@@ -10,6 +10,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.refresh_products import refresh_products
 from app.models.marketplace import Marketplace
 
+# member
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+# from module import Member, get_member, check_access
+
+app = FastAPI()
+
+class MemberResponse(BaseModel):
+    username: str
+    role_name: str
+    access_level: str
+
+# @app.get("/members/{username}", response_model=MemberResponse)
+# def get_member_details(username: str):
+#     member = get_member(username)
+#     if member is None:
+#         raise HTTPException(status_code=404, detail="Member not found")
+#     return {
+#         "username": member.username,
+#         "role_name": member.role.name,
+#         "access_level": member.role.access_level
+#     }
+
+# @app.get("/members/{username}/access-check")
+# def check_member_access(username: str, feature: str):
+#     member = get_member(username)
+#     if member is None:
+#         raise HTTPException(status_code=404, detail="Member not found")
+    
+#     if check_access(member, feature):
+#         return {"access_granted": True}
+#     else:
+#         return {"access_granted": False}
+
+# member
+
+
 app = FastAPI()
 
 origins = [

@@ -18,7 +18,8 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
 
 @router.get("/{product_id}", response_model=ProductRead)
 async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    product = await db.execute(select(Product).filter(Product.id == product_id)).scalars().first()
+    result = await db.execute(select(Product).filter(Product.id == product_id))
+    product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
