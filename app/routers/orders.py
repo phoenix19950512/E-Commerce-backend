@@ -8,14 +8,16 @@ from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 
-def get_order(db: Session, order_id: int):
-    return db.query(Order).filter(Order.id == order_id).first()
+async def get_order(db: AsyncSession, order_id: int):
+    result = await db.execute(select(Order).filter(Order.id == order_id))
+    return result.scalars().first()
 
 def get_orders(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Order).offset(skip).limit(limit).all()
 
-def update_order(db: Session, order_id: int, order: OrderUpdate):
-    db_order = db.query(Order).filter(Order.id == order_id).first()
+async def update_order(db: Session, order_id: int, order: OrderUpdate):
+    result = await db.execute(select(Order).filter(Order.id == order_id))
+    db_order = result.scalars().first()
     if db_order:
         for key, value in order.dict().items():
             setattr(db_order, key, value)
@@ -61,14 +63,14 @@ async def get_orders_count(db: AsyncSession = Depends(get_db)):
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = get_order(db=db, order_id=order_id)
+    db_order = await get_order(db=db, order_id=order_id)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
 
 @router.put("/{order_id}", response_model=OrderRead)
-async def update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
-    db_order = update_order(db=db, order_id=order_id, order=order)
+async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
+    db_order = await update_order(db=db, order_id=order_id, order=order)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
