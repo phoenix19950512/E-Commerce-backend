@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, users, products, profile, marketplace, utils, orders
+from app.routers import auth, users, products, profile, marketplace, utils, orders, dashboard
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,6 +78,7 @@ async def refresh_products(db: AsyncSession = Depends(get_db)):
         refresh_products(marketplace)
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
@@ -85,6 +86,6 @@ app.include_router(marketplace.router, prefix="/api/marketplace", tags=["marketp
 app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

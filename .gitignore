@@ -1,5 +1,6 @@
 __pycache__
 alembic
 venv
+env
 uploads
 API_emag_altex

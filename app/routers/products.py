@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from typing import List
 from app.database import get_db
 from app.models.product import Product
@@ -15,6 +16,12 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(db_product)
     return db_product
+
+@router.get('/count')
+async def get_products_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(func.count(Product.id))
+    count = result.scalar()
+    return count
 
 @router.get("/{product_id}", response_model=ProductRead)
 async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
@@ -50,7 +57,8 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
 
 @router.delete("/{product_id}", response_model=ProductRead)
 async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    product = await db.execute(select(Product).filter(Product.id == product_id)).scalars().first()
+    result = await db.execute(select(Product).filter(Product.id == product_id))
+    product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     await db.delete(product)

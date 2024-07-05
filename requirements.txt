@@ -8,3 +8,8 @@ python-jose
 pydantic
 alembic
 psycopg2
+fastapi_utils
+typing_inspect
+pydantic_settings
+humanize
+requests

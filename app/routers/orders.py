@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
+from sqlalchemy import func
 from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 
 def get_order(db: Session, order_id: int):
@@ -31,11 +33,11 @@ async def delete_order(db: Session, order_id: int):
 router = APIRouter()
 
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
-async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     db_order = Order(**order.dict())
     db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
+    await db.commit()
+    await db.refresh(db_order)
     return db_order
 
 @router.get("/", response_model=List[OrderRead])
@@ -50,6 +52,12 @@ async def read_orders(
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return db_orders
+
+@router.get('/count')
+async def get_orders_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(func.count(Order.id))
+    count = result.scalar()
+    return count
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):

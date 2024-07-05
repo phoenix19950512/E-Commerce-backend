@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any
 from datetime import datetime
+from decimal import Decimal
 
 class Attachment(BaseModel):
     name: Optional[str] = None
@@ -30,7 +31,7 @@ class OrderBase(BaseModel):
     status: Optional[int] = None
     payment_status: Optional[int] = None
     customer_id: Optional[int] = None
-    product_id: Optional[str] = None
+    product_id: Optional[int] = None
     shipping_tax: Optional[float] = None
     shipping_tax_voucher_split: Optional[str] = None
     vouchers: Optional[str] = None
@@ -40,7 +41,7 @@ class OrderBase(BaseModel):
     cashed_cod: Optional[float] = None
     cancellation_request: Optional[str] = None
     has_editable_products: Optional[float] = None
-    refunded_amount: Optional[float] = None
+    refunded_amount: Optional[int] = None
     is_complete: Optional[int] = None
     reason_cancellation: Optional[str] = None
     refund_status: Optional[str] = None
@@ -52,6 +53,10 @@ class OrderBase(BaseModel):
     details: Optional[str] = None
     weekend_delivery: Optional[int] = None
     payment_mode_id: Optional[int] = None
+    sales: Optional[Decimal] = None
+    unit: Optional[int] = None
+    gross_profit: Optional[Decimal] = None
+    net_profit: Optional[Decimal] = None
 
 class OrderCreate(OrderBase):
     pass
@@ -64,3 +69,4 @@ class OrderRead(OrderBase):
 
     class Config:
         orm_mode = True
+        from_attributes = True

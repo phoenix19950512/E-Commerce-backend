@@ -2,8 +2,8 @@ import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DB_USERNAME: str = "dev"
-    DB_PASSOWRD: str = "dev"
+    DB_USERNAME: str = "postgres"
+    DB_PASSOWRD: str = "my pig"
     DB_URL: str = "localhost"
     DB_NAME: str = "e_commerce"
     DB_PORT: str = "5432"
