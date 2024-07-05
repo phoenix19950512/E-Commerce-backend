@@ -186,7 +186,8 @@ async def read_users(
 
 @router.put("/{user_id}", response_model=UserRead)
 async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends(get_db)):
-    db_user = await db.execute(select(User).filter(User.id == user_id)).scalars().first()
+    result = await db.execute(select(User).filter(User.id == user_id))
+    db_user = result.scalars().first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     for var, value in vars(user).items():
@@ -200,7 +201,8 @@ async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends
 
 @router.delete("/{user_id}", response_model=UserRead)
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
-    user = await db.execute(select(User).filter(User.id == user_id)).scalars().first()
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user = result.scalars().first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     await db.delete(user)
