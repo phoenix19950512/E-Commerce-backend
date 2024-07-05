@@ -86,6 +86,6 @@ app.include_router(marketplace.router, prefix="/api/marketplace", tags=["marketp
 app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
