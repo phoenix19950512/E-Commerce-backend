@@ -76,8 +76,8 @@ async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depe
     return db_order
 
 @router.delete("/{order_id}", response_model=OrderRead)
-async def delete_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = delete_order(db=db, order_id=order_id)
+async def get_delete_order(order_id: int, db: Session = Depends(get_db)):
+    db_order = await delete_order(db=db, order_id=order_id)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
