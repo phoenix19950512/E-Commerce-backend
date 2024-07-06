@@ -43,7 +43,7 @@ class OrderBase(BaseModel):
     has_editable_products: Optional[float] = None
     refunded_amount: Optional[int] = None
     is_complete: Optional[int] = None
-    reason_cancellation: Optional[str] = None
+    refunded_reason: Optional[int] = None
     refund_status: Optional[str] = None
     maximum_date_for_shipment: Optional[datetime] = None
     late_shipment: Optional[int] = None

@@ -123,9 +123,9 @@ async def forecast(st_date, en_date, db: AsyncSession):
     avg_daily_net_profit = total_net_profit / days_passed
 
     forecasted_sales = total_sales + (avg_daily_sales * days_remaining)
-    forecasted_orders = total_orders + (avg_daily_orders * days_remaining)
-    forecasted_units = total_units + (avg_daily_units * days_remaining)
-    forecasted_refund = total_refund + (avg_daily_refund * days_remaining)
+    forecasted_orders = int(total_orders + (avg_daily_orders * days_remaining))
+    forecasted_units = int(total_units + (avg_daily_units * days_remaining))
+    forecasted_refund = int(total_refund + (avg_daily_refund * days_remaining))
     forecasted_ads = total_ads + (avg_daily_ads * days_remaining)
     forecasted_payout = forecasted_sales - forecasted_ads
     forecasted_gross_profit = total_gross_profit + (avg_daily_gross_profit * days_remaining)
@@ -210,7 +210,7 @@ async def get_month_data(product_ids_list, date, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
 
     return {
-        "date_string": date_string,
+        "month_string": date_string,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,

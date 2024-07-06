@@ -34,7 +34,7 @@ class Order(Base):
     has_editable_products = Column(Boolean, nullable=True)
     refunded_amount = Column(Integer, nullable=True)
     is_complete = Column(Boolean, nullable=True)
-    reason_cancellation = Column(String, nullable=True)
+    refunded_reason_id = Column(Integer, nullable=True)
     refund_status = Column(String, nullable=True)
     maximum_date_for_shipment = Column(DateTime, nullable=True)
     late_shipment = Column(Integer, nullable=True)
