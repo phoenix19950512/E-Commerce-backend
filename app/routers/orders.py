@@ -52,7 +52,7 @@ async def read_orders(
     result = await db.execute(select(Order).offset(offset).limit(items_per_page))
     db_orders = result.scalars().all()
     if db_orders is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Order not found")
     return db_orders
 
 @router.get('/count')

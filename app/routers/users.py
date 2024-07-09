@@ -51,11 +51,7 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
     user_profiles = []
 
     for user in users:
-        if user.profile and user.profile.avatar:
-            avatar = user.profile.avatar
-        else:
-            avatar = generate_initial(user.full_name)
-        
+        avatar = generate_initial(user.full_name) if not user.profile or not user.profile.avatar else user.profile.avatar
         profile = None
         if user.profile:
             profile = ProfileRead(
@@ -74,12 +70,9 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
                 joined_day=humanize.naturaltime(user.created_at),
                 updated_at=user.updated_at,
                 last_login=humanize.naturaltime(datetime.utcnow() - user.last_logged_in) if user.last_logged_in else None,
-                profile=profile
+                profile=profile,
+                avatar=avatar if not user.profile.avatar else None
             )
-        if user.profile.avatar == "":
-            user_profile.initials = avatar
-        else:
-            user_profile.avatar = avatar
         
         user_profiles.append(
             user_profile
@@ -101,12 +94,15 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already registered",
         )
+    
     hashed_password = get_password_hash(user.password)
     db_user = User(
         username=user.username, email=user.email, full_name=user.full_name, role=user.role, hashed_password=hashed_password
     )
     db.add(db_user)
-    await db.flush()
+    await db.flush()  # This makes sure the db_user gets an ID from the database
+
+    # Now create the profile with the correct user_id
     db_profile = Profile(
         user_id=db_user.id,
         company="",
@@ -117,6 +113,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     db.add(db_profile)
     await db.commit()
     await db.refresh(db_user)
+    
     user = await authenticate_user(db, user.email, user.password)
     if not user:
         raise HTTPException(
@@ -124,12 +121,14 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "bearer"},
         )
+    
     await update_last_logged_in(db, user.id)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"email": user.email}, expires_delta=access_token_expires)
     refresh_token = create_refresh_token(data={"email": user.email}, expires_delta=refresh_token_expires)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
 
 @router.get("/{user_id}", response_model=UserProfileRead)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):

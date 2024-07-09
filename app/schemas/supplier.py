@@ -1,11 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional
-from decimal import Decimal
 
 class SupplierBase(BaseModel):
-    supplier_group: Optional[str] = None
-    supplier_name: Optional[str] = None
-    supplier_wechat: Optional[str] = None
+    group: Optional[str] = None
+    name: Optional[str] = None
+    wechat: Optional[str] = None
 
 class SupplierCreate(SupplierBase):
     pass

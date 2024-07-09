@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR
+from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON
 from app.database import Base
 
 class Product(Base):
@@ -17,6 +17,7 @@ class Product(Base):
     variation_name_1688 = Column(Text, nullable=True)
     pcs_ctn = Column(Text, nullable=True)
     weight = Column(Numeric(12, 6), nullable=True)
+    volumetric_weight = Column(Numeric(12, 6), nullable=True)
     dimensions = Column(Text, nullable=True)
     supplier_id = Column(Integer, nullable=True)
     english_name = Column(Text, nullable=True)
@@ -29,7 +30,7 @@ class Product(Base):
     production_time = Column(Numeric(12, 6), nullable=True)
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
-    day_stock = Column(Integer, nullable=True)
+
 
 
     # admin_user = Column(Text, nullable=True)

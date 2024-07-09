@@ -60,20 +60,13 @@ async def get_value(st_date, en_date, db: AsyncSession = Depends(get_db)):
     total_gross_profit = sum(order.gross_profit for order in orders)
     total_net_profit = sum(order.net_profit for order in orders)
 
-    unique_product_ids = set()
-    total_ads = 0
-    for order in orders:
-        if order.product_id not in unique_product_ids:
-            unique_product_ids.add(order.product_id)
-            total_ads += order.owner.commission
-    total_payout = total_sales - total_ads
     return {
         "date_range": date_string,
         "total_sales": total_sales,
         "total_orders": total_orders,
         "total_units": total_units,
         "total_refund": total_refund,
-        "total_payout": total_payout,
+        "total_payout": 0,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
         "orders": [OrderRead.from_orm(order) for order in orders]
@@ -105,10 +98,10 @@ async def forecast(st_date, en_date, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
     unique_product_ids = set()
     total_ads = 0
-    for order in orders:
-        if order.product_id not in unique_product_ids:
-            unique_product_ids.add(order.product_id)
-            total_ads += order.owner.commission
+    # for order in orders:
+    #     if order.product_id not in unique_product_ids:
+    #         unique_product_ids.add(order.product_id)
+    #         total_ads += order.owner.commission
 
     days_passed = (en_date - st_date).days + 1
     total_days_in_month = (datetime.date(st_date.year, st_date.month + 1, 1) - st_date).days if st_date.month < 12 else 31
@@ -210,11 +203,11 @@ async def get_month_data(product_ids_list, date, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
 
     return {
-        "month_string": date_string,
+        "date_string": date_string,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,
-        "month_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 async def get_week_data(weeK_string, product_ids_list, st_date, en_date, db: AsyncSession):
@@ -232,11 +225,11 @@ async def get_week_data(weeK_string, product_ids_list, st_date, en_date, db: Asy
     total_refund = sum(order.refunded_amount for order in orders)
     total_net_profit = sum(order.net_profit for order in orders)
     return {
-        "weeK_string": weeK_string,
+        "date_string": weeK_string,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,
-        "week_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 async def get_day_data(date, product_ids_list, db: AsyncSession):
@@ -255,11 +248,11 @@ async def get_day_data(date, product_ids_list, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
 
     return {
-        "day_string": f"{date.day} {date.strftime('%b')} {date.year}",
+        "date_string": f"{date.day} {date.strftime('%b')} {date.year}",
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,
-        "day_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 @router.get('/P_L')
@@ -329,13 +322,13 @@ async def PL_month_data(product_ids_list, date, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
 
     return {
-        "month_string": month_string,
+        "date_string": month_string,
         "total_sales": total_sales,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
-        "month_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 async def PL_week_data(week_string, product_ids_list, st_date, en_date, db: AsyncSession):
@@ -356,13 +349,13 @@ async def PL_week_data(week_string, product_ids_list, st_date, en_date, db: Asyn
     total_net_profit = sum(order.net_profit for order in orders)
     
     return {
-        "week_string": week_string,
+        "date_string": week_string,
         "total_sales": total_sales,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
-        "week_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 async def PL_day_data(date, product_ids_list, db: AsyncSession):
@@ -384,13 +377,13 @@ async def PL_day_data(date, product_ids_list, db: AsyncSession):
     total_net_profit = sum(order.net_profit for order in orders)
     
     return {
-        "day_string": day_string,
+        "date_string": day_string,
         "total_sales": total_sales,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
-        "day_orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": [OrderRead.from_orm(order) for order in orders]
     }
 
 # @router.get('/trends')

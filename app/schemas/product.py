@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 
 class ProductBase(BaseModel):
@@ -16,6 +16,7 @@ class ProductBase(BaseModel):
     variation_name_1688: Optional[str] = None
     pcs_ctn: Optional[str] = None
     weight: Optional[Decimal] = None
+    volumetric_weight: Optional[Decimal] = None
     dimensions: Optional[str] = None
     supplier_id: Optional[int] = None
     english_name: Optional[str] = None
@@ -28,7 +29,6 @@ class ProductBase(BaseModel):
     production_time: Optional[Decimal] = None
     discontinued: Optional[bool] = None
     stock: Optional[int] = None
-    day_stock: Optional[int] = None
 
     # admin_user: Optional[str] = None
     # part_number_key: Optional[str] = None

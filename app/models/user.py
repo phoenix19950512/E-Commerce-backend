@@ -16,4 +16,4 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_logged_in = Column(DateTime, nullable=True)
 
-    profile = relationship("Profile", back_populates="user", uselist=False)
+    profile = relationship("Profile", back_populates="user", cascade="all, delete-orphan")

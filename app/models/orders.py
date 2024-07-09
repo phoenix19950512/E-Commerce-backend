@@ -1,12 +1,8 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, Boolean, JSON, ARRAY, Numeric
-# from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy.orm import relationship
-# from sqlalchemy.dialects.postgresql import UUID
-# import uuid
+from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, Boolean, JSON, Numeric
 from app.database import Base
-from app.models.product import Product
-
 from sqlalchemy.orm import relationship
+from app.models.product import Product
+from app.models.awb import AWB
 
 class Order(Base):
     __tablename__ = "orders"
@@ -22,7 +18,7 @@ class Order(Base):
     status = Column(Integer, nullable=True)
     payment_status = Column(Integer, nullable=True)
     customer_id = Column(Integer, nullable=True)
-    product_id = Column(Integer, ForeignKey('products.id'))
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=True)
     shipping_tax = Column(Float, nullable=True)
     shipping_tax_voucher_split = Column(String, nullable=True)
     vouchers = Column(String, nullable=True)
@@ -30,7 +26,6 @@ class Order(Base):
     attachments = Column(JSON, nullable=True)
     cashed_co = Column(Float, nullable=True)
     cashed_cod = Column(Float, nullable=True)
-    cancellation_request = Column(String, nullable=True)
     has_editable_products = Column(Boolean, nullable=True)
     refunded_amount = Column(Integer, nullable=True)
     is_complete = Column(Boolean, nullable=True)
@@ -50,6 +45,6 @@ class Order(Base):
     net_profit = Column(Numeric(16, 4), nullable=True)
 
     owner = relationship('Product', back_populates='orders')
+    awbs = relationship('AWB', back_populates='order')
 
 Product.orders = relationship('Order', back_populates='owner')
-

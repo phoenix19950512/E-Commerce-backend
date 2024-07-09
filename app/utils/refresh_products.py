@@ -15,7 +15,6 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-
 def create_database(dbinfo):
     try:
         conn = psycopg2.connect(

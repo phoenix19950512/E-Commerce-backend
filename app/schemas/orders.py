@@ -1,23 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
-
-class Attachment(BaseModel):
-    name: Optional[str] = None
-    url: Optional[str] = None
-    visibility: Optional[str] = None
-    type: Optional[str] = None
-    force_download: Optional[str] = None
-
-class Flag(BaseModel):
-    flag: Optional[str] = None
-    value: Optional[str] = None
-
-class Detail(BaseModel):
-    locker_delivery_eligible: Optional[str] = None
-    locker_id: Optional[str] = None
-    locker_name: Optional[str] = None
 
 class OrderBase(BaseModel):
     vendor_name: Optional[str] = None
@@ -36,22 +20,21 @@ class OrderBase(BaseModel):
     shipping_tax_voucher_split: Optional[str] = None
     vouchers: Optional[str] = None
     proforms: Optional[str] = None
-    attachments: Optional[str] = None
+    attachments: Optional[List[dict]] = None  # JSON field to List[dict]
     cashed_co: Optional[float] = None
     cashed_cod: Optional[float] = None
-    cancellation_request: Optional[str] = None
-    has_editable_products: Optional[float] = None
+    has_editable_products: Optional[bool] = None  # Corrected to bool
     refunded_amount: Optional[int] = None
-    is_complete: Optional[int] = None
-    refunded_reason: Optional[int] = None
+    is_complete: Optional[bool] = None  # Corrected to bool
+    refunded_reason_id: Optional[int] = None
     refund_status: Optional[str] = None
     maximum_date_for_shipment: Optional[datetime] = None
     late_shipment: Optional[int] = None
-    flags: Optional[str] = None
-    emag_club: Optional[int] = None
+    flags: Optional[List[dict]] = None  # JSON field to List[dict]
+    emag_club: Optional[bool] = None  # Corrected to bool
     finalization_date: Optional[datetime] = None
-    details: Optional[str] = None
-    weekend_delivery: Optional[int] = None
+    details: Optional[List[dict]] = None  # JSON field to List[dict]
+    weekend_delivery: Optional[bool] = None  # Corrected to bool
     payment_mode_id: Optional[int] = None
     sales: Optional[Decimal] = None
     unit: Optional[int] = None
