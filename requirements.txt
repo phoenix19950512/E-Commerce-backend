@@ -13,3 +13,4 @@ typing_inspect
 pydantic_settings
 humanize
 requests
+fastapi_utils
