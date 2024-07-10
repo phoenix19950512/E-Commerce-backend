@@ -9,8 +9,11 @@ from app.schemas.orders import OrderRead
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from app.models.shipment import Shipment
-from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
+from app.models.marketplace import Marketplace
+import json
+
 import datetime
+import base64
 
 router = APIRouter()
 
@@ -21,6 +24,24 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(db_product)
     return db_product
+
+# @router.post("/", response_model=ProductRead)
+# async def create_product(product: ProductCreate, marketplace_id: int, db: AsyncSession = Depends(get_db)):
+#     db_product = Product(**product.dict())
+    
+#     result = await db.execute(select(Marketplace).filter(Marketplace.id == marketplace_id))
+#     marketplace = result.scalars().first()
+#     if not marketplace:
+#         raise HTTPException(status_code=404, detail="Marketplace not found")
+#     MARKETPLACE_API_URL = marketplace.baseAPIURL
+#     USERNAME = marketplace.credentials["firstKey"]
+#     PASSWORD = marketplace.credentials["secondKey"]
+#     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+#     try:
+#         emag_response = create_product(MARKETPLACE_API_URL, API_KEY, db_product, PUBLIC_KEY=None, usePublicKey=False)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))    
+#     return db_product
 
 @router.get('/count')
 async def get_products_count(db: AsyncSession = Depends(get_db)):
@@ -36,12 +57,13 @@ async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+@router.get("/sales_info/{product_id}")
 async def get_sales_info(
     product_id: int,
     type: int,
     db: AsyncSession = Depends(get_db)      
 ):
-    today = datetime.today()
+    today = datetime.date.today()
     sales_info = []
 
     if type == 1:
@@ -62,7 +84,7 @@ async def get_sales_info(
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
             
             sales_month_data = await get_info(product_id, st_datetime, en_datetime, db)
-            sales_info.append({"month_string": date_string, "sales": sales_month_data["sales"]})
+            sales_info.append({"date_string": date_string, "sales": sales_month_data["sales"]})
 
     elif type == 2:
         week_num_en = today.isocalendar()[1]
@@ -77,7 +99,7 @@ async def get_sales_info(
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
             sales_week_data = await get_info(product_id, st_datetime, en_datetime, db)
-            sales_info.append({"week_string": week_string, "sales": sales_week_data["sales"]})
+            sales_info.append({"date_string": week_string, "sales": sales_week_data["sales"]})
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
     else:
@@ -88,11 +110,11 @@ async def get_sales_info(
 
             day_string = f"{date.day} {date.strftime('%b')} {date.year}"
             sales_day_info = await get_info(product_id, st_datetime, en_datetime, db)
-            sales_info.append({"day_string": day_string, "sales": sales_day_info["sales"]})
+            sales_info.append({"date_string": day_string, "sales": sales_day_info["sales"]})
 
     return sales_info
 
-async def get_info(product_id, st_datetime, en_datetime, db: AsyncSession):
+async def get_info(product_id: int, st_datetime, en_datetime, db: AsyncSession):
     query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
     query = query.where(Order.product_id == product_id)
     result = await db.execute(query)
@@ -103,33 +125,42 @@ async def get_info(product_id, st_datetime, en_datetime, db: AsyncSession):
         "sales": units
     }
 
+@router.get("/orders_info/{product_id}")
 async def get_orders_info(product_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Order).filter(Order.product_id == product_id))
-    db_order = result.scalars().first()
-    for order in db_order:
-        return {
+    db_order = result.scalars().all()
+
+    order_data = [
+        {
             "order_id": order.id,
             "order_date": order.date,
             "customer_name": "customer_name",
             "quantity_orders": order.unit,
             "order_status": order.status
-        }
+        } for order in db_order
+    ]
+    return order_data
     
-async def get_refunded_info(product_id: int, db: AsyncSession = Depends(get_db)):
+@router.get("/refunded_info/{products_id}")    
+async def get_refunded_info(products_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Order.refunded_reason_id, func.count(Order.id))
-        .filter(Order.product_id == product_id)
+        .filter(Order.product_id == products_id)
         .group_by(Order.refunded_reason_id)
     )
     refunded_info = result.all()
 
     # Transform the result into a dictionary or another suitable format
-    refunded_info_list = {
+    refunded_info_list = [
         {"refunded_reason_id": refunded_reason_id, "refunded_number": refunded_number} for refunded_reason_id, refunded_number in refunded_info
-    }
+    ]
     return refunded_info_list
 
-async def get_shipment_info(product_id: int, db: AsyncSession = Depends(get_db)):
+@router.get("/shipment_info/{product_id}")
+async def get_shipment_info(
+    product_id: int, 
+    db: AsyncSession = Depends(get_db)
+):
     select_product = await db.execute(select(Product).filter(Product.id == product_id))
     product = select_product.scalars().first()
 
@@ -138,30 +169,34 @@ async def get_shipment_info(product_id: int, db: AsyncSession = Depends(get_db))
     
     product_name = product.product_name
 
-    result = await db.execute(
-        select(Shipment).filter(Shipment.product_name_list.contains([product_name]))
-    )
-    shipment = result.scalars().all()
+    result = await db.execute(select(Shipment))
+    shipments = result.scalars().all()
 
-    if shipment is None:
-        raise HTTPException(status_code=404, detail="Shipment not found")
+    if not shipments:
+        raise HTTPException(status_code=404, detail="Shipments not found")
     
-    quantity_sum = sum(shipment.quantity_list)
+    shipment_data = []
+    for shipment in shipments:
+        try:
+            product_name_list = json.loads(shipment.product_name_list)
+        except (TypeError, json.JSONDecodeError):
+            continue
 
-    try:
-        index = shipment.product_name_list.index(product_name)
-        shipment_quantity = shipment.quantity_list[index]
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Product name not found in shipment")
-    
-    return {
-        "shipment_id": shipment.id,
-        "shipment_date": shipment.date,
-        "shipment_quantity": quantity_sum,
-        "supplier_name": shipment.supplier_name,
-        "shipment_status": shipment.status,
-        "shipment_product_quantity": shipment_quantity
-    }
+        if product_name in product_name_list:
+            index = shipment.product_name_list.index(product_name)
+            shipment_quantity = shipment.quantity_list[index]
+            quantity_sum = sum(shipment.quantity_list)
+
+        shipment_data.append({
+            "shipment_id": shipment.id,
+            "shipment_date": shipment.date,
+            "shipment_quantity": quantity_sum,
+            "supplier_name": shipment.supplier_name,
+            "shipment_status": shipment.status,
+            "shipment_product_quantity": shipment_quantity
+        })
+
+    return shipment_data
 
 @router.get("/", response_model=List[ProductRead])
 async def get_products(

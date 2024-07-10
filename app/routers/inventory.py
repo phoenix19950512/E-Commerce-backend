@@ -5,8 +5,8 @@ from app.models.product import Product
 from app.models.shipment import Shipment 
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 from app.database import get_db
-from app.utils.refresh_products import *
-from sqlalchemy import func, and_
+from app.utils.emag_products import *
+from sqlalchemy import func, and_, text
 import datetime
 from decimal import Decimal
 
@@ -20,48 +20,54 @@ async def get_product_info(
     products = product_result.scalars().all()
 
     product_data = []
-    product_list = [product.product_name for product in products]
 
-    shipments = []
-    for product_name in product_list:
-        shipment_result = await db.execute(
-            select(Shipment).filter(
-                func.jsonb_exists(Shipment.product_name_list, product_name)
-            )
-        )
-        shipments.extend(shipment_result.scalars().all())
+    if product_result:
+        for product in products:
+            stock = product.stock
+            product_name = product.product_name
 
-    for product in products:
-        stock = product.stock
-        product_name = product.product_name
-
-        product_shipments = [shipment for shipment in shipments if product_name in shipment.product_name_list]
-
-        if not product_shipments:
-            continue
-
-        min_date = min(shipment.date for shipment in product_shipments)
-        max_date = max(shipment.date for shipment in product_shipments)
-
-        days = (max_date - min_date).days + 1
-
-        total_sales_number = 0
-        for shipment in product_shipments:
-            if product_name in shipment.product_name_list:
-                index = shipment.product_name_list.index(product_name)
-                total_sales_number += shipment.quantity_list[index]
+            shipment_result = await db.execute(select(Shipment))
             
-        ave_sales = total_sales_number / days
+            shipments = shipment_result.scalars().all()
 
-        stock_days = int(stock / ave_sales) if ave_sales > 0 else 0
-        product_data.append({
-            "product_name": product.product_name,
-            "product_price": product.price,
-            "product_image_link": product.image_link,
-            "product_stock": product.stock,
-            "stock_days": stock_days
-        })
-    return product_data
+            if not shipments:
+                continue
+            
+            product_shipments = []
+
+            for shipment in shipments:
+                try:
+                    product_name_list = json.loads(shipment.product_name_list)
+                except (TypeError, json.JSONDecodeError):
+                    continue
+                
+                if product_name in product_name_list:
+                    product_shipments.append(shipment)
+            if not product_shipments:
+                continue
+            min_date = min(shipment.date for shipment in product_shipments)
+            max_date = max(shipment.date for shipment in product_shipments)
+
+            days = (max_date - min_date).days + 1
+
+            total_sales_number = 0
+            for shipment in product_shipments:
+                if product_name in shipment.product_name_list:
+                    index = shipment.product_name_list.index(product_name)
+                    total_sales_number += shipment.quantity_list[index]
+                
+            ave_sales = total_sales_number / days
+
+            stock_days = int(stock / ave_sales) if ave_sales > 0 else 0
+
+            product_data.append({
+                "product_name": product.product_name,
+                "product_price": product.price,
+                "product_image_link": product.image_link,
+                "product_stock": product.stock,
+                "stock_days": stock_days
+            })
+        return product_data
 
 @router.get('/product/advance')
 async def get_product_advanced_info(
@@ -121,7 +127,7 @@ async def get_product_advanced_info(
             "weight": product.weight,
             "volumetric_weight": product.volumetric_weight,
             "stock": product.stock,
-            "shipment_type": product.shipment_type
+            "shipment_type": shipment_type
         })
 
     return product_data
@@ -165,7 +171,7 @@ async def  get_shipment_info(
 
     return shipment_data
 
-@router.get('/shipment/creation')
+@router.post('/shipment/creation')
 async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(get_db)):
     db_shipment = Shipment(**shipment.dict())
     db.add(db_shipment)
@@ -173,7 +179,7 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     await db.refresh(db_shipment)
     return db_shipment
 
-@router.get("/shipment/update", response_model=ShipmentRead)
+@router.put("/shipment/update", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
     db_shipment = await db.execute(select(Shipment).filter(Shipment.id == shipment_id)).scalars().first()
     if db_shipment is None:

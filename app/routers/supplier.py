@@ -23,23 +23,12 @@ async def get_suppliers_count(db: AsyncSession = Depends(get_db)):
     count = result.scalar()
     return count
 
-# @router.get("/{supplier_id}", response_model=SupplierRead)
-# async def read_supplier(supplier_id: int, db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(Supplier).filter(Supplier.id == supplier_id))
-#     supplier = result.scalars().first()
-#     if supplier is None:
-#         raise HTTPException(status_code=404, detail="supplier not found")
-#     return supplier
-
 @router.get("/", response_model=List[SupplierRead])
 async def get_suppliers(
-    page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
     
-    offset = (page - 1) * items_per_page
-    result = await db.execute(select(Supplier).offset(offset).limit(items_per_page))
+    result = await db.execute(select(Supplier))
     db_suppliers = result.scalars().all()
     if db_suppliers is None:
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -47,7 +36,8 @@ async def get_suppliers(
 
 @router.put("/{supplier_id}", response_model=SupplierRead)
 async def update_supplier(supplier_id: int, supplier: SupplierUpdate, db: AsyncSession = Depends(get_db)):
-    db_supplier = await db.execute(select(Supplier).filter(Supplier.id == supplier_id)).scalars().first()
+    result = await db.execute(select(Supplier).filter(Supplier.id == supplier_id))
+    db_supplier = result.scalars().first()
     if db_supplier is None:
         raise HTTPException(status_code=404, detail="Supplier not found")
     for var, value in vars(supplier).items():

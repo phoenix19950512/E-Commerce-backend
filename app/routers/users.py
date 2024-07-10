@@ -60,23 +60,22 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
                 company=user.profile.company,
                 phone=user.profile.phone,
                 country=user.profile.country,
+                avatar=user.profile.avatar,  # Directly use the avatar from the profile if available
             )
             
         user_profile = UserProfileRead(
-                id=user.id,
-                name=user.full_name,
-                email=user.email,
-                role=convert_role_to_string(user.role),
-                joined_day=humanize.naturaltime(user.created_at),
-                updated_at=user.updated_at,
-                last_login=humanize.naturaltime(datetime.utcnow() - user.last_logged_in) if user.last_logged_in else None,
-                profile=profile,
-                avatar=avatar if not user.profile.avatar else None
-            )
-        
-        user_profiles.append(
-            user_profile
+            id=user.id,
+            name=user.full_name,
+            email=user.email,
+            role=convert_role_to_string(user.role),
+            joined_day=humanize.naturaltime(user.created_at),
+            updated_at=user.updated_at,
+            last_login=humanize.naturaltime(datetime.utcnow() - user.last_logged_in) if user.last_logged_in else None,
+            profile=profile,
+            avatar=avatar
         )
+        
+        user_profiles.append(user_profile)
     return user_profiles
 
 @router.post("/", response_model=Token)

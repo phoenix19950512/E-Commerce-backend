@@ -29,6 +29,7 @@ class ProductBase(BaseModel):
     production_time: Optional[Decimal] = None
     discontinued: Optional[bool] = None
     stock: Optional[int] = None
+    internal_shipping_price: Optional[Decimal] = None
 
     # admin_user: Optional[str] = None
     # part_number_key: Optional[str] = None

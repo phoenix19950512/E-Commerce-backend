@@ -8,3 +8,4 @@ class Supplier(Base):
     group = Column(Text, nullable=True)
     name = Column(Text, nullable=True)
     wechat = Column(Text, nullable=True)
+    

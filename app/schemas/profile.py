@@ -31,8 +31,8 @@ class UserProfileRead(BaseModel):
     updated_at: Optional[datetime] = None
     last_login: Optional[str] = None
     profile: Optional[ProfileRead] = None
-    avatar: Optional[ProfileRead] = None
-    initials: Optional[ProfileRead] = None
+    avatar: Optional[Union[str, Dict[str, str]]] = None
+    initials: Optional[Union[str, Dict[str, str]]] = None
 
     class Config:
         from_attributes = True

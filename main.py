@@ -7,7 +7,7 @@ from app.routers import auth, users, products, profile, marketplace, utils, orde
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.utils.refresh_products import refresh_products
+from app.utils.emag_products import *
 from app.models.marketplace import Marketplace
 
 # member
@@ -46,8 +46,8 @@ async def on_startup():
     await init_models()
 
 @app.on_event("startup")
-@repeat_every(seconds=900)  # Run daily for deleting video last 30 days
-async def refresh_products(db: AsyncSession = Depends(get_db)):
+@repeat_every(seconds=60)  # Run daily for deleting video last 30 days
+async def refresh_product(db: AsyncSession = Depends(get_db)):
     marketplaces = await db.execute(select(Marketplace)).scalars().all()
     for marketplace in marketplaces:
         refresh_products(marketplace)
