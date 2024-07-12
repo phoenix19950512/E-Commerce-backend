@@ -30,8 +30,8 @@ async def get_product_info(
             
             shipments = shipment_result.scalars().all()
 
-            if not shipments:
-                continue
+            # if not shipments:
+            #     continue
             
             product_shipments = []
 
@@ -43,29 +43,31 @@ async def get_product_info(
                 
                 if product_name in product_name_list:
                     product_shipments.append(shipment)
-            if not product_shipments:
-                continue
-            min_date = min(shipment.date for shipment in product_shipments)
-            max_date = max(shipment.date for shipment in product_shipments)
 
-            days = (max_date - min_date).days + 1
+            if  product_shipments:
+                min_date = min(shipment.date for shipment in product_shipments)
+                max_date = max(shipment.date for shipment in product_shipments)
 
-            total_sales_number = 0
-            for shipment in product_shipments:
-                if product_name in shipment.product_name_list:
-                    index = shipment.product_name_list.index(product_name)
-                    total_sales_number += shipment.quantity_list[index]
-                
-            ave_sales = total_sales_number / days
+                days = (max_date - min_date).days + 1
 
-            stock_days = int(stock / ave_sales) if ave_sales > 0 else 0
+                total_sales_number = 0
+                for shipment in product_shipments:
+                    if product_name in shipment.product_name_list:
+                        index = shipment.product_name_list.index(product_name)
+                        total_sales_number += shipment.quantity_list[index]
+                    
+                ave_sales = total_sales_number / days
 
+                stock_days = int(stock / ave_sales) if ave_sales > 0 else 0
+            else:
+                stock_days = product.stock
             product_data.append({
+                "id": product.id,
                 "product_name": product.product_name,
-                "product_price": product.price,
-                "product_image_link": product.image_link,
-                "product_stock": product.stock,
-                "stock_days": stock_days
+                "price": str(product.price),
+                "image_link": product.image_link,
+                "stock": product.stock,
+                "day_stock": stock_days
             })
         return product_data
 
@@ -114,10 +116,7 @@ async def get_product_advanced_info(
 
     result = await db.execute(query)
     products = result.scalars().all()
-    product_count = len(products)
-    product_data = [{
-        "count": product_count
-    }]
+    product_data = []
 
     for product in products:
         product_data.append({

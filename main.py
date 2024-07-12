@@ -50,22 +50,22 @@ async def init_models():
 async def on_startup():
     await init_models()
 
-@app.on_event("startup")
-@repeat_every(seconds=900)  # Run daily for deleting video last 30 days
-async def refresh_data(db: AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting product refresh")
-            result = await session.execute(select(Marketplace))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                logging.info("Refresh order from marketplace")
-                await refresh_orders(marketplace, session)
-                logging.info("Refresh product from marketplace")
-                await refresh_products(marketplace, session)
+# @app.on_event("startup")
+# @repeat_every(seconds=900)  # Run daily for deleting video last 30 days
+# async def refresh_data(db: AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting product refresh")
+#             result = await session.execute(select(Marketplace))
+#             marketplaces = result.scalars().all()
+#             logging.info(f"Success getting {len(marketplaces)} marketplaces")
+#             for marketplace in marketplaces:
+#                 logging.info("Refresh order from marketplace")
+#                 await refresh_orders(marketplace, session)
+#                 logging.info("Refresh product from marketplace")
+#                 await refresh_products(marketplace, session)
                 
-            logging.info("Completed product refresh")
+#             logging.info("Completed product refresh")
 
             # logging.info("Starting order refresh")
             # for marketplace in marketplaces:

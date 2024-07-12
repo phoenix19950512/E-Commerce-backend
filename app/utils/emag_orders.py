@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Dict, Any
+
 from sqlalchemy.exc import IntegrityError
 import logging
 from sqlalchemy import insert
@@ -211,7 +213,9 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
         print(f"Failed to retrieve orders: {response.status_code}")
         return None
 
-def parse_datetime(date_str):
+def safe_parse_datetime(date_str):
+    if date_str is None:
+        return None
     try:
         return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     except ValueError:
@@ -237,14 +241,14 @@ def parse_int(value):
     except (TypeError, ValueError):
         return None
 
-async def insert_orders(orders, db):
+async def insert_orders(orders: List[Dict[str, Any]], db: AsyncSession):
     try:
         for order_data in orders:
             order = Order(
                 vendor_name=order_data.get('vendor_name'),
                 type=order_data.get('type'),
                 parent_id=order_data.get('parent_id'),
-                date=parse_datetime(order_data.get('date')),
+                date=safe_parse_datetime(order_data.get('date')),
                 payment_mode=order_data.get('payment_mode'),
                 detailed_payment_method=order_data.get('detailed_payment_method'),
                 delivery_mode=order_data.get('delivery_mode'),
@@ -265,11 +269,11 @@ async def insert_orders(orders, db):
                 is_complete=order_data.get('is_complete'),
                 refunded_reason_id=order_data.get('refunded_reason_id'),
                 refund_status=order_data.get('refund_status'),
-                maximum_date_for_shipment=parse_datetime(order_data.get('maximum_date_for_shipment')),
+                maximum_date_for_shipment=safe_parse_datetime(order_data.get('maximum_date_for_shipment')),
                 late_shipment=order_data.get('late_shipment'),
                 flags=convert_to_json_string(order_data.get('flags')),
                 emag_club=order_data.get('emag_club'),
-                finalization_date=parse_datetime(order_data.get('finalization_date')),
+                finalization_date=safe_parse_datetime(order_data.get('finalization_date')),
                 details=convert_to_json_string(order_data.get('details')),
                 weekend_delivery=order_data.get('weekend_delivery'),
                 payment_mode_id=order_data.get('payment_mode_id'),
@@ -279,13 +283,14 @@ async def insert_orders(orders, db):
                 net_profit=None  # Set to None if data is not available
             )
             db.add(order)
+        
         await db.commit()
-        logging.info("$$$$$$$$$$$$$$$$$$$$$Orders inserted successfully")
+        logging.info("###########Orders inserted successfully")
     except IntegrityError as e:
-        logging.error(f"Database integrity error: {e}")
+        logging.error(f"$$$$$$$$$$$$$Database integrity error: {e}")
         await db.rollback()
     except Exception as e:
-        logging.error(f"#################Failed to insert orders into database: {e}")
+        logging.error(f"%%%%%%%%%%%%%%%Failed to insert orders into database: {e}")
         await db.rollback()
 
 async def insert_orders_into_db(orders, customers_table, orders_table):
@@ -635,13 +640,13 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
             endpoint = marketplace.orders_crud['endpoint']
             read_endpoint = marketplace.orders_crud['read']
             try:
-                while currentPage <= int(pages):
+                while currentPage <= 2:
                     orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         async with db as session:
                             await insert_orders_into_db(orders['results'], customer_table, orders_table)
-                            # await insert_orders(orders['results'], session)
+                            await insert_orders(orders['results'], session)
                         currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')
