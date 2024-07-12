@@ -6,7 +6,7 @@ from app.models.awb import AWB
 
 class Order(Base):
     __tablename__ = "orders"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     vendor_name = Column(String, nullable=True)
     type = Column(Integer, nullable=True)
     parent_id = Column(Integer, nullable=True)

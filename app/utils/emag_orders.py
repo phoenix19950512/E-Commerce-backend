@@ -7,8 +7,13 @@ from app.config import settings
 from psycopg2 import sql
 from urllib.parse import urlparse
 from app.models.marketplace import Marketplace
+from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 import logging
+from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -169,7 +174,11 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
             "X-Request-Public-Key": f"{PUBLIC_KEY}",
             "X-Request-Signature": f"{API_KEY}"
         }
-    response = requests.get(url, headers=headers, proxies=PROXIES)
+
+    data = json.dumps({
+        "status": [1, 2, 3, 5]
+    })
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         return response.json()
     else:
@@ -192,6 +201,7 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
     data = json.dumps({
         "itemsPerPage": 100,
         "currentPage": currentPage,
+        "status": [1, 2, 3, 5]
     })
     response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
@@ -200,6 +210,83 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
     else:
         print(f"Failed to retrieve orders: {response.status_code}")
         return None
+
+def parse_datetime(date_str):
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        logging.error(f"Error parsing date: {date_str}")
+        return None
+
+def convert_to_json_string(data):
+    if data is None:
+        return None
+    if isinstance(data, list):
+        return json.dumps(data)
+    return data
+
+def parse_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+async def insert_orders(orders, db):
+    try:
+        for order_data in orders:
+            order = Order(
+                vendor_name=order_data.get('vendor_name'),
+                type=order_data.get('type'),
+                parent_id=order_data.get('parent_id'),
+                date=parse_datetime(order_data.get('date')),
+                payment_mode=order_data.get('payment_mode'),
+                detailed_payment_method=order_data.get('detailed_payment_method'),
+                delivery_mode=order_data.get('delivery_mode'),
+                observation=order_data.get('observation'),
+                status=order_data.get('status'),
+                payment_status=order_data.get('payment_status'),
+                customer_id=order_data.get('customer_id'),
+                product_id=order_data.get('product_id'),
+                shipping_tax=parse_float(order_data.get('shipping_tax')),
+                shipping_tax_voucher_split=convert_to_json_string(order_data.get('shipping_tax_voucher_split')),
+                vouchers=convert_to_json_string(order_data.get('vouchers')),
+                proforms=convert_to_json_string(order_data.get('proforms')),
+                attachments=convert_to_json_string(order_data.get('attachments')),
+                cashed_co=parse_float(order_data.get('cashed_co')),
+                cashed_cod=parse_float(order_data.get('cashed_cod')),
+                has_editable_products=order_data.get('has_editable_products'),
+                refunded_amount=parse_int(order_data.get('refunded_amount')),
+                is_complete=order_data.get('is_complete'),
+                refunded_reason_id=order_data.get('refunded_reason_id'),
+                refund_status=order_data.get('refund_status'),
+                maximum_date_for_shipment=parse_datetime(order_data.get('maximum_date_for_shipment')),
+                late_shipment=order_data.get('late_shipment'),
+                flags=convert_to_json_string(order_data.get('flags')),
+                emag_club=order_data.get('emag_club'),
+                finalization_date=parse_datetime(order_data.get('finalization_date')),
+                details=convert_to_json_string(order_data.get('details')),
+                weekend_delivery=order_data.get('weekend_delivery'),
+                payment_mode_id=order_data.get('payment_mode_id'),
+                sales=parse_float(order_data.get('sales')),
+                unit=None,  # Set to None if data is not available
+                gross_profit=None,  # Set to None if data is not available
+                net_profit=None  # Set to None if data is not available
+            )
+            db.add(order)
+        await db.commit()
+        logging.info("$$$$$$$$$$$$$$$$$$$$$Orders inserted successfully")
+    except IntegrityError as e:
+        logging.error(f"Database integrity error: {e}")
+        await db.rollback()
+    except Exception as e:
+        logging.error(f"#################Failed to insert orders into database: {e}")
+        await db.rollback()
 
 async def insert_orders_into_db(orders, customers_table, orders_table):
     try:
@@ -542,17 +629,19 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
             logging.info(f"Number of Pages: {pages}")
             logging.info(f"Number of Items: {items}")
 
-            currentPage = 400
+            # currentPage = int(pages)
+            currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
             endpoint = marketplace.orders_crud['endpoint']
             read_endpoint = marketplace.orders_crud['read']
             try:
-                while currentPage < int(pages) + 1:
+                while currentPage <= 2:
                     orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         async with db as session:
                             await insert_orders_into_db(orders['results'], customer_table, orders_table)
+                            # await insert_orders(orders['results'], session)
                         currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')

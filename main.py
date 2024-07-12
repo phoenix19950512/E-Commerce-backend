@@ -60,15 +60,21 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
-                logging.info("Refresh product from marketplace")
-                await refresh_products(marketplace, session)
-            logging.info("Completed product refresh")
-
-            logging.info("Starting order refresh")
-            for marketplace in marketplaces:
                 logging.info("Refresh order from marketplace")
                 await refresh_orders(marketplace, session)
-            logging.info("Completed order refresh")
+                logging.info("Refresh product from marketplace")
+                await refresh_products(marketplace, session)
+                
+            logging.info("Completed product refresh")
+
+            # logging.info("Starting order refresh")
+            # for marketplace in marketplaces:
+            #     logging.info("Refresh order from marketplace")
+            #     try:
+            #         await refresh_orders(marketplace, session)
+            #     except Exception as e:
+            #         logging.info(f"Error refreshing orders for marketplace {marketplace.id}: {e}")
+            # logging.info("Completed order refresh")
 
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
