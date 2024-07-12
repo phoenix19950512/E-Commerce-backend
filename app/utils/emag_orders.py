@@ -8,7 +8,6 @@ from psycopg2 import sql
 from urllib.parse import urlparse
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.orders import Order
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -201,11 +200,6 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
     else:
         print(f"Failed to retrieve orders: {response.status_code}")
         return None
-
-# async def insert_orders(orders, db):
-#     try:
-#         for order in orders:
-#             order_model = Order()
 
 async def insert_orders_into_db(orders, customers_table, orders_table):
     try:
@@ -533,7 +527,6 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
     customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers"
     orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders"
-    # orders_table = "market_orders"
     create_customers_table(customer_table)
     create_orders_table(orders_table)
 

@@ -49,7 +49,7 @@ async def get_value(st_date, en_date, db: AsyncSession = Depends(get_db)):
     else:
         date_string = f"{st_date.day}-{en_date.day} {st_date.strftime('%B')} {st_date.year}"
 
-    result = await db.execute(select(Order).options(joinedload(Order.owner)).where(Order.date >= st_datetime, Order.date <= en_datetime))
+    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime))
 
     orders = result.scalars().all()
 
@@ -76,7 +76,7 @@ async def forecast(st_date, en_date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    result = await db.execute(select(Order).options(joinedload(Order.owner)).where(Order.date >= st_datetime, Order.date <= en_datetime))
+    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime))
     orders = result.scalars().all()
     if not orders:
         return {

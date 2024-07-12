@@ -50,31 +50,26 @@ async def init_models():
 async def on_startup():
     await init_models()
 
-
-async def refresh_data(interval: int = 900, db: AsyncSession = Depends(get_db)):
-    while True:
-        async for db in get_db():
-            async with db as session:
-                logging.info("Starting product refresh")
-                result = await session.execute(select(Marketplace))
-                marketplaces = result.scalars().all()
-                logging.info(f"Success getting {len(marketplaces)} marketplaces")
-                for marketplace in marketplaces:
-                    logging.info("Refresh product from marketplace")
-                    await refresh_products(marketplace, session)
-                logging.info("Completed product refresh")
-
-                logging.info("Starting order refresh")
-                for marketplace in marketplaces:
-                    logging.info("Refresh order from marketplace")
-                    await refresh_orders(marketplace, session)
-                logging.info("Completed order refresh")
-        await asyncio.sleep(interval)
-
-
 @app.on_event("startup")
-async def startup():
-    asyncio.create_task(refresh_data(900))
+@repeat_every(seconds=900)  # Run daily for deleting video last 30 days
+async def refresh_data(db: AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        async with db as session:
+            logging.info("Starting product refresh")
+            result = await session.execute(select(Marketplace))
+            marketplaces = result.scalars().all()
+            logging.info(f"Success getting {len(marketplaces)} marketplaces")
+            for marketplace in marketplaces:
+                logging.info("Refresh product from marketplace")
+                await refresh_products(marketplace, session)
+            logging.info("Completed product refresh")
+
+            logging.info("Starting order refresh")
+            for marketplace in marketplaces:
+                logging.info("Refresh order from marketplace")
+                await refresh_orders(marketplace, session)
+            logging.info("Completed order refresh")
+
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
