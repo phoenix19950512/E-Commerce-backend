@@ -8,7 +8,12 @@ from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.emag_products import *
+from app.utils.emag_orders import *
 from app.models.marketplace import Marketplace
+from sqlalchemy.orm import Session
+import logging
+
+
 
 # member
 from fastapi import FastAPI, HTTPException
@@ -46,11 +51,25 @@ async def on_startup():
     await init_models()
 
 @app.on_event("startup")
-@repeat_every(seconds=60)  # Run daily for deleting video last 30 days
-async def refresh_product(db: AsyncSession = Depends(get_db)):
-    marketplaces = await db.execute(select(Marketplace)).scalars().all()
-    for marketplace in marketplaces:
-        refresh_products(marketplace)
+@repeat_every(seconds=900)  # Run daily for deleting video last 30 days
+async def refresh_data(db: AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        async with db as session:
+            logging.info("Starting product refresh")
+            result = await session.execute(select(Marketplace))
+            marketplaces = result.scalars().all()
+            logging.info(f"Success getting {len(marketplaces)} marketplaces")
+            for marketplace in marketplaces:
+                logging.info("Refresh product from marketplace")
+                await refresh_products(marketplace, session)
+            logging.info("Completed product refresh")
+
+            logging.info("Starting order refresh")
+            for marketplace in marketplaces:
+                logging.info("Refresh order from marketplace")
+                await refresh_orders(marketplace, session)
+            logging.info("Completed order refresh")
+
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])

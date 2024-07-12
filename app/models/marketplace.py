@@ -13,3 +13,4 @@ class Marketplace(Base):
     credentials = Column(JSON, nullable=False)
     products_crud = Column(JSON, nullable=False)
     orders_crud = Column(JSON, nullable=False)
+    image_url = Column(String, nullable=False)

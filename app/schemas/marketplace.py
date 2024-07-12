@@ -22,6 +22,7 @@ class MarketplaceBase(BaseModel):
     country: Optional[str] = None
     baseAPIURL: Optional[str] = None
     credentials: Optional[Credentials] = None
+    image_url: Optional[str] = None
     products_crud: CRUDOperations = CRUDOperations(
         endpoint="/product_offer",
         create="/create",
