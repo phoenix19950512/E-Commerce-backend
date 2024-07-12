@@ -171,7 +171,7 @@ async def  get_shipment_info(
 
     return shipment_data
 
-@router.post('/shipment/creation')
+@router.post('/shipment')
 async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(get_db)):
     db_shipment = Shipment(**shipment.dict())
     db.add(db_shipment)
@@ -179,7 +179,7 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     await db.refresh(db_shipment)
     return db_shipment
 
-@router.put("/shipment/update", response_model=ShipmentRead)
+@router.put("/shipment", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
     db_shipment = await db.execute(select(Shipment).filter(Shipment.id == shipment_id)).scalars().first()
     if db_shipment is None:

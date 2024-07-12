@@ -18,7 +18,7 @@ class Order(Base):
     status = Column(Integer, nullable=True)
     payment_status = Column(Integer, nullable=True)
     customer_id = Column(Integer, nullable=True)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=True)
+    product_id = Column(Integer, nullable=True)
     shipping_tax = Column(Float, nullable=True)
     shipping_tax_voucher_split = Column(String, nullable=True)
     vouchers = Column(String, nullable=True)
@@ -44,7 +44,5 @@ class Order(Base):
     gross_profit = Column(Numeric(16, 4), nullable=True)
     net_profit = Column(Numeric(16, 4), nullable=True)
 
-    owner = relationship('Product', back_populates='orders')
     awbs = relationship('AWB', back_populates='order')
 
-Product.orders = relationship('Order', back_populates='owner')

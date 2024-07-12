@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON
 from app.database import Base
+from sqlalchemy.orm import relationship
 
 class Product(Base):
     __tablename__ = "products"
@@ -31,5 +32,4 @@ class Product(Base):
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)
-
-
+    
