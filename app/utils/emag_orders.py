@@ -646,7 +646,7 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
                     if orders and orders['isError'] == False:
                         async with db as session:
                             await insert_orders_into_db(orders['results'], customer_table, orders_table)
-                            await insert_orders(orders['results'], session)
+                            # await insert_orders(orders['results'], session)
                         currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')

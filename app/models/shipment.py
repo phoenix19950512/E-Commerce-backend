@@ -4,7 +4,7 @@ from app.database import Base
 class Shipment(Base):
     __tablename__ = "shipments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     date = Column(DateTime, nullable=True)
     type = Column(String, nullable=True)
     product_name_list = Column(JSON, nullable=True)

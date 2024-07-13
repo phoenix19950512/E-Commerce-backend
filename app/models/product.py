@@ -32,4 +32,5 @@ class Product(Base):
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)
+    # market_places = Column(ARRAY(text), nullable=True)
     

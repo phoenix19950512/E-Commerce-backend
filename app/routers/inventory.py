@@ -62,9 +62,9 @@ async def get_product_info(
             else:
                 stock_days = product.stock
             product_data.append({
-                "id": product.id,
                 "product_name": product.product_name,
                 "price": str(product.price),
+                "ean": product.ean,
                 "image_link": product.image_link,
                 "stock": product.stock,
                 "day_stock": stock_days

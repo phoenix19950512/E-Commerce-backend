@@ -30,6 +30,7 @@ class ProductBase(BaseModel):
     discontinued: Optional[bool] = None
     stock: Optional[int] = None
     internal_shipping_price: Optional[Decimal] = None
+    # market_places: Optional[List[str]] = None
 
 class ProductCreate(ProductBase):
     pass
