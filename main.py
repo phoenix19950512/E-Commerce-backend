@@ -60,8 +60,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
-                # logging.info("Refresh product from marketplace")
-                # await refresh_products(marketplace, session)
+                logging.info("Refresh product from marketplace")
+                await refresh_products(marketplace, session)
                 logging.info("Refresh order from marketplace")
                 await refresh_orders(marketplace, session)
                 

@@ -599,7 +599,7 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
             endpoint = marketplace.orders_crud['endpoint']
             read_endpoint = marketplace.orders_crud['read']
             try:
-                while currentPage <= 2:
+                while currentPage <= pages:
                     orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
