@@ -11,6 +11,7 @@ import json
 import os
 import time
 import logging
+from sqlalchemy.exc import SQLAlchemyError
 from app.models.marketplace import Marketplace
 from app.models.product import Product
 from app.schemas.product import ProductCreate
@@ -18,6 +19,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from app.database import get_db
+from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -60,7 +62,7 @@ def create_products_table(products_table):
         cursor = conn.cursor()
         create_table_query = sql.SQL("""
             CREATE TABLE IF NOT EXISTS {} (
-                id SERIAL PRIMARY KEY,
+                id INTEGER,
                 admin_user TEXT,
                 part_number_key TEXT,
                 brand_name TEXT,
@@ -89,7 +91,7 @@ def create_products_table(products_table):
                 availability TEXT,
                 stock TEXT,
                 handling_time TEXT,
-                ean TEXT UNIQUE,
+                ean TEXT PRIMARY KEY UNIQUE,
                 commission NUMERIC(16, 4),
                 validation_status TEXT,
                 translation_validation_status TEXT,
@@ -103,6 +105,59 @@ def create_products_table(products_table):
                 recycleWarranties INTEGER
             )
         """).format(sql.Identifier(products_table))
+
+        cursor.execute(create_table_query)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        logging.info(">>> Created table <<<")
+    except Exception as e:
+        logging.error(f"Failed to create table: {e}")
+
+def create_table():
+    try:
+        conn = psycopg2.connect(
+            dbname=settings.DB_NAME,
+            user=settings.DB_USERNAME,
+            password=settings.DB_PASSOWRD,
+            host=settings.DB_URL,
+            port=settings.DB_PORT
+        )
+
+        cursor = conn.cursor()
+        create_table_query = sql.SQL("""
+            CREATE TABLE IF NOT EXISTS {} (
+                id INTEGER,
+                product_name TEXT,
+                model_name TEXT,
+                price NUMERIC(16, 4),
+                ean TEXT PRIMARY KEY UNIQUE,
+                image_link TEXT,
+                barcode_title TEXT,
+                masterbox_title TEXT,
+                link_address_1688 TEXT,
+                price_1688 NUMERIC(16, 4),
+                variation_name_1688 TEXT,
+                pcs_ctn TEXT,
+                weight NUMERIC(16, 4),
+                volumetric_weight NUMERIC(16, 4),
+                dimensions TEXT,
+                supplier_id INTEGER,
+                english_name TEXT,
+                romanian_name TEXT,
+                material_name_en TEXT,
+                material_name_ro TEXT,
+                hs_code TEXT,
+                battery BOOLEAN,
+                default_usage TEXT,
+                production_time INTEGER,
+                max_sale_price NUMERIC(16, 4),
+                discontinued BOOLEAN,
+                stock INTEGER,
+                internal_shipping_price NUMERIC(16, 4),
+                market_places TEXT[]
+            )
+        """).format(sql.Identifier("internal_products"))
 
         cursor.execute(create_table_query)
         conn.commit()
@@ -161,105 +216,125 @@ def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API
         return None
 
 
-async def insert_products(products, db):
+async def insert_products(products, mp_name: str):
     try:
+        conn = psycopg2.connect(
+            dbname=settings.DB_NAME,
+            user=settings.DB_USERNAME,
+            password=settings.DB_PASSOWRD,
+            host=settings.DB_URL,
+            port=settings.DB_PORT
+        )
+        cursor = conn.cursor()
+        insert_query = sql.SQL("""
+            INSERT INTO {} (
+                id,
+                product_name,
+                model_name,
+                price,
+                ean,
+                image_link,
+                barcode_title,
+                masterbox_title,
+                link_address_1688,
+                price_1688,
+                variation_name_1688,
+                pcs_ctn,
+                weight,
+                volumetric_weight,
+                dimensions,
+                supplier_id,
+                english_name,
+                romanian_name,
+                material_name_en,
+                material_name_ro,
+                hs_code,
+                battery,
+                default_usage,
+                production_time,
+                discontinued,
+                stock,
+                internal_shipping_price,
+                market_places
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) ON CONFLICT (ean) DO UPDATE SET
+                stock = EXCLUDED.stock,
+                market_places = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_places, internal_products.market_places)))
+        """).format(sql.Identifier("internal_products"))
+
         for product in products:
+            id = product.get('id')
+            product_name = product.get('name')
+            model_name = product.get('brand')
+            price = 0
+            ean = str(product.get('ean')[0])
+            image_link = product.get('images')[0]['url']
+            barcode_title = ""
+            masterbox_title = ""
+            link_address_1688 = ""
+            price_1688 = Decimal('0')
+            variation_name_1688 = ""
+            pcs_ctn = ""
+            weight_value = product.get('weight')
+            if isinstance(weight_value, str):
+                weight_value = weight_value.replace(',', '.')  # Handle any comma as decimal separator
+            weight = Decimal(weight_value) if weight_value else Decimal('0')
+            volumetric_weight = 0
+            dimensions = ""
+            supplier_id = 0
+            english_name = ""
+            romanian_name = ""
+            material_name_en = ""
+            material_name_ro = ""
+            hs_code = ""
+            battery = False
+            default_usage = ""
+            production_time = Decimal('0')
+            discontinued = False
+            stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
+            internal_shipping_price = Decimal('0')
+            market_places = [mp_name]  # Ensure this is an array to use array_cat
 
-            product_model = Product(
-                product_name = product.get('name'),
-                model_name = product.get('part_number'),
-                ean = product.get('ean')[0] if product.get('ean') else None,
-                price = product.get('sale_price'),
-                image_link = product.get('images')[0]['url'] if product.get('images') else None,
-                barcode_title = product.get('part_number_key'),
-                masterbox_title = product.get('brand_name'),
-                link_address_1688 = product.get('url'),
-                price_1688 = 0,  # Map appropriately if available
-                variation_name_1688 = product.get('brand'),
-                pcs_ctn = "",  # Map appropriately if available
-                weight = product.get('weight'),
-                volumetric_weight = 0,  # Map appropriately if available
-                dimensions = "",  # Map appropriately if available
-                supplier_id = 1,  # Map appropriately if available
-                english_name = "",  # Map appropriately if available
-                romanian_name = "", # Map appropriately if available
-                material_name_en = "",  # Map appropriately if available
-                material_name_ro = "",  # Map appropriately if available
-                hs_code = "",  # Map appropriately if available
-                battery = False,  # Map appropriately if available
-                default_usage = "",  # Map appropriately if available
-                production_time = 0.0,  # Map appropriately if available
-                discontinued = False,  # Map appropriately if available
-                stock = product.get('stock')[0]['value'] if product.get('stock') else None,
-                internal_shipping_price = 0  # Map appropriately if available
+            values = (
+                id,
+                product_name,
+                model_name,
+                price,
+                ean,
+                image_link,
+                barcode_title,
+                masterbox_title,
+                link_address_1688,
+                price_1688,
+                variation_name_1688,
+                pcs_ctn,
+                weight,
+                volumetric_weight,
+                dimensions,
+                supplier_id,
+                english_name,
+                romanian_name,
+                material_name_en,
+                material_name_ro,
+                hs_code,
+                battery,
+                default_usage,
+                production_time,
+                discontinued,
+                stock,
+                internal_shipping_price,
+                market_places
             )
 
-            stmt = insert(Product).values(
-                product_name=product_model.product_name,
-                model_name=product_model.model_name,
-                ean=product_model.ean,
-                price=product_model.price,
-                image_link=product_model.image_link,
-                barcode_title=product_model.barcode_title,
-                masterbox_title=product_model.masterbox_title,
-                link_address_1688=product_model.link_address_1688,
-                price_1688=product_model.price_1688,
-                variation_name_1688=product_model.variation_name_1688,
-                pcs_ctn=product_model.pcs_ctn,
-                weight=product_model.weight,
-                volumetric_weight=product_model.volumetric_weight,
-                dimensions=product_model.dimensions,
-                supplier_id=product_model.supplier_id,
-                english_name=product_model.english_name,
-                romanian_name=product_model.romanian_name,
-                material_name_en=product_model.material_name_en,
-                material_name_ro=product_model.material_name_ro,
-                hs_code=product_model.hs_code,
-                battery=product_model.battery,
-                default_usage=product_model.default_usage,
-                production_time=product_model.production_time,
-                discontinued=product_model.discontinued,
-                stock=product_model.stock,
-                internal_shipping_price=product_model.internal_shipping_price
-            )
-            stmt = stmt.on_conflict_do_update(
-                index_elements=['ean'],
-                set_={
-                    'product_name': stmt.excluded.product_name,
-                    'model_name': stmt.excluded.model_name,
-                    'price': stmt.excluded.price,
-                    'image_link': stmt.excluded.image_link,
-                    'barcode_title': stmt.excluded.barcode_title,
-                    'masterbox_title': stmt.excluded.masterbox_title,
-                    'link_address_1688': stmt.excluded.link_address_1688,
-                    'price_1688': stmt.excluded.price_1688,
-                    'variation_name_1688': stmt.excluded.variation_name_1688,
-                    'pcs_ctn': stmt.excluded.pcs_ctn,
-                    'weight': stmt.excluded.weight,
-                    'volumetric_weight': stmt.excluded.volumetric_weight,
-                    'dimensions': stmt.excluded.dimensions,
-                    'supplier_id': stmt.excluded.supplier_id,
-                    'english_name': stmt.excluded.english_name,
-                    'romanian_name': stmt.excluded.romanian_name,
-                    'material_name_en': stmt.excluded.material_name_en,
-                    'material_name_ro': stmt.excluded.material_name_ro,
-                    'hs_code': stmt.excluded.hs_code,
-                    'battery': stmt.excluded.battery,
-                    'default_usage': stmt.excluded.default_usage,
-                    'production_time': stmt.excluded.production_time,
-                    'discontinued': stmt.excluded.discontinued,
-                    'stock': stmt.excluded.stock,
-                    'internal_shipping_price': stmt.excluded.internal_shipping_price
-                }
-            )
-
-            await db.execute(stmt)
+            cursor.execute(insert_query, values)
+            conn.commit()
         
-        await db.commit()
-        logging.info("Products inserted successfully into the 'products' table")
+        cursor.close()
+        conn.close()
+        print("$$$$$$$$$$$$Products inserted into Products successfully")
     except Exception as e:
-        # db.rollback()
-        logging.error(f"Failed to insert products into the 'products' table: {e}")
+        print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
 
 
 async def insert_products_into_db(products, username, products_table):
@@ -317,51 +392,13 @@ async def insert_products_into_db(products, username, products_table):
                 recycleWarranties
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id) DO UPDATE SET
-                part_number_key = EXCLUDED.part_number_key,
-                admin_user = EXCLUDED.admin_user,
-                brand_name = EXCLUDED.brand_name,
-                buy_button_rank = EXCLUDED.buy_button_rank,
-                category_id = EXCLUDED.category_id,
-                brand = EXCLUDED.brand,
-                name = EXCLUDED.name,
-                part_number = EXCLUDED.part_number,
-                sale_price = EXCLUDED.sale_price,
-                currency = EXCLUDED.currency,
-                description = EXCLUDED.description,
-                url = EXCLUDED.url,
-                warranty = EXCLUDED.warranty,
-                general_stock = EXCLUDED.general_stock,
-                weight = EXCLUDED.weight,
-                status = EXCLUDED.status,
-                recommended_price = EXCLUDED.recommended_price,
-                images = EXCLUDED.images,
-                attachments = EXCLUDED.attachments,
-                vat_id = EXCLUDED.vat_id,
-                family = EXCLUDED.family,
-                reversible_vat_charging = EXCLUDED.reversible_vat_charging,
-                min_sale_price = EXCLUDED.min_sale_price,
-                max_sale_price = EXCLUDED.max_sale_price,
-                offer_details = EXCLUDED.offer_details,
-                availability = EXCLUDED.availability,
-                stock = EXCLUDED.stock,
-                handling_time = EXCLUDED.handling_time,
-                ean = EXCLUDED.ean,
-                commission = EXCLUDED.commission,
-                validation_status = EXCLUDED.validation_status,
-                translation_validation_status = EXCLUDED.translation_validation_status,
-                offer_validation_status = EXCLUDED.offer_validation_status,
-                auto_translated = EXCLUDED.auto_translated,
-                ownership = EXCLUDED.ownership,
-                best_offer_sale_price = EXCLUDED.best_offer_sale_price,
-                best_offer_recommended_price = EXCLUDED.best_offer_recommended_price,
-                number_of_offers = EXCLUDED.number_of_offers,
-                genius_eligibility = EXCLUDED.genius_eligibility,
-                recycleWarranties = EXCLUDED.recycleWarranties
+            ) ON CONFLICT (ean) DO UPDATE SET
+                stock = EXCLUDED.stock
         """).format(sql.Identifier(products_table))
+        
+        logging.info(products_table)
 
         for product in products:
-            
             id = product.get('id')
             part_number_key = product.get('part_number_key')
             brand_name = product.get('brand_name')
@@ -414,20 +451,7 @@ async def insert_products_into_db(products, username, products_table):
             validation_status_json = json.dumps(validation_status)
             translation_validation_status_json = json.dumps(translation_validation_status)
             offer_validation_status_json = json.dumps(offer_validation_status)
-            # if len(images) > 0:
-            #     parsed_url = urlparse(images[0]["url"])
-            #     path = parsed_url.path
-            #     local_directory = f".{os.path.dirname(path)}"
-            #     local_file_path = f".{path}"
-            #     os.makedirs(local_directory, exist_ok=True)
-            #     try:
-            #         response = requests.get(images[0]["url"])
-            #         response.raise_for_status()
-            #         with open(local_file_path, "wb") as file:
-            #             file.write(response.content)
-            #         print(f"Image downloaded successfully to {local_file_path}.")
-            #     except requests.RequestException as e:
-            #         print(f"Failed to download image. Error: {e}")
+
             cursor.execute(insert_query, (
                 id,
                 username,
@@ -504,7 +528,9 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
-    products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products"
+    products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products".lower()
+
+    # create_table()
     create_products_table(products_table)
 
     if marketplace.credentials["type"] == "user_pass":
@@ -517,6 +543,8 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
 
+            print("------------pages--------------", pages)
+            print("------------items--------------", items)
             currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
             endpoint = marketplace.products_crud['endpoint']
@@ -526,9 +554,8 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
                     products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
                     logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if products and not products.get('isError'):
-                        async with db as session:
-                            await insert_products_into_db(products['results'], USERNAME, products_table)
-                            await insert_products(products['results'], session)
+                        await insert_products_into_db(products['results'], USERNAME, products_table)
+                        await insert_products(products['results'], marketplace.marketplaceDomain)
                     currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')

@@ -39,6 +39,7 @@ class MarketplaceBase(BaseModel):
         delete="/delete",
         count="/count"
     )
+    
 class MarketplaceCreate(MarketplaceBase):
     pass
 

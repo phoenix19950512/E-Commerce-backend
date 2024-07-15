@@ -45,7 +45,6 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
 
 @router.get('/count')
 async def get_products_count(db: AsyncSession = Depends(get_db)):
-    print(dir(db))
     result = await db.execute(func.count(Product.id))
     count = result.scalar()
     return count
@@ -203,7 +202,7 @@ async def get_shipment_info(
 async def get_products(
     supplier_ids: str = Query(None),
     page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    items_per_page: int = Query(50, ge=1, le=1000, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
     

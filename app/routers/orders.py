@@ -46,7 +46,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
 async def read_orders(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
     result = await db.execute(select(Order).offset(offset).limit(items_per_page))

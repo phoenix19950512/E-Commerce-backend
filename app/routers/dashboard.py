@@ -7,21 +7,34 @@ from app.schemas.orders import OrderRead
 from typing import List, Optional
 from app.database import get_db
 import datetime
+import asyncpg
+from app.config import settings
+from psycopg2.extras import RealDictCursor
+
+async def get_db_connection():
+    return await asyncpg.connect(
+        database=settings.DB_NAME,
+        user=settings.DB_USERNAME,
+        password=settings.DB_PASSOWRD,
+        host=settings.DB_URL,
+        port=settings.DB_PORT,
+    )
 
 router = APIRouter()
 # @router.post("/", response_model=ProductRead)
 @router.get('/tiles')
-async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
+
+async def get_dashboard_info():
     today = datetime.date.today()
-    orders_today_data = await get_value(today, today, db)
+    orders_today_data = await get_value(today, today)
 
     yesterday = datetime.date.today() - datetime.timedelta(days = 1)
-    orders_yesterday_data = await get_value(yesterday, yesterday, db)
+    orders_yesterday_data = await get_value(yesterday, yesterday)
     
     first_day_of_month = datetime.date(today.year, today.month, 1)
-    orders_month_data = await get_value(first_day_of_month, today, db)
+    orders_month_data = await get_value(first_day_of_month, today)
 
-    orders_forecast_data = await forecast(first_day_of_month, today, db)
+    # orders_forecast_data = await forecast(first_day_of_month, today)
 
     if today.month > 1:
         last_month_st = datetime.date(today.year, today.month - 1, 1)
@@ -29,17 +42,16 @@ async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
     else:
         last_month_st = datetime.date(today.year - 1, 12, 1)
         last_month_en = datetime.date(today.year - 1, 12, 31)
-    orders_last_month_data = await get_value(last_month_st, last_month_en, db)
+    orders_last_month_data = await get_value(last_month_st, last_month_en)
 
     return {
         "orders_today_data": { "title": "Today", **orders_today_data },
         "orders_yesterday_data": { "title": "Yesterday", **orders_yesterday_data },
-        "orders_month_data": { "title": "Month to Date", **orders_month_data },
-        "orders_forecast_data": { "title": "This Month (forcast)", **orders_forecast_data },
-        "orders_last_month_data": { "title": "Last Month", **orders_last_month_data }
+        "orders_month_data": { "title": "This month", **orders_month_data },
+        "orders_last_month_data": { "title": "Last month", **orders_last_month_data },
     }
 
-async def get_value(st_date, en_date, db: AsyncSession = Depends(get_db)):
+async def get_value(st_date, en_date):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
     
@@ -49,28 +61,83 @@ async def get_value(st_date, en_date, db: AsyncSession = Depends(get_db)):
     else:
         date_string = f"{st_date.day}-{en_date.day} {st_date.strftime('%B')} {st_date.year}"
 
-    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime))
+    order_table = 'emag_ro_orders'
 
-    orders = result.scalars().all()
+    conn = await get_db_connection()
 
-    total_sales = sum(order.sales for order in orders)
+    
+    select_query = f"SELECT * FROM {order_table} WHERE date BETWEEN $1 AND $2"
+    orders = await conn.fetch(select_query, st_datetime, en_datetime)
+
+    total_sales = sum(order['type'] for order in orders)
     total_orders = len(orders)
-    total_units = sum(order.unit for order in orders)
-    total_refund = sum(order.refunded_amount for order in orders)
-    total_gross_profit = sum(order.gross_profit for order in orders)
-    total_net_profit = sum(order.net_profit for order in orders)
 
     return {
         "date_range": date_string,
         "total_sales": total_sales,
-        "total_orders": total_orders,
-        "total_units": total_units,
-        "total_refund": total_refund,
-        "total_payout": 0,
-        "total_gross_profit": total_gross_profit,
-        "total_net_profit": total_net_profit,
-        "orders": [OrderRead.from_orm(order) for order in orders]
+        "total_orders": total_orders
     }
+    
+# async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
+#     today = datetime.date.today()
+#     orders_today_data = await get_value(today, today, db)
+
+#     yesterday = datetime.date.today() - datetime.timedelta(days = 1)
+#     orders_yesterday_data = await get_value(yesterday, yesterday, db)
+    
+#     first_day_of_month = datetime.date(today.year, today.month, 1)
+#     orders_month_data = await get_value(first_day_of_month, today, db)
+
+#     orders_forecast_data = await forecast(first_day_of_month, today, db)
+
+#     if today.month > 1:
+#         last_month_st = datetime.date(today.year, today.month - 1, 1)
+#         last_month_en = first_day_of_month - datetime.timedelta(days = 1)
+#     else:
+#         last_month_st = datetime.date(today.year - 1, 12, 1)
+#         last_month_en = datetime.date(today.year - 1, 12, 31)
+#     orders_last_month_data = await get_value(last_month_st, last_month_en, db)
+
+#     return {
+#         "orders_today_data": { "title": "Today", **orders_today_data },
+#         "orders_yesterday_data": { "title": "Yesterday", **orders_yesterday_data },
+#         "orders_month_data": { "title": "Month to Date", **orders_month_data },
+#         "orders_forecast_data": { "title": "This Month (forcast)", **orders_forecast_data },
+#         "orders_last_month_data": { "title": "Last Month", **orders_last_month_data }
+#     }
+
+# async def get_value(st_date, en_date, db: AsyncSession = Depends(get_db)):
+#     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
+#     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
+    
+#     date_string = ""
+#     if st_date == en_date:
+#         date_string = f"{st_date.day} {st_date.strftime('%B')} {st_date.year}"
+#     else:
+#         date_string = f"{st_date.day}-{en_date.day} {st_date.strftime('%B')} {st_date.year}"
+
+#     result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime))
+
+#     orders = result.scalars().all()
+
+#     total_sales = sum(order.sales for order in orders)
+#     total_orders = len(orders)
+#     total_units = sum(order.unit for order in orders)
+#     total_refund = sum(order.refunded_amount for order in orders)
+#     total_gross_profit = sum(order.gross_profit for order in orders)
+#     total_net_profit = sum(order.net_profit for order in orders)
+
+#     return {
+#         "date_range": date_string,
+#         "total_sales": total_sales,
+#         "total_orders": total_orders,
+#         "total_units": total_units,
+#         "total_refund": total_refund,
+#         "total_payout": 0,
+#         "total_gross_profit": total_gross_profit,
+#         "total_net_profit": total_net_profit,
+#         "orders": [OrderRead.from_orm(order) for order in orders]
+#     }
     
 async def forecast(st_date, en_date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)

@@ -29,9 +29,6 @@ async def get_product_info(
             shipment_result = await db.execute(select(Shipment))
             
             shipments = shipment_result.scalars().all()
-
-            # if not shipments:
-            #     continue
             
             product_shipments = []
 

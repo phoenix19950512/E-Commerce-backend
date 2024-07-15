@@ -16,7 +16,7 @@ import logging
 from sqlalchemy import insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from datetime import datetime
-
+from decimal import Decimal
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
@@ -40,7 +40,7 @@ def create_database():
         )
         conn.autocommit = True
         cursor = conn.cursor()
-        cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{DB_NAME}'")
+        cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{dbname}'")
         exists = cursor.fetchone()
         if not exists:
             cursor.execute(sql.SQL("CREATE DATABASE {} WITH ENCODING 'UTF8'").format(sql.Identifier(DB_NAME)))
@@ -93,7 +93,6 @@ def create_customers_table(customer_table):
                 bank TEXT,
                 iban TEXT,
                 legal_entity INT,
-                fax TEXT,
                 is_vat_payer INT,
                 liable_person TEXT,
                 shipping_street TEXT
@@ -122,16 +121,15 @@ def create_orders_table(orders_table):
                 id BIGINT PRIMARY KEY,
                 vendor_name TEXT,
                 type INT,
-                parent_id BIGINT,
                 date TIMESTAMP,
                 payment_mode VARCHAR(50),
                 detailed_payment_method VARCHAR(50),
                 delivery_mode VARCHAR(50),
-                observation TEXT,
                 status INT,
                 payment_status INT,
                 customer_id BIGINT,
-                product_id TEXT,
+                product_id INTEGER[],
+                quantity INTEGER[],
                 shipping_tax NUMERIC(10, 2),
                 shipping_tax_voucher_split TEXT,
                 vouchers TEXT,
@@ -139,19 +137,16 @@ def create_orders_table(orders_table):
                 attachments TEXT,
                 cashed_co NUMERIC(10, 2),
                 cashed_cod NUMERIC(10, 2),
-                cancellation_request TEXT,
-                has_editable_products DECIMAL,
                 refunded_amount DECIMAL,
                 is_complete INT,
-                reason_cancellation TEXT,
+                cancellation_reason TEXT,
                 refund_status TEXT,
                 maximum_date_for_shipment TIMESTAMP,
                 late_shipment INT,
                 flags TEXT,
-                emag_club INT,
+                emag_club INTEGER,
                 finalization_date TIMESTAMP,
                 details TEXT,
-                weekend_delivery INT,
                 payment_mode_id INT
             )
         """).format(sql.Identifier(orders_table))
@@ -241,47 +236,42 @@ def parse_int(value):
     except (TypeError, ValueError):
         return None
 
-async def insert_orders(orders: List[Dict[str, Any]], db: AsyncSession):
+async def insert_orders(orders, db: AsyncSession):
     try:
         for order_data in orders:
             order = Order(
+                id = order_data.get('id'),
                 vendor_name=order_data.get('vendor_name'),
                 type=order_data.get('type'),
-                parent_id=order_data.get('parent_id'),
                 date=safe_parse_datetime(order_data.get('date')),
                 payment_mode=order_data.get('payment_mode'),
                 detailed_payment_method=order_data.get('detailed_payment_method'),
                 delivery_mode=order_data.get('delivery_mode'),
-                observation=order_data.get('observation'),
                 status=order_data.get('status'),
                 payment_status=order_data.get('payment_status'),
                 customer_id=order_data.get('customer_id'),
-                product_id=order_data.get('product_id'),
-                shipping_tax=parse_float(order_data.get('shipping_tax')),
+                product_id=[int(product.get('product_id')) for product in order_data.get('products')],
+                quantity = [product.get('quantity') for product in order_data.get('products')],
+                shipping_tax=Decimal(order_data.get('shipping_tax')),
                 shipping_tax_voucher_split=convert_to_json_string(order_data.get('shipping_tax_voucher_split')),
                 vouchers=convert_to_json_string(order_data.get('vouchers')),
                 proforms=convert_to_json_string(order_data.get('proforms')),
-                attachments=convert_to_json_string(order_data.get('attachments')),
+                attachments=order_data.get('attachments'),
                 cashed_co=parse_float(order_data.get('cashed_co')),
                 cashed_cod=parse_float(order_data.get('cashed_cod')),
-                has_editable_products=order_data.get('has_editable_products'),
                 refunded_amount=parse_int(order_data.get('refunded_amount')),
                 is_complete=order_data.get('is_complete'),
-                refunded_reason_id=order_data.get('refunded_reason_id'),
+                cancellation_reason=order_data.get('cancellation_reason'),
                 refund_status=order_data.get('refund_status'),
                 maximum_date_for_shipment=safe_parse_datetime(order_data.get('maximum_date_for_shipment')),
                 late_shipment=order_data.get('late_shipment'),
-                flags=convert_to_json_string(order_data.get('flags')),
+                flags=order_data.get('flags'),
                 emag_club=order_data.get('emag_club'),
                 finalization_date=safe_parse_datetime(order_data.get('finalization_date')),
-                details=convert_to_json_string(order_data.get('details')),
-                weekend_delivery=order_data.get('weekend_delivery'),
+                details=order_data.get('details', []),
                 payment_mode_id=order_data.get('payment_mode_id'),
-                sales=parse_float(order_data.get('sales')),
-                unit=None,  # Set to None if data is not available
-                gross_profit=None,  # Set to None if data is not available
-                net_profit=None  # Set to None if data is not available
             )
+            print("&&&&&&&&&&&&deatail&&&&&&&&&&&", order.details)
             db.add(order)
         
         await db.commit()
@@ -338,12 +328,11 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 bank,
                 iban,
                 legal_entity,
-                fax,
                 is_vat_payer,
                 liable_person,
                 shipping_street
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 mkt_id = EXCLUDED.mkt_id,
                 name = EXCLUDED.name,
@@ -375,26 +364,25 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 bank = EXCLUDED.bank,
                 iban = EXCLUDED.iban,
                 legal_entity = EXCLUDED.legal_entity,
-                fax = EXCLUDED.fax,
                 is_vat_payer = EXCLUDED.is_vat_payer,
                 liable_person = EXCLUDED.liable_person,
                 shipping_street = EXCLUDED.shipping_street
-            """).format(sql.Identifier(customers_table))
+        """).format(sql.Identifier(customers_table))
+
         insert_orders_query = sql.SQL("""
             INSERT INTO {} (
                 id,
                 vendor_name,
                 type,
-                parent_id,
                 date,
                 payment_mode,
                 detailed_payment_method,
                 delivery_mode,
-                observation,
                 status,
                 payment_status,
                 customer_id,
                 product_id,
+                quantity,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -402,11 +390,9 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 attachments,
                 cashed_co,
                 cashed_cod,
-                cancellation_request,
-                has_editable_products,
                 refunded_amount,
                 is_complete,
-                reason_cancellation,
+                cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,
                 late_shipment,
@@ -414,45 +400,20 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 emag_club,
                 finalization_date,
                 details,
-                weekend_delivery,
                 payment_mode_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
-                vendor_name = EXCLUDED.vendor_name,
-                type = EXCLUDED.type,
-                parent_id = EXCLUDED.parent_id,
-                date = EXCLUDED.date,
                 payment_mode = EXCLUDED.payment_mode,
-                detailed_payment_method = EXCLUDED.detailed_payment_method,
-                delivery_mode = EXCLUDED.delivery_mode,
-                observation = EXCLUDED.observation,
-                status = EXCLUDED.status,
-                payment_status = EXCLUDED.payment_status,
-                customer_id = EXCLUDED.customer_id,
                 product_id = EXCLUDED.product_id,
+                quantity = EXCLUDED.quantity,
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
-                vouchers = EXCLUDED.vouchers,
-                proforms = EXCLUDED.proforms,
-                attachments = EXCLUDED.attachments,
-                cashed_co = EXCLUDED.cashed_co,
-                cashed_cod = EXCLUDED.cashed_cod,
-                cancellation_request = EXCLUDED.cancellation_request,
-                has_editable_products = EXCLUDED.has_editable_products,
-                refunded_amount = EXCLUDED.refunded_amount,
-                is_complete = EXCLUDED.is_complete,
-                reason_cancellation = EXCLUDED.reason_cancellation,
-                refund_status = EXCLUDED.refund_status,
-                maximum_date_for_shipment = EXCLUDED.maximum_date_for_shipment,
-                late_shipment = EXCLUDED.late_shipment,
-                flags = EXCLUDED.flags,
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
-                weekend_delivery = EXCLUDED.weekend_delivery,
                 payment_mode_id = EXCLUDED.payment_mode_id
-            """).format(sql.Identifier(orders_table))
+        """).format(sql.Identifier(orders_table))
         
         for order in orders:
             customer = order.get('customer', {})
@@ -490,12 +451,11 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
             customer_bank = customer.get('bank')
             customer_iban = customer.get('iban')
             customer_legal_entity = customer.get('legal_entity')
-            customer_fax = customer.get('fax')
             customer_is_vat_payer = customer.get('is_vat_payer')
             customer_liable_person = customer.get('liable_person')
             customer_shipping_street = customer.get('shipping_street')
 
-            cursor_customer.execute(insert_customers_query, (
+            customer_value = (
                 customer_id,
                 customer_mkt_id,
                 customer_name,
@@ -527,61 +487,61 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 customer_bank,
                 customer_iban,
                 customer_legal_entity,
-                customer_fax,
                 customer_is_vat_payer,
                 customer_liable_person,
                 customer_shipping_street
-            ))
+            )
+            cursor_order.execute(insert_customers_query, customer_value)
 
             id = order.get('id')
             vendor_name = order.get('vendor_name')
             type = order.get('type')
-            parent_id = order.get('parent_id')
             date = order.get('date')
             payment_mode = order.get('payment_mode')
             detailed_payment_method = order.get('detailed_payment_method')
             delivery_mode = order.get('delivery_mode')
-            observation = order.get('observation')
             status = order.get('status')
             payment_status = order.get('payment_status')
             customer_id = customer_id
-            products_id = json.dumps([product.get('product_id') for product in order.get('products', [])])
-            shipping_tax = order.get('shipping_tax')
+            products_id = [int(product.get('product_id')) for product in order.get('products')]
+            quantity = [product.get('quantity') for product in order.get('products')]
+            shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = json.dumps(order.get('shipping_tax_voucher_split', []))
-            vouchers = json.dumps(order.get('vouchers', []))
-            proforms = json.dumps(order.get('proforms', []))
-            attachments = json.dumps(order.get('attachments', []))
-            cashed_co = order.get('cashed_co')
-            cashed_cod = order.get('cashed_cod')
-            cancellation_request = order.get('cancellation_request')
-            has_editable_products = order.get('has_editable_products')
+            vouchers = json.dumps(order.get('vouchers'))
+            proforms = json.dumps(order.get('proforms'))
+            attachments = json.dumps(order.get('attachments'))
+            if order.get('cashed_co'):
+                cashed_co = Decimal(order.get('cashed_co'))
+            else:
+                cashed_co = Decimal('0')
+            cashed_cod = Decimal(order.get('cashed_cod'))
             refunded_amount = order.get('refunded_amount')
             is_complete = order.get('is_complete')
-            reason_cancellation = json.dumps(order.get('reason_cancellation', {}))
+            cancellation_reason = order.get('cancellation_reason')
             refund_status = order.get('refund_status')
             maximum_date_for_shipment = order.get('maximum_date_for_shipment')
             late_shipment = order.get('late_shipment')
-            flags = json.dumps(order.get('flags', []))
+            flags = json.dumps(order.get('flags'))
             emag_club = order.get('emag_club')
             finalization_date = order.get('finalization_date')
-            details = json.dumps(order.get('details', {}))
-            weekend_delivery = order.get('weekend_delivery')
+            print("*****************************")
+            details = json.dumps(order.get('details'))
+            print("!!!!!!!!!!!!!!!!!", details)
             payment_mode_id = order.get('payment_mode_id')
             
-            cursor_order.execute(insert_orders_query, (
+            values = (
                 id,
                 vendor_name,
                 type,
-                parent_id,
                 date,
                 payment_mode,
                 detailed_payment_method,
                 delivery_mode,
-                observation,
                 status,
                 payment_status,
                 customer_id,
                 products_id,
+                quantity,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -589,11 +549,9 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 attachments,
                 cashed_co,
                 cashed_cod,
-                cancellation_request,
-                has_editable_products,
                 refunded_amount,
                 is_complete,
-                reason_cancellation,
+                cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,
                 late_shipment,
@@ -601,9 +559,10 @@ async def insert_orders_into_db(orders, customers_table, orders_table):
                 emag_club,
                 finalization_date,
                 details,
-                weekend_delivery,
                 payment_mode_id
-            ))
+            )
+
+            cursor_order.execute(insert_orders_query, values)
         
         conn.commit()
         cursor_order.close()
@@ -617,8 +576,8 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
     # create_database()
 
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-    customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers"
-    orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders"
+    customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers".lower()
+    orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
     create_customers_table(customer_table)
     create_orders_table(orders_table)
 
@@ -646,7 +605,7 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
                     if orders and orders['isError'] == False:
                         async with db as session:
                             await insert_orders_into_db(orders['results'], customer_table, orders_table)
-                            # await insert_orders(orders['results'], session)
+                            await insert_orders(orders['results'], session)
                         currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')

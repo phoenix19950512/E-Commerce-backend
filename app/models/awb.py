@@ -8,7 +8,6 @@ class AWB(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     awb_number = Column(String, unique=True, index=True, nullable=False)
-    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    order_id = Column(Integer, nullable=False)
     observation_field = Column(String, nullable=True)
 
-    order = relationship("Order", back_populates="awbs")

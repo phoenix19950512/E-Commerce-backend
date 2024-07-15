@@ -1,14 +1,14 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON
+from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON, ARRAY
 from app.database import Base
 from sqlalchemy.orm import relationship
 
 class Product(Base):
-    __tablename__ = "products"
+    __tablename__ = "internal_products"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
-    ean = Column(Text, primary_key=True, nullable=True, unique=True)
+    ean = Column(Text, primary_key=True, unique=True)
     price = Column(Numeric(12, 4), nullable=True)
     image_link = Column(Text, nullable=True)
     barcode_title = Column(Text, nullable=True)
@@ -32,5 +32,5 @@ class Product(Base):
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)
-    # market_places = Column(ARRAY(text), nullable=True)
+    market_places = Column(ARRAY(Text), nullable=True)
     
