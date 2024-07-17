@@ -3,12 +3,15 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, users, products, profile, marketplace, utils, orders, dashboard, supplier, refunded_reason, inventory, shipment, AWB_generation, notifications
+from app.routers import auth, refunded, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.emag_products import *
 from app.utils.emag_orders import *
+from app.utils.emag_refund import *
+from app.utils.emag_reviews import *
+from app.routers.reviews import *
 from app.models.marketplace import Marketplace
 from sqlalchemy.orm import Session
 import logging
@@ -62,8 +65,12 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             for marketplace in marketplaces:
                 logging.info("Refresh product from marketplace")
                 await refresh_products(marketplace, session)
+                logging.info("Refresh refunds from marketplace")
+                await refresh_refunds(marketplace)
                 logging.info("Refresh order from marketplace")
                 await refresh_orders(marketplace, session)
+                logging.info("Check hijacker and review")
+                await check_hijacker_and_bad_reviews(marketplace, session)
                 
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -76,7 +83,7 @@ app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 app.include_router(supplier.router, prefix="/api/suppliers", tags=["supppliers"])
 app.include_router(shipment.router, prefix="/api/shipment", tags=["shipment"])
-app.include_router(refunded_reason.router, prefix="/api/refunded_reason", tags=["refunded_reason"])
+app.include_router(refunded.router, prefix="/api/refunded", tags=["refunded"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"])
 app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
 app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])

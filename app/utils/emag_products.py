@@ -131,6 +131,7 @@ def create_table():
                 product_name TEXT,
                 model_name TEXT,
                 price NUMERIC(16, 4),
+                sale_price NUMERIC(16, 4),
                 ean TEXT PRIMARY KEY UNIQUE,
                 image_link TEXT,
                 barcode_title TEXT,
@@ -229,9 +230,12 @@ async def insert_products(products, mp_name: str):
         insert_query = sql.SQL("""
             INSERT INTO {} (
                 id,
+                part_number_key,
                 product_name,
                 model_name,
+                buy_button_rank,
                 price,
+                sale_price,
                 ean,
                 image_link,
                 barcode_title,
@@ -257,17 +261,21 @@ async def insert_products(products, mp_name: str):
                 internal_shipping_price,
                 market_places
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
+                buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
                 market_places = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_places, internal_products.market_places)))
         """).format(sql.Identifier("internal_products"))
 
         for product in products:
             id = product.get('id')
+            part_number_key = product.get('part_number_key')
             product_name = product.get('name')
             model_name = product.get('brand')
+            buy_button_rank = product.get('buy_button_rank')
             price = 0
+            sale_price = Decimal(product.get('sale_price', '0.0'))
             ean = str(product.get('ean')[0])
             image_link = product.get('images')[0]['url']
             barcode_title = ""
@@ -298,9 +306,12 @@ async def insert_products(products, mp_name: str):
 
             values = (
                 id,
+                part_number_key,
                 product_name,
                 model_name,
+                buy_button_rank,
                 price,
+                sale_price,
                 ean,
                 image_link,
                 barcode_title,
@@ -393,6 +404,7 @@ async def insert_products_into_db(products, username, products_table):
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
+                sale_price = EXCLUDED.sale_price,
                 stock = EXCLUDED.stock
         """).format(sql.Identifier(products_table))
         
@@ -407,7 +419,7 @@ async def insert_products_into_db(products, username, products_table):
             brand = product.get('brand')
             name = product.get('name')
             part_number = product.get('part_number')
-            sale_price = product.get('sale_price')
+            sale_price = Decimal(product.get('sale_price', '0.0'))
             currency = product.get('currency')
             description = product.get('description')
             url = product.get('url')
@@ -552,6 +564,7 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
             try:
                 while currentPage <= int(pages):
                     products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
+
                     logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if products and not products.get('isError'):
                         await insert_products_into_db(products['results'], USERNAME, products_table)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, DateTime, JSON
+from sqlalchemy import Column, Integer, String, ARRAY, Text, Numeric, Boolean, VARCHAR, DateTime, JSON
 from app.database import Base
 
 class Shipment(Base):
@@ -7,8 +7,9 @@ class Shipment(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     date = Column(DateTime, nullable=True)
     type = Column(String, nullable=True)
-    product_name_list = Column(JSON, nullable=True)
-    quantity_list = Column(JSON, nullable=True)
+    product_name_list = Column(ARRAY(String), nullable=True)
+    product_id_list = Column(ARRAY(Integer), nullable=True)
+    quantity_list = Column(ARRAY(Integer), nullable=True)
     supplier_name = Column(String, nullable=True)
     status = Column(String, nullable=True)
     expect_date = Column(DateTime, nullable=True)

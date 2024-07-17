@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, literal, any_, and_
 from typing import List
+from sqlalchemy.orm import aliased
 from app.database import get_db
 from app.models.orders import Order
 from app.schemas.orders import OrderRead
+from app.models.refunded import Refunded
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from app.models.shipment import Shipment
@@ -57,12 +59,26 @@ async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-@router.get("/sales_info/{product_id}")
-async def get_sales_info(
+@router.get("/info/{product_id}")
+
+async def get_info(
     product_id: int,
     type: int,
-    db: AsyncSession = Depends(get_db)      
+    db: AsyncSession = Depends(get_db)
 ):
+    sales_info = await get_sales_info(product_id, type, db)
+    orders_info = await get_orders_info(product_id, db)
+    returns_info = await get_refunded_info(product_id, db)
+    shipments_info = await get_shipment_info(product_id, db)
+    return {
+        "sales_info": sales_info,
+        "orders_info": orders_info,
+        "returns_info": returns_info,
+        "shipments_info": shipments_info
+    }
+    # orders_info = await get_orders_info(product_id, db)
+
+async def get_sales_info(product_id, type, db: AsyncSession):
     today = datetime.date.today()
     sales_info = []
 
@@ -83,7 +99,7 @@ async def get_sales_info(
             st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
             
-            sales_month_data = await get_info(product_id, st_datetime, en_datetime, db)
+            sales_month_data = await get_date_info(product_id, st_datetime, en_datetime, db)
             sales_info.append({"date_string": date_string, "sales": sales_month_data["sales"]})
 
     elif type == 2:
@@ -98,7 +114,7 @@ async def get_sales_info(
             st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-            sales_week_data = await get_info(product_id, st_datetime, en_datetime, db)
+            sales_week_data = await get_date_info(product_id, st_datetime, en_datetime, db)
             sales_info.append({"date_string": week_string, "sales": sales_week_data["sales"]})
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
@@ -109,91 +125,95 @@ async def get_sales_info(
             en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
             day_string = f"{date.day} {date.strftime('%b')} {date.year}"
-            sales_day_info = await get_info(product_id, st_datetime, en_datetime, db)
+            sales_day_info = await get_date_info(product_id, st_datetime, en_datetime, db)
             sales_info.append({"date_string": day_string, "sales": sales_day_info["sales"]})
 
     return sales_info
 
-async def get_info(product_id: int, st_datetime, en_datetime, db: AsyncSession):
+async def get_date_info(product_id: int, st_datetime, en_datetime, db: AsyncSession):
     query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
-    query = query.where(Order.product_id == product_id)
+    query = query.where(product_id == any_(Order.product_id))
     result = await db.execute(query)
     orders = result.scalars().all()
-
-    units = len(orders)
+    units = 0
+    for order in orders:
+        products = order.product_id
+        index = products.index(product_id)
+        units += order.quantity[index]
     return {
         "sales": units
     }
 
-@router.get("/orders_info/{product_id}")
-async def get_orders_info(product_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).filter(Order.product_id == product_id))
-    db_order = result.scalars().all()
+async def get_orders_info(product_id: int, db: AsyncSession):
+    result = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
+    orders = result.scalars().all()
 
-    order_data = [
-        {
-            "order_id": order.id,
-            "order_date": order.date,
-            "customer_name": "customer_name",
-            "quantity_orders": order.unit,
-            "order_status": order.status
-        } for order in db_order
-    ]
+    order_data = []
+
+    for order in orders:
+        order_id = order.id
+        order_date = order.date
+        # customer_id = order.customer_id
+        # customer_result = await db.execute(select(Customer).where(Customer.id = customer_id))
+        # customer = customer_result.scalars().first()
+        # customer_name = customer.name
+        unit = sum(order.quantity)
+        order_data.append(
+            {
+                "order_id": order_id,
+                "order_date": order_date,
+                "quantity_orders": unit,
+                "order_status": order.status
+            }
+        )
     return order_data
     
-@router.get("/refunded_info/{products_id}")    
-async def get_refunded_info(products_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Order.refunded_reason_id, func.count(Order.id))
-        .filter(Order.product_id == products_id)
-        .group_by(Order.refunded_reason_id)
-    )
-    refunded_info = result.all()
+async def get_refunded_info(product_id, db: AsyncSession):
+    query_total = select(Refunded).where(product_id == any_(Refunded.products))
+    result_total = await db.execute(query_total)
+    total = len(result_total.scalars().all())
+    query1 = query_total.where(Refunded.return_type == 1)
+    result_1 = await db.execute(query1)
+    num1 = len(result_1.scalars().all())
+    query2 = query_total.where(Refunded.return_type == 2)
+    result_2 = await db.execute(query2)
+    num2 = len(result_2.scalars().all())
+    query3 = query_total.where(Refunded.return_type == 3)
+    result_3 = await db.execute(query3)
+    num3 = len(result_3.scalars().all())
+    query4 = query_total.where(Refunded.return_type == 4)
+    result_4 = await db.execute(query4)
+    num4 = len(result_4.scalars().all())
+    query5 = query_total.where(Refunded.return_type == 5)
+    resutl_5 = await db.execute(query5)
+    num5 = len(resutl_5.scalars().all())
 
-    # Transform the result into a dictionary or another suitable format
-    refunded_info_list = [
-        {"refunded_reason_id": refunded_reason_id, "refunded_number": refunded_number} for refunded_reason_id, refunded_number in refunded_info
-    ]
-    return refunded_info_list
+    return {
+        "total": total,
+        "type_1": num1,
+        "type_2": num2,
+        "type_3": num3,
+        "type_4": num4,
+        "type_5": num5
+    }
 
-@router.get("/shipment_info/{product_id}")
-async def get_shipment_info(
-    product_id: int, 
-    db: AsyncSession = Depends(get_db)
-):
-    select_product = await db.execute(select(Product).filter(Product.id == product_id))
-    product = select_product.scalars().first()
+async def get_shipment_info(product_id: int, db: AsyncSession):
 
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    product_name = product.product_name
-
-    result = await db.execute(select(Shipment))
+    result = await db.execute(select(Shipment).where(product_id == any_(Shipment.product_id_list)))
     shipments = result.scalars().all()
 
-    if not shipments:
-        raise HTTPException(status_code=404, detail="Shipments not found")
-    
     shipment_data = []
     for shipment in shipments:
-        try:
-            product_name_list = json.loads(shipment.product_name_list)
-        except (TypeError, json.JSONDecodeError):
-            continue
-
-        if product_name in product_name_list:
-            index = shipment.product_name_list.index(product_name)
-            shipment_quantity = shipment.quantity_list[index]
-            quantity_sum = sum(shipment.quantity_list)
-
+        index = shipment.product_id_list.index(product_id)
+        total_quantity = sum(shipment.quantity_list)
+        quantity = shipment.quantity_list[index]
         shipment_data.append({
             "shipment_id": shipment.id,
             "shipment_date": shipment.date,
-            "shipment_quantity": quantity_sum,
+            "shipment_quantity": total_quantity,
             "supplier_name": shipment.supplier_name,
             "shipment_status": shipment.status,
-            "shipment_product_quantity": shipment_quantity
+            "shipment_product_quantity": quantity
         })
 
     return shipment_data

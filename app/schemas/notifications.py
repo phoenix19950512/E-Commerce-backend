@@ -7,7 +7,8 @@ class NotificationBase(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     time: Optional[datetime] = None
-    state: str = 'warning'
+    ean: str
+    state: str = "warning"
     read: bool = False
     user_id: int = 1
 

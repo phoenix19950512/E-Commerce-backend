@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
+from sqlalchemy.sql import text
 from sqlalchemy import func
 from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
@@ -46,18 +47,58 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
 async def read_orders(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    status: int = Query(-1, description="Status of the order"),
+    search_text: str = Query('', description="Text for searching"),
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Order).offset(offset).limit(items_per_page))
+    if status == -1:
+        result = await db.execute(select(Order).filter(
+            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (Order.payment_mode.ilike(f"%{search_text}%")) |
+            (Order.details.ilike(f"%{search_text}%")) |
+            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.delivery_mode.ilike(f"%{search_text}%")) |
+            (Order.proforms.ilike(f"%{search_text}%"))
+        ).offset(offset).limit(items_per_page))
+    else :
+        result = await db.execute(select(Order).where(Order.status == status).filter(
+            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (Order.payment_mode.ilike(f"%{search_text}%")) |
+            (Order.details.ilike(f"%{search_text}%")) |
+            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.delivery_mode.ilike(f"%{search_text}%")) |
+            (Order.proforms.ilike(f"%{search_text}%"))
+        ).offset(offset).limit(items_per_page))
     db_orders = result.scalars().all()
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_orders
 
 @router.get('/count')
-async def get_orders_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Order.id))
+async def get_orders_count(
+    status: int = Query(-1, description="Status of the order"),
+    search_text: str = Query('', description="Text for searching"),
+    db: AsyncSession = Depends(get_db)
+):
+    if status == -1:
+        result = await db.execute(select(func.count()).select_from(Order).filter(
+            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (Order.payment_mode.ilike(f"%{search_text}%")) |
+            (Order.details.ilike(f"%{search_text}%")) |
+            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.delivery_mode.ilike(f"%{search_text}%")) |
+            (Order.proforms.ilike(f"%{search_text}%"))
+        ))
+    else:
+        result = await db.execute(select(func.count()).select_from(Order).where(Order.status == status).filter(
+            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (Order.payment_mode.ilike(f"%{search_text}%")) |
+            (Order.details.ilike(f"%{search_text}%")) |
+            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.delivery_mode.ilike(f"%{search_text}%")) |
+            (Order.proforms.ilike(f"%{search_text}%"))
+        ))
     count = result.scalar()
     return count
 

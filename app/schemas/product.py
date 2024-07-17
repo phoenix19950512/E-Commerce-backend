@@ -4,9 +4,12 @@ from decimal import Decimal
 
 class ProductBase(BaseModel):
     id: int
+    part_number_key: Optional[str] = None
     product_name: Optional[str] = None
     model_name: Optional[str] = None
+    buy_button_rank: Optional[int] = None
     price: Optional[Decimal] = None
+    sale_price: Optional[Decimal] = None
     ean: str
     image_link: Optional[str] = None
     barcode_title: Optional[str] = None

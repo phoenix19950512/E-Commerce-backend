@@ -6,6 +6,7 @@ class ShipmentBase(BaseModel):
     date: Optional[datetime] = None
     type: Optional[str] = None
     product_name_list: Optional[List[str]] = None
+    product_id_list: Optional[List[int]] = None
     quantity_list: Optional[List[int]] = None
     supplier_name: Optional[str] = None
     status: Optional[str] = None

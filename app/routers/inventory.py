@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import any_
 from app.models.product import Product
+from app.models.orders import Order
 from app.models.shipment import Shipment 
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 from app.database import get_db
@@ -16,57 +18,52 @@ router = APIRouter()
 async def get_product_info(
     db: AsyncSession = Depends(get_db)
 ):
+    
+    order_result = await db.execute(select(Order))
+    orders = order_result.scalars().all()
+
+    cnt = {}
+    min_time = {}
+    max_time = {}
+
+    for order in orders:
+        product_ids = order.product_id
+        quantities = order.quantity
+        for i in range(len(product_ids)):
+            if product_ids[i] not in cnt:
+                cnt[product_ids[i]] = 0
+                min_time[product_ids[i]] = order.date
+                max_time[product_ids[i]] = order.date
+            
+            cnt[product_ids[i]] += quantities[i]
+            min_time[product_ids[i]] = min(min_time[product_ids[i]], order.date)
+            max_time[product_ids[i]] = max(max_time[product_ids[i]], order.date)
+
+
     product_result = await db.execute(select(Product))
     products = product_result.scalars().all()
 
     product_data = []
-
-    if product_result:
-        for product in products:
-            stock = product.stock
-            product_name = product.product_name
-
-            shipment_result = await db.execute(select(Shipment))
-            
-            shipments = shipment_result.scalars().all()
-            
-            product_shipments = []
-
-            for shipment in shipments:
-                try:
-                    product_name_list = json.loads(shipment.product_name_list)
-                except (TypeError, json.JSONDecodeError):
-                    continue
-                
-                if product_name in product_name_list:
-                    product_shipments.append(shipment)
-
-            if  product_shipments:
-                min_date = min(shipment.date for shipment in product_shipments)
-                max_date = max(shipment.date for shipment in product_shipments)
-
-                days = (max_date - min_date).days + 1
-
-                total_sales_number = 0
-                for shipment in product_shipments:
-                    if product_name in shipment.product_name_list:
-                        index = shipment.product_name_list.index(product_name)
-                        total_sales_number += shipment.quantity_list[index]
-                    
-                ave_sales = total_sales_number / days
-
-                stock_days = int(stock / ave_sales) if ave_sales > 0 else 0
-            else:
-                stock_days = product.stock
-            product_data.append({
-                "product_name": product.product_name,
-                "price": str(product.price),
-                "ean": product.ean,
-                "image_link": product.image_link,
-                "stock": product.stock,
-                "day_stock": stock_days
-            })
-        return product_data
+    for product in products:
+        stock = product.stock
+        product_id = product.id
+        if product_id not in cnt:
+            stock_days = 10000000000
+        else:
+            days = (max_time[product_id] - min_time[product_id]).days + 1
+            ave_sales = cnt[product_id] / days
+            stock_days = int(stock / ave_sales) if ave_sales > 0 else 1000000000
+        product_data.append({
+            "id": product.id,
+            "product_name": product.product_name,
+            "price": str(product.price),
+            "sale_price": str(product.sale_price),
+            "ean": product.ean,
+            "image_link": product.image_link,
+            "stock": product.stock,
+            "day_stock": stock_days
+        })
+    return product_data
 
 @router.get('/product/advance')
 async def get_product_advanced_info(
@@ -117,8 +114,10 @@ async def get_product_advanced_info(
 
     for product in products:
         product_data.append({
+            "id": product.id,
             "product_name" : product.product_name,
             "price": product.price,
+            "sale_price": product.sale_price,
             "image_link": product.image_link,
             "weight": product.weight,
             "volumetric_weight": product.volumetric_weight,
@@ -150,7 +149,7 @@ async def  get_shipment_info(
         status = []
 
     query = select(Shipment).where(Shipment.type.in_(type))
-    query = query.where(Shipment.status.in_(status))
+    query = query.where(status == any_(Shipment.status))
 
     result = await db.execute(query)
     shipments = result.scalars().all()
@@ -174,6 +173,11 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment
+
+@router.get("/barcode")
+async def barcode_generation(ean):
+    Code123 = barcode.get_barcode_class('code123')
+    
 
 @router.put("/shipment", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):

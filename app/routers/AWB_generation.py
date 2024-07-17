@@ -17,8 +17,8 @@ from decimal import Decimal
 router = APIRouter()
 
 @router.get('/orders')
-async def get_orders_info(status: int = Query(None), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).where(Order.status == status))
+async def get_orders_info(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).where(Order.status == 4))
     orders = result.scalars().all()
     return {
         "orders": [OrderRead.from_orm(order) for order in orders]

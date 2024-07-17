@@ -4,10 +4,11 @@ from app.database import Base
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(Text, nullable=True)
     description = Column(Text, nullable=True)
     time = Column(DateTime, nullable=True)
+    ean = Column(Text, primary_key=True, unique=True)
     state = Column(Text, nullable=False)
     read = Column(Boolean, nullable=False)
     user_id = Column(Integer, nullable=False)

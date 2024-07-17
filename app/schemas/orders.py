@@ -19,20 +19,21 @@ class OrderBase(BaseModel):
     shipping_tax_voucher_split: Optional[str] = None
     vouchers: Optional[str] = None
     proforms: Optional[str] = None
-    attachments: Optional[List[dict]] = None  # JSON field to List[dict]
+    attachments: Optional[str] = None  # JSON field to List[dict]
     cashed_co: Optional[float] = None
     cashed_cod: Optional[float] = None
-    refunded_amount: Optional[int] = None
-    is_complete: Optional[bool] = None  # Corrected to bool
-    cancellation_reason: Optional[int] = None
+    refunded_amount: Optional[float] = None
+    is_complete: Optional[int] = None  # Corrected to bool
+    cancellation_reason: Optional[str] = None
     refund_status: Optional[str] = None
     maximum_date_for_shipment: Optional[datetime] = None
     late_shipment: Optional[int] = None
-    flags: Optional[List[dict]] = None  # JSON field to List[dict]
-    emag_club: Optional[bool] = None  # Corrected to bool
+    flags: Optional[str] = None  # JSON field to List[dict]
+    emag_club: Optional[int] = None  # Corrected to bool
     finalization_date: Optional[datetime] = None
-    details: Optional[dict] = None  # JSON field to List[dict]
+    details: Optional[str] = None  # JSON field to List[dict]
     payment_mode_id: Optional[int] = None
+    market_place: Optional[str] = None
 
 
 class OrderCreate(OrderBase):

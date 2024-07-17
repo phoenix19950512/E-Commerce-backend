@@ -1,15 +1,18 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON, ARRAY
+from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR, JSON, ARRAY, BigInteger
 from app.database import Base
 from sqlalchemy.orm import relationship
 
 class Product(Base):
     __tablename__ = "internal_products"
 
-    id = Column(Integer)
+    id = Column(BigInteger)
+    part_number_key = Column(String, nullable=True)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
+    buy_button_rank = Column(Integer, nullable=True)
     ean = Column(Text, primary_key=True, unique=True)
     price = Column(Numeric(12, 4), nullable=True)
+    sale_price = Column(Numeric(12, 4), nullable=True)
     image_link = Column(Text, nullable=True)
     barcode_title = Column(Text, nullable=True)
     masterbox_title = Column(Text, nullable=True)
