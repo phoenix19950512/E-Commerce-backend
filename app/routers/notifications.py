@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import text
 from app.models.notifications import Notification
 from app.database import get_db
 from app.schemas.notifications import NotificationCreate, NotificationUpdate, NotificationRead
@@ -8,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import logging
 from pydantic import ValidationError
+from app.config import settings
 
 async def create_notification(db: AsyncSession, notifications: NotificationCreate):
     db_notification = Notification(**notifications.dict())
@@ -21,8 +23,10 @@ async def get_notification(db: AsyncSession, notification_id: int):
     return result.scalars().first()
 
 async def get_notifications(db: AsyncSession):
+
     result = await db.execute(select(Notification))
-    return result.scalars().all()
+    notifications = result.scalars().all()
+    return notifications
 
 async def update_notification(db: AsyncSession, notification_id: int, notifications: NotificationUpdate):
     db_notification = await get_notification(db, notification_id)

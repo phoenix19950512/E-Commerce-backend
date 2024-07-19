@@ -8,6 +8,7 @@ from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
+from app.config import settings
 
 async def get_order(db: AsyncSession, order_id: int):
     result = await db.execute(select(Order).filter(Order.id == order_id))
@@ -57,7 +58,7 @@ async def read_orders(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
-            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
         ).offset(offset).limit(items_per_page))
@@ -66,7 +67,7 @@ async def read_orders(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
-            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
         ).offset(offset).limit(items_per_page))
@@ -86,7 +87,7 @@ async def get_orders_count(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
-            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
         ))
@@ -95,12 +96,13 @@ async def get_orders_count(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
-            (Order.market_place.ilike(f"%{search_text}%")) |
+            (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
         ))
     count = result.scalar()
     return count
+
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):

@@ -28,27 +28,6 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-def create_database():
-    try:
-        conn = psycopg2.connect(
-            dbname=settings.DB_NAME,
-            user=settings.DB_USERNAME,
-            password=settings.DB_PASSOWRD,
-            host=settings.DB_URL,
-            port=settings.DB_PORT
-        )
-        conn.autocommit = True
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{settings.DB_NAME}'")
-        exists = cursor.fetchone()
-        if not exists:
-            cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(settings.DB_NAME)))
-        cursor.close()
-        conn.close()
-        logging.info(">>> Created database <<<")
-    except Exception as e:
-        logging.error(f"Failed to create database: {e}")
-
 def create_products_table(products_table):
     try:
         conn = psycopg2.connect(
@@ -102,63 +81,10 @@ def create_products_table(products_table):
                 best_offer_recommended_price NUMERIC(16, 4),
                 number_of_offers INTEGER,
                 genius_eligibility INTEGER,
-                recycleWarranties INTEGER
+                recycleWarranties INTEGER,
+                market_place TEXT
             )
         """).format(sql.Identifier(products_table))
-
-        cursor.execute(create_table_query)
-        conn.commit()
-        cursor.close()
-        conn.close()
-        logging.info(">>> Created table <<<")
-    except Exception as e:
-        logging.error(f"Failed to create table: {e}")
-
-def create_table():
-    try:
-        conn = psycopg2.connect(
-            dbname=settings.DB_NAME,
-            user=settings.DB_USERNAME,
-            password=settings.DB_PASSOWRD,
-            host=settings.DB_URL,
-            port=settings.DB_PORT
-        )
-
-        cursor = conn.cursor()
-        create_table_query = sql.SQL("""
-            CREATE TABLE IF NOT EXISTS {} (
-                id INTEGER,
-                product_name TEXT,
-                model_name TEXT,
-                price NUMERIC(16, 4),
-                sale_price NUMERIC(16, 4),
-                ean TEXT PRIMARY KEY UNIQUE,
-                image_link TEXT,
-                barcode_title TEXT,
-                masterbox_title TEXT,
-                link_address_1688 TEXT,
-                price_1688 NUMERIC(16, 4),
-                variation_name_1688 TEXT,
-                pcs_ctn TEXT,
-                weight NUMERIC(16, 4),
-                volumetric_weight NUMERIC(16, 4),
-                dimensions TEXT,
-                supplier_id INTEGER,
-                english_name TEXT,
-                romanian_name TEXT,
-                material_name_en TEXT,
-                material_name_ro TEXT,
-                hs_code TEXT,
-                battery BOOLEAN,
-                default_usage TEXT,
-                production_time INTEGER,
-                max_sale_price NUMERIC(16, 4),
-                discontinued BOOLEAN,
-                stock INTEGER,
-                internal_shipping_price NUMERIC(16, 4),
-                market_places TEXT[]
-            )
-        """).format(sql.Identifier("internal_products"))
 
         cursor.execute(create_table_query)
         conn.commit()
@@ -259,13 +185,13 @@ async def insert_products(products, mp_name: str):
                 discontinued,
                 stock,
                 internal_shipping_price,
-                market_places
+                market_place
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
-                market_places = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_places, internal_products.market_places)))
+                market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place)))
         """).format(sql.Identifier("internal_products"))
 
         for product in products:
@@ -276,8 +202,8 @@ async def insert_products(products, mp_name: str):
             buy_button_rank = product.get('buy_button_rank')
             price = 0
             sale_price = Decimal(product.get('sale_price', '0.0'))
-            ean = str(product.get('ean')[0])
-            image_link = product.get('images')[0]['url']
+            ean = str(product.get('ean')[0]) if product.get('ean') else None
+            image_link = product.get('images')[0]['url'] if product.get('images') else None
             barcode_title = ""
             masterbox_title = ""
             link_address_1688 = ""
@@ -302,7 +228,7 @@ async def insert_products(products, mp_name: str):
             discontinued = False
             stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
             internal_shipping_price = Decimal('0')
-            market_places = [mp_name]  # Ensure this is an array to use array_cat
+            market_place = [mp_name]  # Ensure this is an array to use array_cat
 
             values = (
                 id,
@@ -335,7 +261,7 @@ async def insert_products(products, mp_name: str):
                 discontinued,
                 stock,
                 internal_shipping_price,
-                market_places
+                market_place
             )
 
             cursor.execute(insert_query, values)
@@ -348,7 +274,7 @@ async def insert_products(products, mp_name: str):
         print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
 
 
-async def insert_products_into_db(products, username, products_table):
+async def insert_products_into_db(products, username, products_table, place):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -400,9 +326,10 @@ async def insert_products_into_db(products, username, products_table):
                 best_offer_recommended_price,
                 number_of_offers,
                 genius_eligibility,
-                recycleWarranties
+                recycleWarranties,
+                market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 sale_price = EXCLUDED.sale_price,
                 stock = EXCLUDED.stock
@@ -451,6 +378,7 @@ async def insert_products_into_db(products, username, products_table):
             number_of_offers = product.get('number_of_offers')
             genius_eligibility = product.get('genius_eligibility')
             recycleWarranties = product.get('recycleWarranties')
+            market_place = place
 
             images_json = json.dumps(images)
             attachments_json = json.dumps(attachments)
@@ -506,6 +434,7 @@ async def insert_products_into_db(products, username, products_table):
                 number_of_offers,
                 genius_eligibility,
                 recycleWarranties,
+                market_place
             ))
             conn.commit()
         
@@ -515,32 +444,12 @@ async def insert_products_into_db(products, username, products_table):
     except Exception as e:
         print(f"Failed to insert products into database: {e}")
 
-async def get_signature(public_key, private_key, page_nr=1, items_per_page=100):
-    request_params = {
-        'page_nr': page_nr,
-        'items_per_page': items_per_page
-    }
-    url_query_string = urllib.parse.urlencode(
-        request_params,
-        safe='|',
-        quote_via=urllib.parse.quote
-    )
-    current_timestamp = int(time.time())
-    remainder = current_timestamp % 10000
-    time_digits = str(remainder).zfill(4)
-    # current_time = str(int(time.time()))
-    # time_digits = current_time[-4:]
-    string_to_hash = ( public_key + '||' + hashlib.sha512(private_key.encode()).hexdigest() + '||' + url_query_string + '||' + time_digits )
-    hash_value = hashlib.sha512(string_to_hash.encode()).hexdigest().lower()
-    signature = time_digits + hash_value
-    logging.info(signature)
-    return signature
-
 async def refresh_products(marketplace: Marketplace, db: AsyncSession):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
     products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products".lower()
+    settings.products_table_name.append(products_table)
 
     # create_table()
     create_products_table(products_table)
@@ -567,7 +476,7 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
 
                     logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if products and not products.get('isError'):
-                        await insert_products_into_db(products['results'], USERNAME, products_table)
+                        await insert_products_into_db(products['results'], USERNAME, products_table, marketplace.marketplaceDomain)
                         await insert_products(products['results'], marketplace.marketplaceDomain)
                     currentPage += 1
             except Exception as e:

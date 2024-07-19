@@ -7,7 +7,7 @@ from sqlalchemy.orm import aliased
 from app.database import get_db
 from app.models.orders import Order
 from app.schemas.orders import OrderRead
-from app.models.refunded import Refunded
+from app.models.returns import Returns
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from app.models.shipment import Shipment

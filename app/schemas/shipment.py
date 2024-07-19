@@ -3,17 +3,36 @@ from typing import Optional, List
 from datetime import datetime
 
 class ShipmentBase(BaseModel):
+    title: Optional[str] = None
     date: Optional[datetime] = None
     type: Optional[str] = None
-    product_name_list: Optional[List[str]] = None
-    product_id_list: Optional[List[int]] = None
-    quantity_list: Optional[List[int]] = None
-    supplier_name: Optional[str] = None
-    status: Optional[str] = None
-    expect_date: Optional[datetime] = None
-    special_note: Optional[str] = None
+    ean: Optional[List[str]] = None
+    name: Optional[List[str]] = None
+    quantity: Optional[List[int]] = None
+    supplier_name: Optional[List[str]] = None
+    item: Optional[List[int]] = None
+    pdf_sent: Optional[List[bool]] = None
+    pay_url: Optional[List[str]] = None
+    tracking: Optional[List[str]] = None
+    arrive_agent: Optional[List[bool]] = None
+    wechat_group: Optional[List[str]] = None
+    pp: Optional[List[str]] = None
+    each_status: Optional[List[str]] = None
+    shipment_name: Optional[List[str]] = None
+    box_number: Optional[List[int]] = None
+    document: Optional[List[str]] = None
+    barcode_url: Optional[List[str]] = None
+    add_date: Optional[List[datetime]] = None
+    date_agent: Optional[List[datetime]] = None
+    SID: Optional[List[str]] = None
+    GID: Optional[List[str]] = None
+    date_port: Optional[List[datetime]] = None
+    newid: Optional[List[str]] = None
 
 class ShipmentCreate(ShipmentBase):
+    pass
+
+class ShipmentUpdate(ShipmentBase):
     pass
 
 class ShipmentRead(ShipmentBase):
@@ -21,6 +40,3 @@ class ShipmentRead(ShipmentBase):
 
     class Config:
         orm_mode = True
-
-class ShipmentUpdate(ShipmentBase):
-    pass

@@ -33,7 +33,7 @@ class OrderBase(BaseModel):
     finalization_date: Optional[datetime] = None
     details: Optional[str] = None  # JSON field to List[dict]
     payment_mode_id: Optional[int] = None
-    market_place: Optional[str] = None
+    order_market_place: Optional[str] = None
 
 
 class OrderCreate(OrderBase):
@@ -44,7 +44,7 @@ class OrderUpdate(OrderBase):
 
 class OrderRead(OrderBase):
     id: int
+    order_market_place: str
 
     class Config:
         orm_mode = True
-        from_attributes = True

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
+from sqlalchemy import any_
 from typing import List
 from app.database import get_db
 from app.models.shipment import Shipment
@@ -36,6 +37,29 @@ async def get_shipments(
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
+
+@router.get("/imports")
+async def get_imports(ean: str, db:AsyncSession = Depends(get_db)):
+    query = select(Shipment).where(ean == any_(Shipment.ean))
+    result = await db.execute(query)
+
+    shipments = result.scalars().all()
+
+    imports_data = []
+
+    for shipment in shipments:
+        ean_list = shipment.ean
+        quantity_list = shipment.quantity
+        title = shipment.title
+        index = ean_list.index(ean)
+        quantity = quantity_list[index]
+
+        imports_data.append({
+            "title": title,
+            "quantity": quantity
+        })
+
+    return imports_data
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):

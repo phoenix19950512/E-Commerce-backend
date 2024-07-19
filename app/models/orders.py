@@ -1,12 +1,10 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, Boolean, JSON, Numeric, ARRAY, BigInteger
+from sqlalchemy import Column, String, Integer, Float, DateTime, PrimaryKeyConstraint, ARRAY, BigInteger
 from app.database import Base
-from sqlalchemy.orm import relationship
-from app.models.product import Product
 
 class Order(Base):
     __tablename__ = "orders"
-    id = Column(BigInteger, primary_key=True)
-    vendor_name = Column(String, nullable=True)
+    id = Column(BigInteger)
+    vendor_name = Column(String, nullable=True, primary_key=True)
     type = Column(Integer, nullable=True)
     date = Column(DateTime, nullable=True)
     payment_mode = Column(String, nullable=True)
@@ -35,5 +33,9 @@ class Order(Base):
     finalization_date = Column(DateTime, nullable=True)
     details = Column(String, nullable=True)
     payment_mode_id = Column(Integer, nullable=True)
-    market_place = Column(String, nullable=True)
+    order_market_place = Column(String, nullable=True)
+
+    __table_args__ = (
+        PrimaryKeyConstraint('id', 'order_market_place', name='pk_id_order_market_place'),
+    )
 

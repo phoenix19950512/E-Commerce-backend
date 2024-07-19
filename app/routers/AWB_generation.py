@@ -10,7 +10,7 @@ from app.models.awb import AWB
 from app.schemas.awb import AWBCreate, AWBRead
 from app.utils.awb import generate_awb_number
 from app.database import get_db
-from sqlalchemy import func, and_
+from sqlalchemy import func, any_
 import datetime
 from decimal import Decimal
 
@@ -18,10 +18,10 @@ router = APIRouter()
 
 @router.get('/orders')
 async def get_orders_info(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).where(Order.status == 4))
+    result = await db.execute(select(Order).where(Order.status == any_([1,2,3])))
     orders = result.scalars().all()
     return {
-        "orders": [OrderRead.from_orm(order) for order in orders]
+        "orders": orders
     }
 
 @router.post("/awb", response_model=AWBRead)

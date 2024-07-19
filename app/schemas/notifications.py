@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 class NotificationBase(BaseModel):
+    id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
     time: Optional[datetime] = None
@@ -11,6 +12,7 @@ class NotificationBase(BaseModel):
     state: str = "warning"
     read: bool = False
     user_id: int = 1
+    market_place: Optional[str] = None
 
 class NotificationCreate(NotificationBase):
     pass
@@ -19,7 +21,8 @@ class NotificationUpdate(NotificationBase):
     pass
 
 class NotificationRead(NotificationBase):
-    id: int
+    ean: str
+    market_place: str
 
     class Config:
         orm_mode = True

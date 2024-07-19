@@ -11,6 +11,8 @@ from app.utils.emag_products import *
 from sqlalchemy import func, and_, text
 import datetime
 from decimal import Decimal
+import barcode
+from barcode.writer import ImageWriter
 
 router = APIRouter()
 
@@ -175,8 +177,21 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     return db_shipment
 
 @router.get("/barcode")
-async def barcode_generation(ean):
-    Code123 = barcode.get_barcode_class('code123')
+def barcode_generation(ean):
+    Code128 = barcode.get_barcode_class('code128')
+    barcode_instance = Code128(ean, writer=ImageWriter())
+    options = {
+        'module_width': 0.2,
+        'module_height': 15,
+        'font_size': 10,
+        'text_distance': 1,
+        'quiet_zone': 6.5,
+    }
+    filename = barcode_instance.save("custom_barcode_image", options)
+
+    print(f"Customized barcode saved as {filename}.png")
+
+    return filename
     
 
 @router.put("/shipment", response_model=ShipmentRead)

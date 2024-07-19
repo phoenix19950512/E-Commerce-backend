@@ -6,7 +6,6 @@ from app.schemas.marketplace import MarketplaceCreate, MarketplaceUpdate, Market
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-import logging
 from pydantic import ValidationError
 
 async def create_marketplace(db: AsyncSession, marketplace: MarketplaceCreate):
@@ -49,10 +48,8 @@ async def create_new_marketplace(marketplace: MarketplaceCreate, db: AsyncSessio
     try:
         return await create_marketplace(db, marketplace)
     except ValidationError as e:
-        logging.error(f"Validation error: {e.errors()}")
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
     except Exception as e:
-        logging.error(f"Error creating marketplace: {e}")
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
 @router.get("/{marketplace_id}", response_model=MarketplaceRead)

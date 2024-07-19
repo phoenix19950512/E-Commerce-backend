@@ -1,5 +1,6 @@
 import os
 from pydantic_settings import BaseSettings
+from typing import List
 
 class Settings(BaseSettings):
     DB_USERNAME: str = "postgres"
@@ -11,6 +12,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.urandom(32).hex()
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
-
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 1440
+    
+    products_table_name: List[str] = []
+    orders_table_name: List[str] = []
+    returns_table_name: List[str] = []
+    customers_table_name: List[str] = []
+    notifications_table_name: List[str] = []
+    reviews_table_name: List[str] = []
 settings = Settings()

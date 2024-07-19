@@ -17,12 +17,33 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
+# PROXIES = {
+#     'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+#     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+# }
 
-def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False, ):
+def get_attachments(API_KEY, PROXIES):
+    url = 'https://marketplace-api.emag.ro/api-3/product_offer/save'
+    api_key = str(API_KEY).replace("b'", '').replace("'", "")
+    headers = {
+        "Authorization": f"Basic {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    data = json.dumps({
+        "itmesPerPage": 100,
+        "currentPage": 1
+    })
+
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        get_attachments = response.json()
+        return get_attachments
+    else:
+        logging.info(f"Failed to retrieve refunds: {response.status_code}")
+        return None
+
+def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{RMAS_ENDPOINT}/{READ_ENDPOINT}"
     
     if usePublicKey is True:
@@ -49,7 +70,7 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         logging.info(f"Failed to retrieve refunds: {response.status_code}")
         return None
 
-def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
+def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
     logging.info("counting start")
     url = f"{MARKETPLACE_API_URL}{RMAS_ENDPOINT}/{COUNT_ENGPOINT}"
     if usePublicKey is False:
@@ -101,13 +122,13 @@ async def insert_rmas_into_db(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                market_place
+                return_market_place
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (order_id) DO UPDATE SET
+            ) ON CONFLICT (order_id, market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status               
-        """).format(sql.Identifier("refunded"))
+        """).format(sql.Identifier("returns"))
 
         for rma in rmas:
             emag_id = rma.get('emag_id')
@@ -119,7 +140,7 @@ async def insert_rmas_into_db(rmas, place:str):
             products = [int(product.get('product_id')) for product in rma.get('products')]
             quantity = [int(product.get('quantity')) for product in rma.get('products')]
             pickup_address = rma.get('pickup_address')
-            return_reason = rma.get('return_reason')
+            return_reason = rma.get('observations')
             return_type = rma.get('return_type')
             replacement_product_emag_id = rma.get('replacement_product_emag_id')
             replacement_product_id = rma.get('replacement_product_id')
@@ -127,7 +148,7 @@ async def insert_rmas_into_db(rmas, place:str):
             replacement_product_quantity = rma.get('replacement_product_quantity')
             date = rma.get('date')
             request_status = rma.get('request_status')
-            market_place = place
+            return_market_place = place
 
             value = (
                 emag_id,
@@ -147,7 +168,7 @@ async def insert_rmas_into_db(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                market_place
+                return_market_place
             )
             cursor.execute(insert_query, value)
             conn.commit()
@@ -158,10 +179,15 @@ async def insert_rmas_into_db(rmas, place:str):
     except Exception as e:
         print(f"Failed to insert refunds into database: {e}")
 
-async def refresh_refunds(marketplace: Marketplace):
+async def refresh_returns(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-
+    proxy = marketplace.proxy
+    PROXIES = {
+        'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+        'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    }
+    print(PROXIES)
     if marketplace.credentials["type"] == "user_pass":
         
         USERNAME = marketplace.credentials["firstKey"]
@@ -172,7 +198,11 @@ async def refresh_refunds(marketplace: Marketplace):
         endpoint = "/rma"
         read_endpoint = "/read"
         count_endpoint = "/count"
-        result = count_all_rmas(baseAPIURL, endpoint, count_endpoint, API_KEY)
+
+        # result = get_attachments(API_KEY, PROXIES)
+        # print(result)
+
+        result = count_all_rmas(baseAPIURL, endpoint, count_endpoint, API_KEY, PROXIES=PROXIES)
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
@@ -180,8 +210,8 @@ async def refresh_refunds(marketplace: Marketplace):
             print("------------items--------------", items)
         try:
             current_page  = 1
-            while current_page < int(pages):
-                rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
+            while current_page <= int(pages):
+                rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page, PROXIES=PROXIES)
                 logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
                 await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain)
                 current_page += 1

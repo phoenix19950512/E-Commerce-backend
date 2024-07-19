@@ -5,17 +5,27 @@ from sqlalchemy import text, and_, func, literal_column, cast, ARRAY, Integer, B
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import joinedload
 from app.models.product import Product
-from app.schemas.product import ProductRead
+from app.models.marketplace import Marketplace
 from app.models.orders import Order
-from app.schemas.orders import OrderRead
-from app.models.refunded import Refunded
-from app.schemas.refunded import RefundedRead
+from app.models.returns import Returns
 from typing import List, Optional
 from app.database import get_db
 import datetime
 import asyncpg
 from app.config import settings
 from psycopg2.extras import RealDictCursor
+from decimal import Decimal
+
+vat_dict = {}
+
+async def get_vat_dict(db: AsyncSession):
+    query = select(Marketplace.marketplaceDomain, Marketplace.vat)
+    result = await db.execute(query)
+    records = result.all()
+    
+    global vat_dict
+    vat_dict = {record.marketplaceDomain: record.vat for record in records}
+
 
 async def get_db_connection():
     return await asyncpg.connect(
@@ -27,17 +37,26 @@ async def get_db_connection():
     )
 
 router = APIRouter()
-# @router.post("/", response_model=ProductRead)
 
 async def get_return(st_datetime, en_datetime, db:AsyncSession):
-    query = select(Refunded).where(Refunded.return_type == 3)
-    query = query.where(Refunded.date >= st_datetime, Refunded.date <= en_datetime)
-    refunds_result = await db.execute(query)
-    refunds = refunds_result.scalars().all()
     
-    return len(refunds)
+    query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime)
+    query = query.where(Returns.type == 3)
+    result = await db.execute(query)
+    refunds = result.scalars().all()
+    count = len(refunds)
+
+    return count
 
 async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
+    
+    total_units = 0
+    total_refund = 0
+    total_net_profit = 0
+    total_refund = await get_return(st_datetime, en_datetime, db)
+
+    orders_with_products = []
+
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).where(
         and_(
@@ -54,29 +73,40 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
             Order.product_id.op('&&')(cast(product_ids_list, ARRAY(BigInteger)))
         )
     result = await db.execute(query)
-    orders_with_products = result.fetchall()
+    orders_with_products = result.all()
 
-    total_units = 0
-    total_refund = 0
-    total_net_profit = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    orders = []
 
     for order, product in orders_with_products:
+        orders.append(order)
         total_units += sum(order.quantity)
         product_ids = order.product_id
         quantities = order.quantity
+
+        marketplace_domain = order.get("order_market_place")
+        vat = vat_dict[marketplace_domain]
+
         for i in range(len(product_ids)):
-            total_net_profit += (product.sale_price - product.price - product.internal_shipping_price) * quantities[i]
+            if product.id == product_ids[i]:
+                total_net_profit += (product.sale_price * 100 / Decimal(100.0 + vat) - product.price) * quantities[i]
         
     return {
         "date_string": date_string,
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,
-        "orders": [OrderRead.from_orm(order) for order, _ in orders_with_products]
+        "orders": orders
     }
 
 async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
+    
+    total_units = 0
+    total_refund = 0
+    total_net_profit = 0
+    total_sales = 0
+    total_gross_profit = 0
+    total_refund = await get_return(st_datetime, en_datetime, db)
+
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).where(
         and_(
@@ -93,13 +123,35 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
             Order.product_id.op('&&')(cast(product_ids_list, ARRAY(BigInteger)))
         )
     result = await db.execute(query)
-    orders_with_products = result.fetchall()
-    sales = 0
-    units_sold = 0
-    refunds = await get_return(st_datetime, en_datetime, db)
-    
+    orders_with_products = result.all()
 
-    return
+    orders = []
+
+    for order, product in orders_with_products:
+        orders.append(order)
+        total_units += sum(order.quantity)
+        product_ids = order.product_id
+        quantity = order.quantity
+
+        marketplace_domain = order.get("order_market_place")
+        vat = vat_dict[marketplace_domain]
+
+        for i in range(len(product_ids)):
+            if product.id == product_ids[i]:
+                total_sales += product.sale_price * quantity[i]
+                total_net_profit += (product.sale_price * 100 / Decimal(100.0 + vat) - product.price) * quantity[i]
+                total_gross_profit += (product.sale_price - product.price) * quantity[i]
+
+    return {
+        "date_string": date_string,
+        "total_sales": total_sales,
+        "total_units": total_units,
+        "total_refund": total_refund,
+        "total_gross_profit": total_gross_profit,
+        "total_net_profit": total_net_profit,
+        "orders": orders
+    }   
+    
 
 @router.get('/tiles')
 
@@ -134,21 +186,22 @@ async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
 async def get_value(st_date, en_date, db:AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
-    
-    ProductAlias = aliased(Product)
 
-    query = select(Order, ProductAlias).where(
-        and_(
-            Order.date >= st_datetime,
-            Order.date <= en_datetime
-        )
-    ).join(
-        ProductAlias,
-        ProductAlias.id == func.any(Order.product_id)
-    )
-    
-    result = await db.execute(query)
-    orders_with_products = result.fetchall()
+    orders_with_products = []
+
+    query = text(f"""
+        SELECT orders.*, products.*
+        FROM orders AS orders
+        JOIN internal_products AS products ON products.id = ANY(orders.product_id)
+        WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime
+    """)
+
+    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime})
+    records = result.fetchall()
+
+    for record in records:
+        record_dict = {key: value for key, value in zip(result.keys(), record)}
+        orders_with_products.append(record_dict)
 
     date_string = ""
     if st_date == en_date:
@@ -162,15 +215,30 @@ async def get_value(st_date, en_date, db:AsyncSession):
     total_refund = await get_return(st_datetime, en_datetime, db)
     total_gross_profit = 0
     total_net_profit = 0
-    for order, product in orders_with_products:
-        product_ids = order.product_id
-        quantities = order.quantity
+    orders = []
+    for order in orders_with_products:
+        orders.append(order)
+        product_ids = order.get("product_id")
+        quantities = order.get("quantity")
         total_units += sum(quantity for quantity in quantities)
 
+        marketplace_domain = order.get("order_market_place")
+        vat = vat_dict[marketplace_domain]
+        # print(marketplace_domain)
+        # query = select(Marketplace).where(marketplace_domain == Marketplace.marketplaceDomain)
+        # marketplace_result = await db.execute(query)
+        # marketplace = marketplace_result.scalars().first()
+        # vat = marketplace.vat
+
         for i in range(len(product_ids)): 
-            total_sales += product.sale_price * quantities[i]
-            total_gross_profit += (product.sale_price - product.price) * quantities[i]
-            total_net_profit += (product.sale_price - product.price - product.internal_shipping_price) * quantities[i]
+            product = next((p for p in orders_with_products if p['id'] == product_ids[i]), None)
+            if product:
+                sale_price = product.get("sale_price", Decimal(0))
+                price = product.get("price", Decimal(0))
+                quantity = quantities[i]
+                total_sales += sale_price * quantity
+                total_gross_profit += (sale_price - price) * quantity
+                total_net_profit += (sale_price * 100 / Decimal(100.0 + vat) - price) * quantity
 
     return {
         "date_range": date_string,
@@ -180,6 +248,7 @@ async def get_value(st_date, en_date, db:AsyncSession):
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
+        "orders": orders
     }
     
 async def forecast(st_date, en_date, db: AsyncSession):
@@ -244,7 +313,6 @@ async def get_chart_data(
 ):
     
     today = datetime.date.today()
-    print("*****************")
     chart_data = []
 
     if product_ids:
@@ -350,7 +418,7 @@ async def get_PL_data(product_ids: str = Query(None),  # Make product_ids requir
     }
 
 async def PL_month_data(product_ids_list, date, db: AsyncSession):
-    month_string = f"{date.strftime('%b')} {date.year}"
+    date_string = f"{date.strftime('%b')} {date.year}"
     st_date = datetime.date(date.year, date.month, 1)
     if date.month == 12:
         en_date = datetime.date(date.year, 12, 31)
@@ -360,82 +428,94 @@ async def PL_month_data(product_ids_list, date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
-    if product_ids_list:
-        query = query.where(Order.product_id.in_(product_ids_list))
-
-    result = await db.execute(query)
-    orders = result.scalars().all() 
-
-    total_sales = sum(order.sales for order in orders)
-    total_units = sum(order.unit for order in orders)
-    total_refund = sum(order.refunded_amount for order in orders)
-    total_gross_profit = sum(order.gross_profit for order in orders)
-    total_net_profit = sum(order.net_profit for order in orders)
-
-    return {
-        "date_string": month_string,
-        "total_sales": total_sales,
-        "total_units": total_units,
-        "total_refund": total_refund,
-        "total_gross_profit": total_gross_profit,
-        "total_net_profit": total_net_profit,
-        "orders": [OrderRead.from_orm(order) for order in orders]
-    }
+    return await get_PL(date_string, product_ids_list, st_datetime, en_datetime, db)
 
 async def PL_week_data(week_string, product_ids_list, st_date, en_date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
-    if product_ids_list:
-        query = query.where(Order.product_id.in_(product_ids_list))
-
-    result = await db.execute(query)
-    orders = result.scalars().all() 
-
-    total_sales = sum(order.sales for order in orders)
-    total_units = sum(order.unit for order in orders)
-    total_refund = sum(order.refunded_amount for order in orders)
-    total_gross_profit = sum(order.gross_profit for order in orders)
-    total_net_profit = sum(order.net_profit for order in orders)
-    
-    return {
-        "date_string": week_string,
-        "total_sales": total_sales,
-        "total_units": total_units,
-        "total_refund": total_refund,
-        "total_gross_profit": total_gross_profit,
-        "total_net_profit": total_net_profit,
-        "orders": [OrderRead.from_orm(order) for order in orders]
-    }
+    return await get_PL(week_string, product_ids_list, st_datetime, en_datetime, db)
 
 async def PL_day_data(date, product_ids_list, db: AsyncSession):
     day_string = f"{date.day} {date.strftime('%b')} {date.year}"
     st_datetime = datetime.datetime.combine(date, datetime.time.min)
     en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
-    query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
-    if product_ids_list:
-        query = query.where(Order.product_id.in_(product_ids_list))
+    return await get_PL(day_string, product_ids_list, st_datetime, en_datetime, db)
 
-    result = await db.execute(query)
-    orders = result.scalars().all() 
+@router.get('/trends')
 
-    total_sales = sum(order.sales for order in orders)
-    total_units = sum(order.unit for order in orders)
-    total_refund = sum(order.refunded_amount for order in orders)
-    total_gross_profit = sum(order.gross_profit for order in orders)
-    total_net_profit = sum(order.net_profit for order in orders)
-    
+async def get_trends_info(
+    product_ids: str = Query(None),
+    type: int = Query(...),
+    field: str = Query(...),
+    db: AsyncSession = Depends(get_db)
+):
+    today = datetime.date.today()
+    trends_data = []
+
+    if product_ids:
+        product_ids_list = [int(id.strip()) for id in product_ids.split(",")]
+    else:
+        product_ids_list = []
+
+    if type == 1:
+        for i in range(13):
+            if today.month + i <= 12:
+                date = datetime.date(today.year - 1, today.month + i, today.day)
+            else:
+                date = datetime.date(today.year, today.month + i - 12, today.day)
+
+            trends_data.insert(0, await treand_month_data(product_ids_list, date, field, db))
+    elif type == 2:
+        week_num_en = today.isocalendar()[1]
+        en_date = today
+        st_date = today - datetime.timedelta(today.weekday())
+        for i in range(14):
+            if week_num_en - i > 0:
+                week_string = f"week {week_num_en - i}"
+            else:
+                week_string = f"week {week_num_en + 52 - i}"
+
+            trends_data.append(await trend_week_data(week_string, product_ids_list, st_date, en_date, field, db))
+            en_date = st_date - datetime.timedelta(days=1)
+            st_date = st_date - datetime.timedelta(days=7)
+    else:
+        for i in range(30):
+            date = today - datetime.timedelta(days=i)
+            trends_data.append(await trend_day_data(date, product_ids_list, field, db))
     return {
-        "date_string": day_string,
-        "total_sales": total_sales,
-        "total_units": total_units,
-        "total_refund": total_refund,
-        "total_gross_profit": total_gross_profit,
-        "total_net_profit": total_net_profit,
-        "orders": [OrderRead.from_orm(order) for order in orders]
+        "trends_data": trends_data
     }
 
-# @router.get('/trends')
+async def treand_month_data(product_ids_list, date, field, db: AsyncSession):
+    date_string = f"{date.strftime('%b')} {date.year}"
+    st_date = datetime.date(date.year, date.month, 1)
+    if date.month == 12:
+        en_date = datetime.date(date.year, 12, 31)
+    else:
+        en_date = datetime.date(date.year, date.month + 1, 1) - datetime.timedelta(days = 1)
+
+    st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
+    en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
+
+    result = await get_PL(date_string, product_ids_list, st_datetime, en_datetime, db)
+    field = "total_" + field
+    return result.get(f"{field}")
+
+async def trend_week_data(week_string, product_ids_list, st_date, en_date, field, db: AsyncSession):
+    st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
+    en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
+
+    result = await get_PL(week_string, product_ids_list, st_datetime, en_datetime, db)
+    field = "total_" + field
+    return result.get(f"{field}")
+
+async def trend_day_data(date, product_ids_list, field, db: AsyncSession):
+    day_string = f"{date.day} {date.strftime('%b')} {date.year}"
+    st_datetime = datetime.datetime.combine(date, datetime.time.min)
+    en_datetime = datetime.datetime.combine(date, datetime.time.max)
+
+    result = await get_PL(day_string, product_ids_list, st_datetime, en_datetime, db)
+    field = "total_" + field
+    return result.get(f"{field}")
