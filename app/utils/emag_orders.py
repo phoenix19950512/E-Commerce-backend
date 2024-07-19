@@ -273,7 +273,7 @@ async def insert_orders(orders, mp_name:str):
                 order_market_place
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id, market_place) DO UPDATE SET
+            ) ON CONFLICT (id, order_market_place) DO UPDATE SET
                 payment_mode = EXCLUDED.payment_mode,
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,

@@ -14,3 +14,4 @@ pydantic_settings
 humanize
 requests
 fastapi_utils
+barcode
