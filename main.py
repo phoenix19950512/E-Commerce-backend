@@ -118,7 +118,7 @@ if __name__ == "__main__":
         port=8000,
         ssl_keyfile=ssl_keyfile,
         ssl_certfile=ssl_certfile,
-        reload=True  # Optional: Enables auto-reload for code changes
+        # reload=True  # Optional: Enables auto-reload for code changes
     )
     # else:
     #     print("SSL keyfile or certfile not found. Running without SSL.")
