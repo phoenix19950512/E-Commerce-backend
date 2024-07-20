@@ -125,7 +125,7 @@ async def insert_rmas_into_db(rmas, place:str):
                 return_market_place
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (order_id, market_place) DO UPDATE SET
+            ) ON CONFLICT (order_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status               
         """).format(sql.Identifier("returns"))

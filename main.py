@@ -74,13 +74,13 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
                 logging.info("Refresh product from marketplace")
-                await refresh_products(marketplace, session)
+                # await refresh_products(marketplace, session)
                 logging.info("Refresh refunds from marketplace")
-                await refresh_returns(marketplace)
+                # await refresh_returns(marketplace)
                 logging.info("Refresh order from marketplace")
-                await refresh_orders(marketplace, session)
+                # await refresh_orders(marketplace, session)
                 logging.info("Check hijacker and review")
-                await check_hijacker_and_bad_reviews(marketplace, session)
+                # await check_hijacker_and_bad_reviews(marketplace, session)
                 
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

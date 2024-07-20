@@ -16,15 +16,14 @@ from app.config import settings
 from psycopg2.extras import RealDictCursor
 from decimal import Decimal
 
-vat_dict = {}
-
 async def get_vat_dict(db: AsyncSession):
     query = select(Marketplace.marketplaceDomain, Marketplace.vat)
     result = await db.execute(query)
     records = result.all()
     
-    global vat_dict
-    vat_dict = {record.marketplaceDomain: record.vat for record in records}
+    return {record.marketplaceDomain: record.vat for record in records}
+
+
 
 
 async def get_db_connection():
@@ -38,6 +37,7 @@ async def get_db_connection():
 
 router = APIRouter()
 
+
 async def get_return(st_datetime, en_datetime, db:AsyncSession):
     
     query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime)
@@ -49,7 +49,7 @@ async def get_return(st_datetime, en_datetime, db:AsyncSession):
     return count
 
 async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
-    
+    vat_dict = await get_vat_dict(db)
     total_units = 0
     total_refund = 0
     total_net_profit = 0
@@ -83,7 +83,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
         product_ids = order.product_id
         quantities = order.quantity
 
-        marketplace_domain = order.get("order_market_place")
+        marketplace_domain = order.order_market_place
         vat = vat_dict[marketplace_domain]
 
         for i in range(len(product_ids)):
@@ -99,6 +99,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
     }
 
 async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
+    vat_dict = await get_vat_dict(db)
     
     total_units = 0
     total_refund = 0
@@ -133,7 +134,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
         product_ids = order.product_id
         quantity = order.quantity
 
-        marketplace_domain = order.get("order_market_place")
+        marketplace_domain = order.order_market_place
         vat = vat_dict[marketplace_domain]
 
         for i in range(len(product_ids)):
@@ -184,6 +185,9 @@ async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
     }
 
 async def get_value(st_date, en_date, db:AsyncSession):
+
+    vat_dict = await get_vat_dict(db)
+
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
