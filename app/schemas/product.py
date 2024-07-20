@@ -32,6 +32,7 @@ class ProductBase(BaseModel):
     production_time: Optional[Decimal] = None
     discontinued: Optional[bool] = None
     stock: Optional[int] = None
+    warehouse: Optional[str] = None
     internal_shipping_price: Optional[Decimal] = None
     market_place: Optional[List[str]] = None
 

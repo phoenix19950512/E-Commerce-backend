@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, any_
 from typing import List
 from app.database import get_db
 from app.models.returns import Returns
@@ -32,6 +32,12 @@ async def get_returns(
     if db_returns is None:
         raise HTTPException(status_code=404, detail="return not found")
     return db_returns
+
+@router.get("/replacement")
+async def get_replacement(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).filter(Returns.return_type == any_([1, 2])))
+    db_replacements = result.scalars().all()
+    return db_replacements
 
 @router.put("/{return_id}", response_model=ReturnsRead)
 async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession = Depends(get_db)):

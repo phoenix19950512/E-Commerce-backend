@@ -16,8 +16,36 @@ from barcode.writer import ImageWriter
 
 router = APIRouter()
 
+async def get_imports(ean: str, db:AsyncSession):
+    query = select(Shipment).where(ean == any_(Shipment.ean))
+    result = await db.execute(query)
+
+    shipments = result.scalars().all()
+
+    imports_data = []
+
+    for shipment in shipments:
+        ean_list = shipment.ean
+        quantity_list = shipment.quantity
+        status_list = shipment.each_status
+        title = shipment.title
+        index = ean_list.index(ean)
+        quantity = quantity_list[index]
+        if status_list[index] == "arrived":
+            continue
+        imports_data.append({
+            "title": title,
+            "quantity": quantity
+        })
+
+    return imports_data
+
+
 @router.get('/product')
 async def get_product_info(
+    shipment_type: str = Query(None),
+    query_stock_days: int = Query(None),
+    query_imports_stocks: int = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     
@@ -49,21 +77,35 @@ async def get_product_info(
     for product in products:
         stock = product.stock
         product_id = product.id
+        ean = product.ean
+
+        imports_datas = await get_imports(ean, db)
+        imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
+
         if product_id not in cnt:
-            stock_days = 10000000000
+            stock_days = -1
         else:
             days = (max_time[product_id] - min_time[product_id]).days + 1
             ave_sales = cnt[product_id] / days
-            stock_days = int(stock / ave_sales) if ave_sales > 0 else 1000000000
+            stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
+            stock_imports_days = int(((stock + imports) / ave_sales))
+
+            if query_stock_days and stock_imports_days < query_stock_days:
+                quantity = int(stock_imports_days * ave_sales) - stock - imports
+            else:
+                quantity = ""
+        
+
         product_data.append({
             "id": product.id,
             "product_name": product.product_name,
-            "price": str(product.price),
-            "sale_price": str(product.sale_price),
             "ean": product.ean,
+            "quantity": quantity,
             "image_link": product.image_link,
-            "stock": product.stock,
-            "day_stock": stock_days
+            "wechat": product.supplier_id,
+            "stock_imports": [product.stock, ave_sales, imports],
+            "day_stock": [stock_days, stock_imports_days],
+            "imports_data": imports_datas
         })
     return product_data
 

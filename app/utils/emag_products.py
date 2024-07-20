@@ -184,10 +184,11 @@ async def insert_products(products, mp_name: str):
                 production_time,
                 discontinued,
                 stock,
+                warehouse,
                 internal_shipping_price,
                 market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
@@ -227,6 +228,7 @@ async def insert_products(products, mp_name: str):
             production_time = Decimal('0')
             discontinued = False
             stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
+            warehouse = ""
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
 
@@ -260,6 +262,7 @@ async def insert_products(products, mp_name: str):
                 production_time,
                 discontinued,
                 stock,
+                warehouse,
                 internal_shipping_price,
                 market_place
             )
@@ -486,7 +489,6 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
         PUBLIC_KEY = marketplace.credentials["firstKey"]
         PRIVATE_KEY = marketplace.credentials["secondKey"]
         logging.info("starting count")
-        sign = get_signature(PUBLIC_KEY, PRIVATE_KEY)
         result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], sign, PUBLIC_KEY, True, proxies=PROXIES)
         if result:
             pages = result['results']['noOfPages']

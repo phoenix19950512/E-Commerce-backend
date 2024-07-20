@@ -15,6 +15,7 @@ from app.utils.awb import *
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
 from sqlalchemy.orm import Session
+import ssl
 import logging
 
 
@@ -32,7 +33,11 @@ class MemberResponse(BaseModel):
     role_name: str
     access_level: str
 
+
 app = FastAPI()
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 
 origins = [
     "*"
@@ -45,14 +50,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 async def init_models():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-@app.on_event("startup")
-async def on_startup():
-    await init_models()
+# @app.on_event("startup")
+# async def on_startup():
+#     await init_models()
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
@@ -99,6 +103,28 @@ app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
 app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])
 app.include_router(customer.router, prefix='/api/customers', tags=["customers"])
 
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 if __name__ == "__main__":
+    # Check if SSL arguments are provided
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    ssl_keyfile = "ssl/key.pem"
+    ssl_certfile = "ssl/cert.pem"
+    # if ssl_keyfile and ssl_certfile:
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile,
+        reload=True  # Optional: Enables auto-reload for code changes
+    )
+    # else:
+    #     print("SSL keyfile or certfile not found. Running without SSL.")
+    #     uvicorn.run(
+    #         "main:app",
+    #         host="0.0.0.0",
+    #         port=8000,
+    #         reload=True  # Optional: Enables auto-reload for code changes
+    #     )

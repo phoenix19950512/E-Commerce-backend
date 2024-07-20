@@ -169,22 +169,22 @@ async def get_orders_info(product_id: int, db: AsyncSession):
     return order_data
     
 async def get_refunded_info(product_id, db: AsyncSession):
-    query_total = select(Refunded).where(product_id == any_(Refunded.products))
+    query_total = select(Returns).where(product_id == any_(Returns.products))
     result_total = await db.execute(query_total)
     total = len(result_total.scalars().all())
-    query1 = query_total.where(Refunded.return_type == 1)
+    query1 = query_total.where(Returns.return_type == 1)
     result_1 = await db.execute(query1)
     num1 = len(result_1.scalars().all())
-    query2 = query_total.where(Refunded.return_type == 2)
+    query2 = query_total.where(Returns.return_type == 2)
     result_2 = await db.execute(query2)
     num2 = len(result_2.scalars().all())
-    query3 = query_total.where(Refunded.return_type == 3)
+    query3 = query_total.where(Returns.return_type == 3)
     result_3 = await db.execute(query3)
     num3 = len(result_3.scalars().all())
-    query4 = query_total.where(Refunded.return_type == 4)
+    query4 = query_total.where(Returns.return_type == 4)
     result_4 = await db.execute(query4)
     num4 = len(result_4.scalars().all())
-    query5 = query_total.where(Refunded.return_type == 5)
+    query5 = query_total.where(Returns.return_type == 5)
     resutl_5 = await db.execute(query5)
     num5 = len(resutl_5.scalars().all())
 
@@ -197,21 +197,22 @@ async def get_refunded_info(product_id, db: AsyncSession):
         "type_5": num5
     }
 
-async def get_shipment_info(product_id: int, db: AsyncSession):
+async def get_shipment_info(ean: str, db: AsyncSession):
 
-    result = await db.execute(select(Shipment).where(product_id == any_(Shipment.product_id_list)))
+    result = await db.execute(select(Shipment).where(ean == any_(Shipment.ean)))
     shipments = result.scalars().all()
 
     shipment_data = []
     for shipment in shipments:
-        index = shipment.product_id_list.index(product_id)
-        total_quantity = sum(shipment.quantity_list)
-        quantity = shipment.quantity_list[index]
+        index = shipment.ean.index(ean)
+        total_quantity = sum(shipment.quantity)
+        quantity = shipment.quantity[index]
         shipment_data.append({
             "shipment_id": shipment.id,
+            "shipment_title": shipment.title,
             "shipment_date": shipment.date,
             "shipment_quantity": total_quantity,
-            "supplier_name": shipment.supplier_name,
+            "supplier_name": shipment.supplier_name[index],
             "shipment_status": shipment.status,
             "shipment_product_quantity": quantity
         })
