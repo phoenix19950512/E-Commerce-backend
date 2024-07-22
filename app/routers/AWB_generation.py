@@ -38,7 +38,7 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
         },
         "locker_id": db_awb.locker_id,
         "is_oversize": db_awb.is_oversize,
-        "insured_vale": db_awb.insured_vale,
+        "insured_value": db_awb.insured_value,
         "weight": db_awb.weight,
         "envelope_number": db_awb.envelope_number,
         "parcel_number": db_awb.parcel_number,

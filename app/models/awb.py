@@ -26,7 +26,7 @@ class AWB(Base):
     receiver_zipcode = Column(String, nullable=True)
     locker_id = Column(String, nullable=True)
     is_oversize = Column(Boolean, nullable=True)
-    insured_vale = Column(DECIMAL, nullable=True) 
+    insured_value = Column(DECIMAL, nullable=True) 
     weight = Column(DECIMAL, nullable=True)
     envelope_number = Column(Integer, nullable=False)
     parcel_number = Column(Integer, nullable=True)

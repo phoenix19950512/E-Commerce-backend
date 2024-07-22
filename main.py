@@ -83,8 +83,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                 # await refresh_orders(marketplace, session)
                 logging.info("Check hijacker and review")
                 # await check_hijacker_and_bad_reviews(marketplace, session)
-                logging.info("Refresh awb from marketplace")
-                await refresh_awb(marketplace, session)
+                # logging.info("Refresh awb from marketplace")
+                # await refresh_awb(marketplace, session)
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])

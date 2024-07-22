@@ -23,7 +23,7 @@ class AWBBase(BaseModel):
     receiver_zipcode: Optional[str] = None
     locker_id: Optional[str] = None
     is_oversize: Optional[bool] = None
-    insured_vale: Optional[Decimal] = None
+    insured_value: Optional[Decimal] = None
     weight: Optional[Decimal] = None
     envelope_number: Optional[int] = None
     parcel_number: Optional[int] = None
