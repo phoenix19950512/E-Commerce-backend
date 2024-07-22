@@ -11,7 +11,7 @@ from app.utils.emag_awbs import *
 
 router = APIRouter()
 
-@router.post("/${marketplace}", response_model=AWBRead)
+@router.post("/{marketplace}", response_model=AWBRead)
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
     db.add(db_awb)
