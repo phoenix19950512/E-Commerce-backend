@@ -95,7 +95,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
         "total_units": total_units,
         "total_refund": total_refund,
         "total_net_profit": total_net_profit,
-        "orders": orders
+        # "orders": orders
     }
 
 async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
@@ -150,7 +150,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
-        "orders": orders
+        # "orders": orders
     }   
     
 
@@ -252,7 +252,7 @@ async def get_value(st_date, en_date, db:AsyncSession):
         "total_refund": total_refund,
         "total_gross_profit": total_gross_profit,
         "total_net_profit": total_net_profit,
-        "orders": orders
+        # "orders": orders
     }
     
 async def forecast(st_date, en_date, db: AsyncSession):

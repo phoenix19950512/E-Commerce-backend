@@ -4,7 +4,6 @@ from datetime import datetime
 from decimal import Decimal
 
 class CustomersBase(BaseModel):
-    id: int
     mkt_id: Optional[int] = None
     name: Optional[str] = None
     company: Optional[str] = None

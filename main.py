@@ -11,7 +11,7 @@ from app.utils.emag_products import *
 from app.utils.emag_orders import *
 from app.utils.emag_returns import *
 from app.utils.emag_reviews import *
-from app.utils.awb import *
+from app.utils.emag_awbs import *
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
 from sqlalchemy.orm import Session
@@ -54,9 +54,9 @@ async def init_models():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-# @app.on_event("startup")
-# async def on_startup():
-#     await init_models()
+@app.on_event("startup")
+async def on_startup():
+    await init_models()
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
@@ -67,8 +67,6 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
     settings.customers_table_name = []
     settings.returns_table_name = []
     settings.reviews_table_name = []
-
-    print("awb_number", generate_awb_number())
 
     async for db in get_db():
         async with db as session:
@@ -85,7 +83,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                 # await refresh_orders(marketplace, session)
                 logging.info("Check hijacker and review")
                 # await check_hijacker_and_bad_reviews(marketplace, session)
-                
+                logging.info("Refresh awb from marketplace")
+                await refresh_awb(marketplace, session)
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])

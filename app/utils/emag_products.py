@@ -11,10 +11,7 @@ import json
 import os
 import time
 import logging
-from sqlalchemy.exc import SQLAlchemyError
 from app.models.marketplace import Marketplace
-from app.models.product import Product
-from app.schemas.product import ProductCreate
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
