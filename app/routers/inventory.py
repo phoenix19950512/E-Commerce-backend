@@ -41,11 +41,66 @@ async def get_imports(ean: str, db:AsyncSession):
     return imports_data
 
 
+@router.get('shipment/product')
+async def get_product_info(
+    query_stock_days: int = Query(None),
+    ean: str = Query(...),
+    db: AsyncSession = Depends(get_db)
+):
+    query = await db.execute(select(Product).where(Product.ean == ean))
+    product = query.scalars().first()
+    product_id = product.id
+
+    if product.weight < 350 and product.volumetric_weight < 350:
+        type = 1
+    elif product.battery:
+        type = 2
+    else:
+        ty = 3
+
+    query = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
+    orders = query.scalars().all()
+    
+    cnt = 0
+    min_time = datetime.datetime.today()
+    max_time = datetime.datetime(0, 0, 0, 0, 0, 0)
+    for order in orders:
+        product_ids = order.product_id
+        quantities = order.quantity
+
+        index = product_ids.index(product_id)
+        cnt += quantities[index]
+        min_time = min(min_time, order.date)
+        max_time = max(max_time, order.date)
+
+    stock = product.stock
+    import_datas = await get_imports(ean, db)
+    imports = sum(import_data.get("quantity") for import_data in import_datas)
+    days = (max_time - min_time).days + 1
+    ave_sale = cnt / days
+    stock_days = int(stock / ave_sale) if ave_sale > 0 else -1
+    stock_imports_days = int((stock + imports) / ave_sale)
+
+    if query_stock_days and stock_imports_days < query_stock_days:
+        quantity = int(stock_imports_days * ave_sale) - stock - imports
+    else:
+        quantity = ""
+
+    return {
+        "type": type,
+        "quantity": quantity,
+        "image_link": product.image_link,
+        "wechat": product.supplier_id,
+        "stock_imports": [product.stock, ave_sale, imports],
+        "day_stock": [stock_days, stock_imports_days],
+        "imports_data": import_datas
+    }
+
 @router.get('/product')
 async def get_product_info(
-    shipment_type: str = Query(None),
-    query_stock_days: int = Query(None),
-    query_imports_stocks: int = Query(None),
+    shipment_type: int = Query(0),
+    query_stock_days: int = Query(0),
+    query_imports_stocks: int = Query(0),
     db: AsyncSession = Depends(get_db)
 ):
     
@@ -69,12 +124,20 @@ async def get_product_info(
             min_time[product_ids[i]] = min(min_time[product_ids[i]], order.date)
             max_time[product_ids[i]] = max(max_time[product_ids[i]], order.date)
 
-
     product_result = await db.execute(select(Product))
     products = product_result.scalars().all()
 
     product_data = []
     for product in products:
+        if product.weight < 250 and product.volumetric_weight < 250:
+            type = 1
+        elif product.battery:
+            type = 2
+        else:
+            type = 3
+        
+        if shipment_type != 0 and type != shipment_type:
+            continue
         stock = product.stock
         product_id = product.id
         ean = product.ean
@@ -95,24 +158,25 @@ async def get_product_info(
             else:
                 quantity = ""
         
-
-        product_data.append({
-            "id": product.id,
-            "product_name": product.product_name,
-            "ean": product.ean,
-            "quantity": quantity,
-            "image_link": product.image_link,
-            "wechat": product.supplier_id,
-            "stock_imports": [product.stock, ave_sales, imports],
-            "day_stock": [stock_days, stock_imports_days],
-            "imports_data": imports_datas
-        })
+        if (query_imports_stocks == 0 or imports < query_imports_stocks) and (query_stock_days == 0 or stock_imports_days < query_stock_days):
+            product_data.append({
+                "id": product.id,
+                "type": type,
+                "product_name": product.product_name,
+                "ean": product.ean,
+                "quantity": quantity,
+                "image_link": product.image_link,
+                "wechat": product.supplier_id,
+                "stock_imports": [product.stock, ave_sales, imports],
+                "day_stock": [stock_days, stock_imports_days],
+                "imports_data": imports_datas
+            })
     return product_data
 
 @router.get('/product/advance')
 async def get_product_advanced_info(
     db: AsyncSession = Depends(get_db),
-    shipment_type: str = Query(None),
+    shipment_type: int = Query(None),
     weight_min: Decimal = Query(None),
     weight_max: Decimal = Query(None),
     volumetric_weight_min: Decimal = Query(None),
@@ -130,7 +194,7 @@ async def get_product_advanced_info(
     unique_names = set()
 
     for shipment in shipments:
-        name_list = shipment.product_name_list
+        name_list = shipment.name
         for name in name_list:
             if name not in unique_names:
                 product_type_list.append(name)
@@ -217,24 +281,6 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment
-
-@router.get("/barcode")
-def barcode_generation(ean):
-    Code128 = barcode.get_barcode_class('code128')
-    barcode_instance = Code128(ean, writer=ImageWriter())
-    options = {
-        'module_width': 0.2,
-        'module_height': 15,
-        'font_size': 10,
-        'text_distance': 1,
-        'quiet_zone': 6.5,
-    }
-    filename = barcode_instance.save("custom_barcode_image", options)
-
-    print(f"Customized barcode saved as {filename}.png")
-
-    return filename
-    
 
 @router.put("/shipment", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
