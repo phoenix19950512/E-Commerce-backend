@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, VARCHAR
+from sqlalchemy import Column, Integer, Text
 from app.database import Base
 
 class Supplier(Base):

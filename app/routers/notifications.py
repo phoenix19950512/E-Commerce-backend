@@ -28,12 +28,13 @@ async def get_notifications(db: AsyncSession):
     notifications = result.scalars().all()
     return notifications
 
-async def update_notification(db: AsyncSession, notification_id: int, notifications: NotificationUpdate):
+async def update_notification(db: AsyncSession, notification_id: int, notification: NotificationUpdate):
     db_notification = await get_notification(db, notification_id)
     if db_notification is None:
         return None
-    for key, value in notifications.dict().items():
-        setattr(db_notification, key, value)
+    update_data = notification.dict(exclude_unset=True)  # Only update fields that are set
+    for key, value in update_data.items():
+        setattr(notification, key, value)
     await db.commit()
     await db.refresh(db_notification)
     return db_notification

@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, returns, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer
+from app.routers import auth, returns, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -82,8 +82,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                 logging.info("Refresh order from marketplace")
                 # await refresh_orders(marketplace, session)
                 logging.info("Check hijacker and review")
-                # await check_hijacker_and_bad_reviews(marketplace, session)
-                # logging.info("Refresh awb from marketplace")
+                await check_hijacker_and_bad_reviews(marketplace, session)
+                logging.info("Refresh awb from marketplace")
                 # await refresh_awb(marketplace, session)
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -101,6 +101,7 @@ app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"]
 app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
 app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])
 app.include_router(customer.router, prefix='/api/customers', tags=["customers"])
+app.include_router(warehouse.router, prefix="/api/warehouse", tags=["warehouses"])
 
 # if __name__ == "__main__":
 #     import uvicorn

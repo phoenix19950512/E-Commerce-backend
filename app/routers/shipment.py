@@ -66,8 +66,9 @@ async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncS
     db_shipment = await db.execute(select(Shipment).filter(Shipment.id == shipment_id)).scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
-    for var, value in vars(shipment).items():
-        setattr(db_shipment, var, value) if value else None
+    update_data = shipment.dict(exclude_unset=True)  # Only update fields that are set
+    for key, value in update_data.items():
+        setattr(shipment, key, value)
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment

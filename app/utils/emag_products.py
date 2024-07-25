@@ -106,6 +106,10 @@ def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, A
             "X-Request-Signature": f"{API_KEY}"
         }
 
+    data = {
+        
+    }
+
     response = requests.get(url, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         logging.info("success count")

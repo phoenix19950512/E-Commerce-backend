@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ARRAY, Text, Numeric, Boolean, VARCHAR, DateTime, JSON
+from sqlalchemy import Column, Integer, ARRAY, Text, Boolean, DateTime
 from app.database import Base
 
 class Shipment(Base):
@@ -8,8 +8,11 @@ class Shipment(Base):
     title = Column(Text, nullable=True)
     date = Column(DateTime, nullable=True)
     type = Column(Text, nullable=True)
+    status = Column(Text, nullable=True)
+    warehouse = Column(Text, nullable=True)
+    note = Column(Text, nullable=True)
+    agent_name = Column(Text, nullable=True)
     ean = Column(ARRAY(Text), nullable=True)
-    name = Column(ARRAY(Text), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
     supplier_name = Column(ARRAY(Text), nullable=True)
     item = Column(ARRAY(Integer), nullable=True)
@@ -23,7 +26,6 @@ class Shipment(Base):
     shipment_name = Column(ARRAY(Text), nullable=True)
     box_number = Column(ARRAY(Integer), nullable=True)
     document = Column(ARRAY(Text), nullable=True)
-    barcode_url = Column(ARRAY(Text), nullable=True)
     add_date = Column(ARRAY(DateTime), nullable=True)
     date_agent = Column(ARRAY(DateTime), nullable=True)
     SID = Column(ARRAY(Text), nullable=True)

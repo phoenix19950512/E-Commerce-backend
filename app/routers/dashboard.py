@@ -15,6 +15,7 @@ import asyncpg
 from app.config import settings
 from psycopg2.extras import RealDictCursor
 from decimal import Decimal
+from sqlalchemy import any_
 
 async def get_vat_dict(db: AsyncSession):
     query = select(Marketplace.marketplaceDomain, Marketplace.vat)
@@ -139,6 +140,49 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
 
         for i in range(len(product_ids)):
             if product.id == product_ids[i]:
+                total_sales += product.sale_price * quantity[i]
+                total_net_profit += (product.sale_price * 100 / Decimal(100.0 + vat) - product.price) * quantity[i]
+                total_gross_profit += (product.sale_price - product.price) * quantity[i]
+
+    return {
+        "date_string": date_string,
+        "total_sales": total_sales,
+        "total_units": total_units,
+        "total_refund": total_refund,
+        "total_gross_profit": total_gross_profit,
+        "total_net_profit": total_net_profit,
+        # "orders": orders
+    }   
+    
+async def get_trend(date_string, product_id, st_datetime, en_datetime, db:AsyncSession):
+    vat_dict = await get_vat_dict(db)
+    
+    total_units = 0
+    total_refund = 0
+    total_net_profit = 0
+    total_sales = 0
+    total_gross_profit = 0
+    total_refund = await get_return(st_datetime, en_datetime, db)
+
+    query = select(Product).where(Product.id == product_id)
+    result = await db.execute(query)
+    product = result.scalars().first()
+
+    query = select(Order).where(product_id == any_(Order.product_id))
+    query = query.where(Order.date > st_datetime, Order.date < en_datetime)
+    result = await db.execute(query)
+    orders = result.scalars().all()
+
+    for order in orders:
+        total_units += sum(order.quantity)
+        product_ids = order.product_id
+        quantity = order.quantity
+
+        marketplace_domain = order.order_market_place
+        vat = vat_dict[marketplace_domain]
+
+        for i in range(len(product_ids)):
+            if product_id == product_ids[i]:
                 total_sales += product.sale_price * quantity[i]
                 total_net_profit += (product.sale_price * 100 / Decimal(100.0 + vat) - product.price) * quantity[i]
                 total_gross_profit += (product.sale_price - product.price) * quantity[i]
@@ -503,23 +547,35 @@ async def treand_month_data(product_ids_list, date, field, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    result = await get_PL(date_string, product_ids_list, st_datetime, en_datetime, db)
+    rlt = []
     field = "total_" + field
-    return result.get(f"{field}")
+
+    for product_id in product_ids_list:
+        result = await get_trend(date_string, product_id, st_datetime, en_datetime, db)
+        rlt.append(result.get(f"{field}"))
+    return rlt
 
 async def trend_week_data(week_string, product_ids_list, st_date, en_date, field, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    result = await get_PL(week_string, product_ids_list, st_datetime, en_datetime, db)
-    field = "total_" + field
-    return result.get(f"{field}")
+    rlt = []
+
+    for product_id in product_ids_list:
+        result = await get_trend(week_string, product_id, st_datetime, en_datetime, db)
+        field = "total_" + field
+        rlt.append(result.get(f"{field}"))
+    return rlt
 
 async def trend_day_data(date, product_ids_list, field, db: AsyncSession):
     day_string = f"{date.day} {date.strftime('%b')} {date.year}"
     st_datetime = datetime.datetime.combine(date, datetime.time.min)
     en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
-    result = await get_PL(day_string, product_ids_list, st_datetime, en_datetime, db)
-    field = "total_" + field
-    return result.get(f"{field}")
+    rlt = []
+
+    for product_id in product_ids_list:
+        result = await get_trend(day_string, product_id, st_datetime, en_datetime, db)
+        field = "total_" + field
+        rlt.append(result.get(f"{field}"))
+    return rlt

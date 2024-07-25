@@ -56,7 +56,7 @@ async def get_product_info(
     elif product.battery:
         type = 2
     else:
-        ty = 3
+        type = 3
 
     query = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
     orders = query.scalars().all()
@@ -82,7 +82,7 @@ async def get_product_info(
     stock_imports_days = int((stock + imports) / ave_sale)
 
     if query_stock_days and stock_imports_days < query_stock_days:
-        quantity = int(stock_imports_days * ave_sale) - stock - imports
+        quantity = int(query_stock_days * ave_sale) - stock - imports
     else:
         quantity = ""
 
@@ -136,7 +136,7 @@ async def get_product_info(
         else:
             type = 3
         
-        if shipment_type != 0 and type != shipment_type:
+        if type != shipment_type and shipment_type != 0:
             continue
         stock = product.stock
         product_id = product.id
@@ -153,8 +153,8 @@ async def get_product_info(
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
             stock_imports_days = int(((stock + imports) / ave_sales))
 
-            if query_stock_days and stock_imports_days < query_stock_days:
-                quantity = int(stock_imports_days * ave_sales) - stock - imports
+            if  stock_imports_days < query_stock_days:
+                quantity = int(query_stock_days * ave_sales) - stock - imports
             else:
                 quantity = ""
         

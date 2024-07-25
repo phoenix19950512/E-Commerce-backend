@@ -5,6 +5,7 @@ import psycopg2
 from psycopg2 import sql
 from app.models.product import Product
 from app.models.notifications import Notification
+from app.models.review import Review
 from app.routers.notifications import create_new_notification
 from app.utils.emag_reviews import *
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,14 +65,15 @@ def check_hijacker(product_list):
     except Exception as e:
         logging.info("Can't Read hijackers", e)
 
-# def check_bad_reviews(review_list: List[Review], threshold: int = 3):
-#     bad_reviews = []
+def check_bad_reviews(review_list: List[Review], threshold: int = 3):
+    bad_reviews = []
 
-#     for review in review_list.reviews:
-#         if review.rating <= threshold:
-#             bad_reviews.append(review)
+    for review in review_list:
+        if review.rating <= threshold:
+            bad_reviews.append(review)
 
-#     return bad_reviews
+    return bad_reviews
+
 async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSession):
     products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products".lower()
     notifications_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_notifications".lower()
@@ -164,22 +166,22 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     except Exception as e:
         print("Can't add notification", e)
 
-    await db.close()
-    # reviews = await refresh_reviews(marketplace, db)
+    # await db.close()
+    # await refresh_reviews(marketplace, db)
 
-
-    # print("##############", len(reviews))
+    # result = await db.execute(select(Review))
+    # reviews = result.scalars().all()
 
     # bad_reviews = check_bad_reviews(reviews)
     
     # print("@@@@@@@@@@@@@@@@", bad_reviews)
-    # for bad_review in bad_reviews:
-    #     date_str = datetime.now()
-    #     create_new_notification({
-    #         "title": "Warning",
-    #         "description": "Never send bad review again!",
-    #         "time": date_str.strftime('%Y-%m-%dT%H:%M:%S'),
-    #         "state": "warning",
-    #         "read": False,
-    #         "user_id": bad_review.user_id
-    #     })
+    # # for bad_review in bad_reviews:
+    # #     date_str = datetime.now()
+    # #     create_new_notification({
+    # #         "title": "Warning",
+    # #         "description": "Never send bad review again!",
+    # #         "time": date_str.strftime('%Y-%m-%dT%H:%M:%S'),
+    # #         "state": "warning",
+    # #         "read": False,
+    # #         "user_id": bad_review.user_id
+    # #     })

@@ -246,9 +246,9 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    for var, value in vars(product).items():
-        if value is not None:
-            setattr(db_product, var, value)
+    update_data = product.dict(exclude_unset=True)  # Only update fields that are set
+    for key, value in update_data.items():
+        setattr(product, key, value)
 
     await db.commit()
     await db.refresh(db_product)

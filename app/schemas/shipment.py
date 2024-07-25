@@ -6,8 +6,11 @@ class ShipmentBase(BaseModel):
     title: Optional[str] = None
     date: Optional[datetime] = None
     type: Optional[str] = None
+    status: Optional[str] = None
+    warehouse: Optional[str] = None
+    note: Optional[str] = None
+    agent_name: Optional[str] = None
     ean: Optional[List[str]] = None
-    name: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
     supplier_name: Optional[List[str]] = None
     item: Optional[List[int]] = None
@@ -21,7 +24,6 @@ class ShipmentBase(BaseModel):
     shipment_name: Optional[List[str]] = None
     box_number: Optional[List[int]] = None
     document: Optional[List[str]] = None
-    barcode_url: Optional[List[str]] = None
     add_date: Optional[List[datetime]] = None
     date_agent: Optional[List[datetime]] = None
     SID: Optional[List[str]] = None

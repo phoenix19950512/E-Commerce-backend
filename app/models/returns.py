@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, PrimaryKeyConstraint, Numeric, Boolean, VARCHAR, BigInteger, ARRAY, JSON, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, PrimaryKeyConstraint, BigInteger, ARRAY, DateTime
 from app.database import Base
 
 class Returns(Base):

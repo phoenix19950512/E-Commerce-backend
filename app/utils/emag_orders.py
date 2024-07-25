@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 import logging
 from sqlalchemy import insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from datetime import datetime
+import datetime
 from decimal import Decimal
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -43,14 +43,17 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
             "X-Request-Signature": f"{API_KEY}"
         }
 
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=5)
+    modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
     data = json.dumps({
-        "status": [0, 1, 2, 3, 4, 5]
+        "modifiedAfter": modifiedAfter_date
     })
     response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
+        logging.info("success to count orders")
         return response.json()
     else:
-        print(f"Failed to retrieve orders: {response.status_code}")
+        logging.info(f"Failed to retrieve orders: {response.status_code}")
         return None
     
 def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
@@ -66,10 +69,14 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
             "Authorization": f"Basic {api_key}",
             "Content-Type": "application/json"
         }
+
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=5)
+    modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
+    
     data = json.dumps({
         "itemsPerPage": 100,
         "currentPage": currentPage,
-        "status": [0, 1, 2, 3, 4, 5]
+        "modifiedAfter": modifiedAfter_date
     })
     response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
@@ -163,11 +170,19 @@ async def insert_orders(orders, mp_name:str):
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, order_market_place) DO UPDATE SET
-                payment_mode = EXCLUDED.payment_mode,
+                vendor_name = EXCLUDED.vendor_name,
+                type = EXCLUDED.type,
+                date = EXCLUDED.date,
+                payment_mode = EXCLUDED.payment_mode,                      
+                status = EXCLUDED.status,
+                payment_status = EXCLUDED.payment_status,
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
+                refunded_amount = EXCLUDED.refunded_amount,
+                is_complete = EXCLUDED.is_complete,
+                refund_status = EXCLUDED.refund_status,
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
