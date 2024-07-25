@@ -59,17 +59,17 @@ async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-@router.get("/info/{product_id}")
+@router.get("/info/{ean}")
 
 async def get_info(
-    product_id: int,
+    ean: str,
     type: int,
     db: AsyncSession = Depends(get_db)
 ):
-    sales_info = await get_sales_info(product_id, type, db)
-    orders_info = await get_orders_info(product_id, db)
-    returns_info = await get_refunded_info(product_id, db)
-    shipments_info = await get_shipment_info(product_id, db)
+    sales_info = await get_sales_info(ean, type, db)
+    orders_info = await get_orders_info(ean, db)
+    returns_info = await get_refunded_info(ean, db)
+    shipments_info = await get_shipment_info(ean, db)
     return {
         "sales_info": sales_info,
         "orders_info": orders_info,
@@ -78,7 +78,7 @@ async def get_info(
     }
     # orders_info = await get_orders_info(product_id, db)
 
-async def get_sales_info(product_id, type, db: AsyncSession):
+async def get_sales_info(ean, type, db: AsyncSession):
     today = datetime.date.today()
     sales_info = []
 
@@ -99,7 +99,7 @@ async def get_sales_info(product_id, type, db: AsyncSession):
             st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
             
-            sales_month_data = await get_date_info(product_id, st_datetime, en_datetime, db)
+            sales_month_data = await get_date_info(ean, st_datetime, en_datetime, db)
             sales_info.append({"date_string": date_string, "sales": sales_month_data["sales"]})
 
     elif type == 2:
@@ -114,7 +114,7 @@ async def get_sales_info(product_id, type, db: AsyncSession):
             st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
             en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-            sales_week_data = await get_date_info(product_id, st_datetime, en_datetime, db)
+            sales_week_data = await get_date_info(ean, st_datetime, en_datetime, db)
             sales_info.append({"date_string": week_string, "sales": sales_week_data["sales"]})
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
@@ -125,12 +125,18 @@ async def get_sales_info(product_id, type, db: AsyncSession):
             en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
             day_string = f"{date.day} {date.strftime('%b')} {date.year}"
-            sales_day_info = await get_date_info(product_id, st_datetime, en_datetime, db)
+            sales_day_info = await get_date_info(ean, st_datetime, en_datetime, db)
             sales_info.append({"date_string": day_string, "sales": sales_day_info["sales"]})
 
     return sales_info
 
-async def get_date_info(product_id: int, st_datetime, en_datetime, db: AsyncSession):
+async def get_date_info(ean: str, st_datetime, en_datetime, db: AsyncSession):
+
+    query = select(Product).where(Product.ean == ean)
+    result = await db.execute(query)
+    product = result.scalars().first()
+    product_id = product.id
+
     query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime)
     query = query.where(product_id == any_(Order.product_id))
     result = await db.execute(query)
@@ -144,7 +150,12 @@ async def get_date_info(product_id: int, st_datetime, en_datetime, db: AsyncSess
         "sales": units
     }
 
-async def get_orders_info(product_id: int, db: AsyncSession):
+async def get_orders_info(ean: str, db: AsyncSession):
+    query = select(Product).where(Product.ean == ean)
+    result = await db.execute(query)
+    product = result.scalars().first()
+    product_id = product.id
+
     result = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
     orders = result.scalars().all()
 
@@ -168,7 +179,12 @@ async def get_orders_info(product_id: int, db: AsyncSession):
         )
     return order_data
     
-async def get_refunded_info(product_id, db: AsyncSession):
+async def get_refunded_info(ean: str, db: AsyncSession):
+    query = select(Product).where(Product.ean == ean)
+    result = await db.execute(query)
+    product = result.scalars().first()
+    product_id = product.id
+
     query_total = select(Returns).where(product_id == any_(Returns.products))
     result_total = await db.execute(query_total)
     total = len(result_total.scalars().all())

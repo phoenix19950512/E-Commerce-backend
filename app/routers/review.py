@@ -42,6 +42,7 @@ async def update_review(review_id: int, review: ReviewUpdate, db: AsyncSession =
         raise HTTPException(status_code=404, detail="Review not found")
     for var, value in vars(review).items():
         setattr(db_review, var, value) if value else None
+    db.add(db_review)
     await db.commit()
     await db.refresh(db_review)
     return db_review

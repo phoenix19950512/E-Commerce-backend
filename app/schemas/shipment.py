@@ -4,7 +4,8 @@ from datetime import datetime
 
 class ShipmentBase(BaseModel):
     title: Optional[str] = None
-    date: Optional[datetime] = None
+    create_date: Optional[datetime] = None
+    delivery_date: Optional[datetime] = None
     type: Optional[str] = None
     status: Optional[str] = None
     warehouse: Optional[str] = None

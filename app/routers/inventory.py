@@ -180,7 +180,7 @@ async def get_product_advanced_info(
     weight_min: Decimal = Query(None),
     weight_max: Decimal = Query(None),
     volumetric_weight_min: Decimal = Query(None),
-    volumetric_weight_max: Decimal = Query(None)
+    volumetric_weight_max: Decimal = Query(None) 
 ):
     query_ship = select(Shipment)
 
@@ -194,7 +194,7 @@ async def get_product_advanced_info(
     unique_names = set()
 
     for shipment in shipments:
-        name_list = shipment.name
+        name_list = shipment.title
         for name in name_list:
             if name not in unique_names:
                 product_type_list.append(name)

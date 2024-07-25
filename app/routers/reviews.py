@@ -166,15 +166,15 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     except Exception as e:
         print("Can't add notification", e)
 
-    # await db.close()
-    # await refresh_reviews(marketplace, db)
+    await db.close()
+    await refresh_reviews(marketplace, db)
 
-    # result = await db.execute(select(Review))
-    # reviews = result.scalars().all()
+    result = await db.execute(select(Review))
+    reviews = result.scalars().all()
 
-    # bad_reviews = check_bad_reviews(reviews)
+    bad_reviews = check_bad_reviews(reviews)
     
-    # print("@@@@@@@@@@@@@@@@", bad_reviews)
+    print("@@@@@@@@@@@@@@@@", bad_reviews)
     # # for bad_review in bad_reviews:
     # #     date_str = datetime.now()
     # #     create_new_notification({

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ReviewBase(BaseModel):
+
     product_id: Optional[int] = None
     review_id: Optional[int] = None
     user_id: Optional[int] = None

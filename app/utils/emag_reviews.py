@@ -44,44 +44,47 @@ async def get_all_reviews(product_id_list, product_part_number_key_list, marketp
             })
     return await get_review_by_product(product_id_list[i], product_part_number_key_list[i], marketplace)
 
-async def insert_reviews_into_db(reviews, place):
-    conn = psycopg2.connect(
-        dbname=settings.DB_NAME,
-        user=settings.DB_USERNAME,
-        password=settings.DB_PASSOWRD,
-        host=settings.DB_URL,
-        port=settings.DB_PORT
-    )
-    conn.set_client_encoding('UTF8')
-    cursor = conn.cursor()
+async def insert_review_into_db(review, place):
+    try:
+        conn = psycopg2.connect(
+            dbname=settings.DB_NAME,
+            user=settings.DB_USERNAME,
+            password=settings.DB_PASSOWRD,  # Corrected spelling from DB_PASSOWRD to DB_PASSWORD
+            host=settings.DB_URL,
+            port=settings.DB_PORT
+        )
+        conn.set_client_encoding('UTF8')
+        cursor = conn.cursor()
 
-    insert_query = sql.SQL("""
-        INSERT INTO {} (
-            id,
-            product_id,
-            review_id,
-            user_id,
-            user_name,
-            content,
-            moderate_by,
-            rating,
-            brand_id,
-            review_marketplace               
-        ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-        ) ON CONFLICT (review_id, review_marketplace) DO UPDATE SET
-            product_id = EXCLUDED.product_id
-            user_id = EXCLUDED.user_id
-            user_name = EXCLUDED.user_name
-    """).format(sql.Identifier("reviews"))
+        insert_query = sql.SQL("""
+            INSERT INTO {} (
+                product_id,
+                review_id,
+                user_id,
+                user_name,
+                content,
+                moderated_by,
+                rating,
+                brand_id,
+                review_marketplace               
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) ON CONFLICT (id, review_id, review_marketplace) DO UPDATE SET
+                product_id = EXCLUDED.product_id,
+                user_id = EXCLUDED.user_id,
+                user_name = EXCLUDED.user_name,
+                content = EXCLUDED.content,
+                moderated_by = EXCLUDED.moderated_by,
+                rating = EXCLUDED.rating,
+                brand_id = EXCLUDED.brand_id
+        """).format(sql.Identifier("reviews"))
 
-    for review in reviews:
-        product_id = review.get("product").get("id")
+        product_id = review.get("product", {}).get("id")
         review_id = review.get("id")
-        user_id = review.get("user").get("id")
-        user_name = review.get("user").get("name")
+        user_id = review.get("user", {}).get("id")
+        user_name = review.get("user", {}).get("name")
         content = review.get("content")
-        moderate_by = review.get("moderated_by")
+        moderated_by = review.get("moderated_by")
         rating = review.get("rating")
         brand_id = review.get("brand_id")
         review_marketplace = place
@@ -92,31 +95,50 @@ async def insert_reviews_into_db(reviews, place):
             user_id,
             user_name,
             content,
-            moderate_by,
+            moderated_by,
             rating,
             brand_id,
             review_marketplace
         )
 
-        print(values)
-
+        print(f'Inserting review: {values}')
         cursor.execute(insert_query, values)
         conn.commit()
+        print(f"Successfully inserted review: {values}")
 
-    cursor.close()
-    conn.close()
-        
-async def refresh_reviews(marketplace: Marketplace, db:AsyncSession):
+        cursor.close()
+        conn.close()
+    except Exception as inner_e:
+        print(f"Error inserting review {review_id}: {inner_e}")
+
+async def insert_reviews_into_db(reviews, place):
+    for review in reviews:
+        await insert_review_into_db(review, place)
+
+async def refresh_reviews(marketplace: Marketplace, db: AsyncSession):
     result = await db.execute(select(Product))
     products = result.scalars().all()
 
+    logging.info(f"Number of products: {len(products)}")
 
-    for product in products:
-        result = await get_review_by_product(product.id, product.part_number_key, marketplace)
+    cnt = 0
+    try:
+        for product in products:
+            cnt += 1
+            logging.info(f"Processing product {cnt}/{len(products)}: {product.id}")
 
-        if result == "nothing" or result.get("count") == 0:
-            continue
+            result = await get_review_by_product(product.id, product.part_number_key, marketplace)
 
-        reviews = result.get("reviews").get("items")
+            if result == "nothing" or result.get("reviews").get("count") == 0:
+                logging.info(f"No reviews for product {product.id}")
+                continue
 
-        await insert_reviews_into_db(reviews, marketplace.marketplaceDomain)
+            reviews = result.get("reviews").get("items")
+
+            await insert_reviews_into_db(reviews, marketplace.marketplaceDomain)
+        
+        logging.info(f"Processed {cnt} products")
+    except Exception as e:
+        logging.error(f"Error processing reviews: {e}")
+
+    print(cnt)

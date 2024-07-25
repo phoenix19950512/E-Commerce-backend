@@ -60,13 +60,7 @@ async def on_startup():
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
-async def refresh_data(db: AsyncSession = Depends(get_db)):
-    settings.products_table_name = []
-    settings.orders_table_name = []
-    settings.notifications_table_name = []
-    settings.customers_table_name = []
-    settings.returns_table_name = []
-    settings.reviews_table_name = []
+async def refresh_data(db: AsyncSession = Depends(get_db)): 
 
     async for db in get_db():
         async with db as session:
@@ -82,7 +76,7 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                 logging.info("Refresh order from marketplace")
                 # await refresh_orders(marketplace, session)
                 logging.info("Check hijacker and review")
-                await check_hijacker_and_bad_reviews(marketplace, session)
+                # await check_hijacker_and_bad_reviews(marketplace, session)
                 logging.info("Refresh awb from marketplace")
                 # await refresh_awb(marketplace, session)
 

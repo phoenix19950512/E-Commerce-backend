@@ -6,7 +6,8 @@ class Shipment(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(Text, nullable=True)
-    date = Column(DateTime, nullable=True)
+    create_date = Column(DateTime, nullable=True)
+    delivery_date = Column(DateTime, nullable=True)
     type = Column(Text, nullable=True)
     status = Column(Text, nullable=True)
     warehouse = Column(Text, nullable=True)

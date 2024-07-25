@@ -63,12 +63,13 @@ async def get_imports(ean: str, db:AsyncSession = Depends(get_db)):
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
-    db_shipment = await db.execute(select(Shipment).filter(Shipment.id == shipment_id)).scalars().first()
+    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id))
+    db_shipment = result.scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
     update_data = shipment.dict(exclude_unset=True)  # Only update fields that are set
     for key, value in update_data.items():
-        setattr(shipment, key, value)
+        setattr(db_shipment, key, value)
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment

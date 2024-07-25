@@ -46,6 +46,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
 
 @router.get("/", response_model=List[OrderRead])
 async def read_orders(
+    flag: bool = Query(1),
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     status: int = Query(-1, description="Status of the order"),
@@ -54,24 +55,32 @@ async def read_orders(
 ):
     offset = (page - 1) * items_per_page
     if status == -1:
-        result = await db.execute(select(Order).filter(
+        query = select(Order).filter(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
-        ).offset(offset).limit(items_per_page))
+        ).offset(offset).limit(items_per_page)
     else :
-        result = await db.execute(select(Order).where(Order.status == status).filter(
+        query = select(Order).where(Order.status == status).filter(
             (Order.vendor_name.ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
-        ).offset(offset).limit(items_per_page))
+        ).offset(offset).limit(items_per_page)
+
+    if flag == True:
+        query = query.order_by(Order.date.desc())
+    else:
+        query = query.order_by(Order.date.asc())
+    
+    result = await db.execute(query)
     db_orders = result.scalars().all()
+    
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_orders
