@@ -43,7 +43,7 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=1)
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
     modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
     data = json.dumps({
         "modifiedAfter": modifiedAfter_date
@@ -70,7 +70,7 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
             "Content-Type": "application/json"
         }
 
-    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=1)
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
     modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
     
     data = json.dumps({

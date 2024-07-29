@@ -175,13 +175,13 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     bad_reviews = check_bad_reviews(reviews)
     
     print("@@@@@@@@@@@@@@@@", bad_reviews)
-    # # for bad_review in bad_reviews:
-    # #     date_str = datetime.now()
-    # #     create_new_notification({
-    # #         "title": "Warning",
-    # #         "description": "Never send bad review again!",
-    # #         "time": date_str.strftime('%Y-%m-%dT%H:%M:%S'),
-    # #         "state": "warning",
-    # #         "read": False,
-    # #         "user_id": bad_review.user_id
-    # #     })
+    # for bad_review in bad_reviews:
+    #     date_str = datetime.now()
+    #     create_new_notification({
+    #         "title": "Warning",
+    #         "description": "Never send bad review again!",
+    #         "time": date_str.strftime('%Y-%m-%dT%H:%M:%S'),
+    #         "state": "warning",
+    #         "read": False,
+    #         "user_id": bad_review.user_id
+    #     })

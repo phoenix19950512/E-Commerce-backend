@@ -106,10 +106,6 @@ def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, A
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    data = {
-        
-    }
-
     response = requests.get(url, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         logging.info("success count")
@@ -278,7 +274,7 @@ async def insert_products(products, mp_name: str):
         print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
 
 
-async def insert_products_into_db(products, username, products_table, place):
+async def insert_products_into_db(products, username, place):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -337,9 +333,7 @@ async def insert_products_into_db(products, username, products_table, place):
             ) ON CONFLICT (ean) DO UPDATE SET
                 sale_price = EXCLUDED.sale_price,
                 stock = EXCLUDED.stock
-        """).format(sql.Identifier(products_table))
-        
-        logging.info(products_table)
+        """).format(sql.Identifier("products"))
 
         for product in products:
             id = product.get('id')
@@ -359,7 +353,7 @@ async def insert_products_into_db(products, username, products_table, place):
             weight = product.get('weight')
             status = product.get('status')
             recommended_price = product.get('recommended_price', "")
-            images = product.get('images', [])
+            images = product.get('images')[0]['url'] if product.get('images') else None
             attachments = product.get('attachments', [])
             vat_id = product.get('vat_id')
             family = product.get('family', {})
@@ -368,9 +362,9 @@ async def insert_products_into_db(products, username, products_table, place):
             max_sale_price = product.get('max_sale_price')
             offer_details = product.get('offer_details', {})
             availability = product.get('availability', [])
-            stock = product.get('stock', [])
+            stock = sum(product.get('stock', []))
             handling_time = product.get('handling_time', [])
-            ean = product.get('ean', [])
+            ean = product.get('ean')[0] if product.get('ean') else None
             commission = product.get('commission')
             validation_status = product.get('validation_status', [])
             translation_validation_status = product.get('translation_validation_status', [])
@@ -384,14 +378,11 @@ async def insert_products_into_db(products, username, products_table, place):
             recycleWarranties = product.get('recycleWarranties')
             market_place = place
 
-            images_json = json.dumps(images)
             attachments_json = json.dumps(attachments)
             family_json = json.dumps(family)
             offer_details_json = json.dumps(offer_details)
             availability_json = json.dumps(availability)
-            stock_json = json.dumps(stock)
             handling_time_json = json.dumps(handling_time)
-            ean_json = json.dumps(ean)
             validation_status_json = json.dumps(validation_status)
             translation_validation_status_json = json.dumps(translation_validation_status)
             offer_validation_status_json = json.dumps(offer_validation_status)
@@ -415,7 +406,7 @@ async def insert_products_into_db(products, username, products_table, place):
                 weight,
                 status,
                 recommended_price,
-                images_json,
+                images,
                 attachments_json,
                 vat_id,
                 family_json,
@@ -424,9 +415,9 @@ async def insert_products_into_db(products, username, products_table, place):
                 max_sale_price,
                 offer_details_json,
                 availability_json,
-                stock_json,
+                stock,
                 handling_time_json,
-                ean_json,
+                ean,
                 commission,
                 validation_status_json,
                 translation_validation_status_json,
@@ -452,12 +443,6 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
-    products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products".lower()
-    settings.products_table_name.append(products_table)
-
-    # create_table()
-    create_products_table(products_table)
-
     if marketplace.credentials["type"] == "user_pass":
         
         USERNAME = marketplace.credentials["firstKey"]
@@ -480,7 +465,7 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
 
                     logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if products and not products.get('isError'):
-                        await insert_products_into_db(products['results'], USERNAME, products_table, marketplace.marketplaceDomain)
+                        await insert_products_into_db(products['results'], USERNAME, marketplace.marketplaceDomain)
                         await insert_products(products['results'], marketplace.marketplaceDomain)
                     currentPage += 1
             except Exception as e:
@@ -499,6 +484,3 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
                 if products and not products['isError']:
                     insert_products_into_db(products['results'], PUBLIC_KEY, products_table)
                     currentPage += 1
-
-
-
