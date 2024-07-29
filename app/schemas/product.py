@@ -3,7 +3,7 @@ from typing import Optional, List
 from decimal import Decimal
 
 class ProductBase(BaseModel):
-    id: int
+    id: Optional[int] = None
     part_number_key: Optional[str] = None
     product_name: Optional[str] = None
     model_name: Optional[str] = None
@@ -40,7 +40,7 @@ class ProductCreate(ProductBase):
     pass
 
 class ProductRead(ProductBase):
-    id: int
+    ean: str
 
     class Config:
         orm_mode = True

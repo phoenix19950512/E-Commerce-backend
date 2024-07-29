@@ -58,28 +58,6 @@ async def init_models():
 async def on_startup():
     await init_models()
 
-@app.on_event("startup")
-@repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
-async def refresh_data(db: AsyncSession = Depends(get_db)): 
-
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting product refresh")
-            result = await session.execute(select(Marketplace))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                logging.info("Refresh product from marketplace")
-                # await refresh_products(marketplace, session)
-                logging.info("Refresh refunds from marketplace")
-                # await refresh_returns(marketplace)
-                logging.info("Refresh order from marketplace")
-                # await refresh_orders(marketplace, session)
-                logging.info("Check hijacker and review")
-                # await check_hijacker_and_bad_reviews(marketplace, session)
-                logging.info("Refresh awb from marketplace")
-                # await refresh_awb(marketplace, session)
-
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])

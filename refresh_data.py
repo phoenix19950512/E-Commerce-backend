@@ -91,41 +91,6 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                 logging.info("Refresh orders from marketplace")
                 await refresh_orders(marketplace, session)
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
-app.include_router(users.router, prefix="/api/users", tags=["users"])
-app.include_router(products.router, prefix="/api/products", tags=["products"])
-app.include_router(profile.router, prefix="/profile", tags=["profile"])
-app.include_router(marketplace.router, prefix="/api/marketplace", tags=["marketplace"])
-app.include_router(utils.router, prefix="/api/utils", tags=["utils"])
-app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
-app.include_router(supplier.router, prefix="/api/suppliers", tags=["supppliers"])
-app.include_router(shipment.router, prefix="/api/shipment", tags=["shipment"])
-app.include_router(returns.router, prefix="/api/returns", tags=["returns"])
-app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"])
-app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
-app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])
-app.include_router(customer.router, prefix='/api/customers', tags=["customers"])
-app.include_router(warehouse.router, prefix="/api/warehouse", tags=["warehouses"])
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("refresh_data:app", host="0.0.0.0", port=3000, reload=True)
-# if __name__ == "__main__":
-    # Check if SSL arguments are provided
-    # import uvicorn
-    # if ssl_keyfile and ssl_certfile:
-    # uvicorn.run(
-    #     "main:app",
-    #     host="0.0.0.0",
-    #     port=3000,
-    #     reload=True  # Optional: Enables auto-reload for code changes
-    # )
-    # else:
-    #     print("SSL keyfile or certfile not found. Running without SSL.")
-    #     uvicorn.run(
-    #         "main:app",
-    #         host="0.0.0.0",
-    #         port=8000,
-    #         reload=True  # Optional: Enables auto-reload for code changes
-    #     )

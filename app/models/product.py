@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class Product(Base):
     __tablename__ = "internal_products"
 
-    id = Column(BigInteger)
+    id = Column(BigInteger, nullable=True)
     part_number_key = Column(String, nullable=True)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
