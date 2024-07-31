@@ -16,6 +16,14 @@ import json
 
 import datetime
 import base64
+import calendar
+
+def get_valid_date(year, month, day):
+    # Find the last day of the month
+    last_day_of_month = calendar.monthrange(year, month)[1]
+    # Set the day to the last day of the month if necessary
+    day = min(day, last_day_of_month)
+    return datetime.date(year, month, day)
 
 router = APIRouter()
 
@@ -84,10 +92,10 @@ async def get_sales_info(ean, type, db: AsyncSession):
 
     if type == 1:
         for i in range(13):
-            if today.month + i <= 12:
-                date = datetime.date(today.year - 1, today.month + i, today.day)
-            else:
-                date = datetime.date(today.year, today.month + i - 12, today.day)
+            month = today.month + i
+            year = today.year - 1 if month <= 12 else today.year
+            month = month if month <= 12 else month - 12
+            date = get_valid_date(year, month, today.day)
             
             date_string = f"{date.strftime('%b')} {date.year}"
             st_date = datetime.date(date.year, date.month, 1)
