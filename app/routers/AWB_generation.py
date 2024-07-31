@@ -9,6 +9,7 @@ from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from app.models.product import Product
+from app.models.customer import Customers
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
 from sqlalchemy import any_
@@ -59,6 +60,18 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
 
     result = await save_awb(market_place, data, db)
     return result
+
+@router.get("/customer")
+async def get_customer(
+    order_id: int,
+    db:AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
+    customer_id = db_order.customer_id
+    result = await db.execute(select(Customers).where(Customers.id == customer_id))
+    db_customer = result.scalars().first()
+    return db_customer
 
 @router.get("/", response_model=List[AWBRead])
 async def get_awbs(
