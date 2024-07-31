@@ -25,7 +25,7 @@ class UserProfileRead(BaseModel):
     id: int
     joined_day: Optional[str] = None
     email: Optional[str] = None
-    name: Optional[str] = None
+    full_name: Optional[str] = None
     role: Optional[str] = None
     username: Optional[str] = None
     updated_at: Optional[datetime] = None

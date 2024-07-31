@@ -3,8 +3,8 @@ from app.database import Base
 
 class Order(Base):
     __tablename__ = "orders"
-    id = Column(BigInteger)
-    vendor_name = Column(String, nullable=True, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
+    vendor_name = Column(String, nullable=True)
     type = Column(Integer, nullable=True)
     date = Column(DateTime, nullable=True)
     payment_mode = Column(String, nullable=True)

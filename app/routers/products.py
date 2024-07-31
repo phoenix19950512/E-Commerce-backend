@@ -246,9 +246,9 @@ async def get_products(
     offset = (page - 1) * items_per_page
     if supplier_ids:
         supplier_id_list = [int(id.strip()) for id  in supplier_ids.split(",")]
-        result = await db.execute(select(Product).filter(Product.supplier_id.in_(supplier_id_list)).offset(offset).limit(items_per_page))
+        result = await db.execute(select(Product).filter(Product.supplier_id == any_(supplier_id_list)).order_by(Product.id).offset(offset).limit(items_per_page))
     else:
-        result = await db.execute(select(Product).offset(offset).limit(items_per_page))
+        result = await db.execute(select(Product).order_by(Product.id).offset(offset).limit(items_per_page))
     db_products = result.scalars().all()
     if db_products is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -262,9 +262,8 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    update_data = product.dict(exclude_unset=True)  # Only update fields that are set
-    for key, value in update_data.items():
-        setattr(product, key, value)
+    for var, value in vars(product).items():
+        setattr(db_product, var, value) if value else None
 
     await db.commit()
     await db.refresh(db_product)

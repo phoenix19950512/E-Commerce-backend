@@ -181,7 +181,7 @@ async def insert_products(products, mp_name: str):
                 production_time,
                 discontinued,
                 stock,
-                warehouse,
+                warehouse_id,
                 internal_shipping_price,
                 market_place
             ) VALUES (
@@ -225,7 +225,7 @@ async def insert_products(products, mp_name: str):
             production_time = Decimal('0')
             discontinued = False
             stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
-            warehouse = ""
+            warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
 
@@ -259,7 +259,7 @@ async def insert_products(products, mp_name: str):
                 production_time,
                 discontinued,
                 stock,
-                warehouse,
+                warehouse_id,
                 internal_shipping_price,
                 market_place
             )

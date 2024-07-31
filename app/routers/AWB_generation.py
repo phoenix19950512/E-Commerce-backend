@@ -7,11 +7,15 @@ from app.database import get_db
 from app.models.awb import AWB
 from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
+from app.models.orders import Order
+from app.models.product import Product
+from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
+from sqlalchemy import any_
 
 router = APIRouter()
 
-@router.post("/{marketplace}", response_model=AWBRead)
+@router.post("/")
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
     db.add(db_awb)
@@ -19,7 +23,6 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
     await db.refresh(db_awb)
     data = {
         "order_id": db_awb.order_id,
-        "rma_id": db_awb.rma_id,
         "sender": {
             "name": db_awb.sender_name,
             "phone1": db_awb.sender_phone1,
@@ -70,6 +73,28 @@ async def get_awbs(
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
     return db_awbs
+
+@router.get("/warehouse")
+async def get_warehouse(
+    order_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
+    db_product_list = db_order.product_id
+    
+    result = await db.execute(select(Product).where(Product.id == any_(db_product_list)))
+    db_products = result.scalars().all()
+
+    warehouse_id_list = []
+
+    for product in db_products:
+        warehouse_id_list.append(product.warehouse_id)
+
+    result = await db.execute(select(Warehouse).where(Warehouse.id == any_(warehouse_id_list)))
+    db_warehouses = result.scalars().all()
+
+    return db_warehouses
 
 @router.put("/{awb_id}", response_model=AWBRead)
 async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(get_db)):

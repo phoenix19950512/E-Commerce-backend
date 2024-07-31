@@ -15,5 +15,5 @@ class Review(Base):
     review_marketplace = Column(Text, nullable=True)    
 
     __table_args__ = (
-        PrimaryKeyConstraint('review_id', 'review_marketplace', 'id', name='pk_review_id_review_marketplace'),  # Updated composite primary key
+        PrimaryKeyConstraint('id', 'review_marketplace', 'review_id', name='pk_review_id_review_marketplace'),  # Updated composite primary key
     )

@@ -34,7 +34,7 @@ class Product(Base):
     production_time = Column(Numeric(12, 6), nullable=True)
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
-    warehouse = Column(Text, nullable=True)
+    warehouse_id = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)
     market_place = Column(ARRAY(Text), nullable=True)
     

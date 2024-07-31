@@ -16,6 +16,14 @@ from app.config import settings
 from psycopg2.extras import RealDictCursor
 from decimal import Decimal
 from sqlalchemy import any_
+import calendar
+
+def get_valid_date(year, month, day):
+    # Find the last day of the month
+    last_day_of_month = calendar.monthrange(year, month)[1]
+    # Set the day to the last day of the month if necessary
+    day = min(day, last_day_of_month)
+    return datetime.date(year, month, day)
 
 async def get_vat_dict(db: AsyncSession):
     query = select(Marketplace.marketplaceDomain, Marketplace.vat)
@@ -370,10 +378,10 @@ async def get_chart_data(
 
     if type == 1:
         for i in range(13):
-            if today.month + i <= 12:
-                date = datetime.date(today.year - 1, today.month + i, today.day)
-            else:
-                date = datetime.date(today.year, today.month + i - 12, today.day)
+            month = today.month + i
+            year = today.year - 1 if month <= 12 else today.year
+            month = month if month <= 12 else month - 12
+            date = get_valid_date(year, month, today.day)
 
             chart_data.append(await get_month_data(product_ids_list, date, db))
     elif type == 2:
@@ -438,10 +446,10 @@ async def get_PL_data(product_ids: str = Query(None),  # Make product_ids requir
 
     if type == 1:
         for i in range(13):
-            if today.month + i <= 12:
-                date = datetime.date(today.year - 1, today.month + i, today.day)
-            else:
-                date = datetime.date(today.year, today.month + i - 12, today.day)
+            month = today.month + i
+            year = today.year - 1 if month <= 12 else today.year
+            month = month if month <= 12 else month - 12
+            date = get_valid_date(year, month, today.day)
 
             PL_data.insert(0, await PL_month_data(product_ids_list, date, db))
     elif type == 2:
@@ -507,12 +515,19 @@ async def get_trends_info(
     else:
         product_ids_list = []
 
+    def get_valid_date(year, month, day):
+        # Find the last day of the month
+        last_day_of_month = calendar.monthrange(year, month)[1]
+        # Set the day to the last day of the month if necessary
+        day = min(day, last_day_of_month)
+        return datetime.date(year, month, day)
+
     if type == 1:
         for i in range(13):
-            if today.month + i <= 12:
-                date = datetime.date(today.year - 1, today.month + i, today.day)
-            else:
-                date = datetime.date(today.year, today.month + i - 12, today.day)
+            month = today.month + i
+            year = today.year - 1 if month <= 12 else today.year
+            month = month if month <= 12 else month - 12
+            date = get_valid_date(year, month, today.day)
 
             trends_data.insert(0, await treand_month_data(product_ids_list, date, field, db))
     elif type == 2:

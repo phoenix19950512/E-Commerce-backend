@@ -65,7 +65,8 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
             
         user_profile = UserProfileRead(
             id=user.id,
-            name=user.full_name,
+            full_name=user.full_name,
+            username=user.username,
             email=user.email,
             role=convert_role_to_string(user.role),
             joined_day=humanize.naturaltime(user.created_at),
@@ -139,7 +140,7 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
         avatar = generate_initial(user.full_name)
     user_profile = UserProfileRead(
         id=user.id,
-        name=user.full_name,
+        full_name=user.full_name,
         email=user.email,
         role=convert_role_to_string(user.role)
     )

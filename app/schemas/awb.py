@@ -6,7 +6,6 @@ from decimal import Decimal
 
 class AWBBase(BaseModel):
     order_id: int
-    rma_id: Optional[int] = None
     sender_name: Optional[str] = None
     sender_phone1: Optional[str] = None
     sender_phone2: Optional[str] = None

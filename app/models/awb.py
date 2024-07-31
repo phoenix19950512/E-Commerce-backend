@@ -9,7 +9,6 @@ class AWB(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, unique=True, index=True, nullable=False)
-    rma_id = Column(Integer, nullable=False)
     sender_name = Column(String, nullable=True)
     sender_phone1 = Column(String, nullable=True)
     sender_phone2 = Column(String, nullable=True)

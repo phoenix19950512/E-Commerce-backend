@@ -3,17 +3,12 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, returns, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse
+from app.routers import auth, returns, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse, team_member, locality
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.utils.emag_products import *
-from app.utils.emag_orders import *
-from app.utils.emag_returns import *
-from app.utils.emag_reviews import *
-from app.utils.emag_awbs import *
-from app.routers.reviews import *
 from app.models.marketplace import Marketplace
+from app.models.locality import Locality
 from sqlalchemy.orm import Session
 import ssl
 import logging
@@ -74,6 +69,8 @@ app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
 app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])
 app.include_router(customer.router, prefix='/api/customers', tags=["customers"])
 app.include_router(warehouse.router, prefix="/api/warehouse", tags=["warehouses"])
+app.include_router(team_member.router, prefix="/api/team_member", tags=["team_member"])
+app.include_router(locality.router, prefix="/api/locality", tags=['locality'])
 
 # if __name__ == "__main__":
 #     import uvicorn
