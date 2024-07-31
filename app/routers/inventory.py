@@ -146,7 +146,18 @@ async def get_product_info(
         imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
 
         if product_id not in cnt:
-            stock_days = -1
+            product_data.append({
+                "id": product.id,
+                "type": type,
+                "product_name": product.product_name,
+                "ean": product.ean,
+                "quantity": query_imports_stocks,
+                "image_link":product.image_link,
+                "wechat": product.supplier_id,
+                "stock_imports": [product.stock, 0, imports],
+                "day_stock": [0, 0],
+                "imports_data": imports_datas
+            })
         else:
             days = (max_time[product_id] - min_time[product_id]).days + 1
             ave_sales = cnt[product_id] / days
@@ -158,19 +169,19 @@ async def get_product_info(
             else:
                 quantity = ""
         
-        if (query_imports_stocks == 0 or imports < query_imports_stocks) and (query_stock_days == 0 or stock_imports_days < query_stock_days):
-            product_data.append({
-                "id": product.id,
-                "type": type,
-                "product_name": product.product_name,
-                "ean": product.ean,
-                "quantity": quantity,
-                "image_link": product.image_link,
-                "wechat": product.supplier_id,
-                "stock_imports": [product.stock, ave_sales, imports],
-                "day_stock": [stock_days, stock_imports_days],
-                "imports_data": imports_datas
-            })
+            if (query_imports_stocks == 0 or imports < query_imports_stocks) and (query_stock_days == 0 or stock_imports_days < query_stock_days):
+                product_data.append({
+                    "id": product.id,
+                    "type": type,
+                    "product_name": product.product_name,
+                    "ean": product.ean,
+                    "quantity": quantity,
+                    "image_link": product.image_link,
+                    "wechat": product.supplier_id,
+                    "stock_imports": [product.stock, ave_sales, imports],
+                    "day_stock": [stock_days, stock_imports_days],
+                    "imports_data": imports_datas
+                })
     return product_data
 
 @router.get('/product/advance')
