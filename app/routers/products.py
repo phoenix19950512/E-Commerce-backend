@@ -240,15 +240,24 @@ async def get_products(
     supplier_ids: str = Query(None),
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=1000, description="Number of items per page"),
+    search_text: str = Query('', description="Text for searching"),
     db: AsyncSession = Depends(get_db)
 ):
     
     offset = (page - 1) * items_per_page
     if supplier_ids:
         supplier_id_list = [int(id.strip()) for id  in supplier_ids.split(",")]
-        result = await db.execute(select(Product).filter(Product.supplier_id == any_(supplier_id_list)).order_by(Product.id).offset(offset).limit(items_per_page))
+        result = await db.execute(select(Product).filter(
+            (Product.supplier_id == any_(supplier_id_list)) | 
+            (Product.product_name.ilike(f"%{search_text}%")) |
+            (Product.model_name.ilike(f"%{search_text}%")) |
+            (Product.ean.ilike(f"%{search_text}%"))
+        ).order_by(Product.id).offset(offset).limit(items_per_page))
     else:
-        result = await db.execute(select(Product).order_by(Product.id).offset(offset).limit(items_per_page))
+        result = await db.execute(select(Product).filter(
+            (Product.product_name.ilike(f"%{search_text}%")) |
+            (Product.model_name.ilike(f"%{search_text}%")) |
+            (Product.ean.ilike(f"%{search_text}%"))).order_by(Product.id).offset(offset).limit(items_per_page))
     db_products = result.scalars().all()
     if db_products is None:
         raise HTTPException(status_code=404, detail="Product not found")

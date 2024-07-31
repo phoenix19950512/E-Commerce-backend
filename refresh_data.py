@@ -92,7 +92,7 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
 
 
 @app.on_event("startup")
-@repeat_every(seconds=900)
+@repeat_every(seconds=600)
 async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
