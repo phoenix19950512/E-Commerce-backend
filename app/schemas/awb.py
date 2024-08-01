@@ -16,12 +16,12 @@ class AWBBase(BaseModel):
     receiver_contact: Optional[str] = None
     receiver_phone1: Optional[str] = None
     receiver_phone2: Optional[str] = None
-    receiver_legal_entity: Optional[bool] = None
+    receiver_legal_entity: Optional[int] = None
     receiver_locality_id: Optional[int] = None
     receiver_street: Optional[str] = None
     receiver_zipcode: Optional[str] = None
     locker_id: Optional[str] = None
-    is_oversize: Optional[bool] = None
+    is_oversize: Optional[int] = None
     insured_value: Optional[Decimal] = None
     weight: Optional[Decimal] = None
     envelope_number: Optional[int] = None
@@ -29,10 +29,10 @@ class AWBBase(BaseModel):
     observation: Optional[str] = None
     cod: Optional[Decimal] = None
     courier_account_id: Optional[int] = None
-    pickup_and_return: Optional[bool] = None
-    saturday_delivery: Optional[bool] = None
-    sameday_delivery: Optional[bool] = None
-    dropoff_locker: Optional[bool] = None
+    pickup_and_return: Optional[int] = None
+    saturday_delivery: Optional[int] = None
+    sameday_delivery: Optional[int] = None
+    dropoff_locker: Optional[int] = None
 
 class AWBCreate(AWBBase):
     pass
