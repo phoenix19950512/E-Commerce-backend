@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ARRAY, Text, Boolean, DateTime
+from sqlalchemy import Column, Integer, ARRAY, Text, Boolean, DateTime, Numeric
 from app.database import Base
 
 class Shipment(Base):
@@ -12,11 +12,14 @@ class Shipment(Base):
     status = Column(Text, nullable=True)
     warehouse = Column(Text, nullable=True)
     note = Column(Text, nullable=True)
-    agent_name = Column(Text, nullable=True)
+    agent = Column(Text, nullable=True)
+    awb = Column(Text, nullable=True)
+    vat = Column(Numeric(12, 4), nullable=True)
+    custom_taxes = Column(Numeric(12, 4), nullable=True)
+    shipment_cost = Column(Numeric(12, 4), nullable=True)
     ean = Column(ARRAY(Text), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
-    supplier_name = Column(ARRAY(Text), nullable=True)
-    item = Column(ARRAY(Integer), nullable=True)
+    item_per_box = Column(ARRAY(Integer), nullable=True)
     pdf_sent = Column(ARRAY(Boolean), nullable=True)
     pay_url = Column(ARRAY(Text), nullable=True)
     tracking = Column(ARRAY(Text), nullable=True)
@@ -24,12 +27,8 @@ class Shipment(Base):
     wechat_group = Column(ARRAY(Text), nullable=True)
     pp = Column(ARRAY(Text), nullable=True)
     each_status = Column(ARRAY(Text), nullable=True)
-    shipment_name = Column(ARRAY(Text), nullable=True)
     box_number = Column(ARRAY(Integer), nullable=True)
     document = Column(ARRAY(Text), nullable=True)
-    add_date = Column(ARRAY(DateTime), nullable=True)
+    date_added = Column(ARRAY(DateTime), nullable=True)
     date_agent = Column(ARRAY(DateTime), nullable=True)
-    SID = Column(ARRAY(Text), nullable=True)
-    GID = Column(ARRAY(Text), nullable=True)
-    date_port = Column(ARRAY(DateTime), nullable=True)
-    newid = Column(ARRAY(Text), nullable=True)
+    user = Column(ARRAY(Integer), nullable=True)

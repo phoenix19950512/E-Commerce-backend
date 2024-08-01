@@ -6,6 +6,7 @@ from sqlalchemy import any_
 from typing import List
 from app.database import get_db
 from app.models.shipment import Shipment
+from app.models.product import Product
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
 router = APIRouter()
@@ -38,8 +39,8 @@ async def get_shipments(
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
 
-@router.get("/imports")
-async def get_imports(ean: str, db:AsyncSession = Depends(get_db)):
+@router.get("/product_info")
+async def get_info(ean: str, db:AsyncSession = Depends(get_db)):
     query = select(Shipment).where(ean == any_(Shipment.ean))
     result = await db.execute(query)
 
@@ -48,6 +49,8 @@ async def get_imports(ean: str, db:AsyncSession = Depends(get_db)):
     imports_data = []
 
     for shipment in shipments:
+        if shipment.status == "arrived":
+            continue
         ean_list = shipment.ean
         quantity_list = shipment.quantity
         title = shipment.title
@@ -59,7 +62,21 @@ async def get_imports(ean: str, db:AsyncSession = Depends(get_db)):
             "quantity": quantity
         })
 
-    return imports_data
+    result = await db.execute(select(Product).where(Product.ean == ean))
+    product = result.scalars().first()
+
+    if product.weight < 250 and product.volumetric_weight < 250:
+        type = 1
+    elif product.battery:
+        type = 2
+    else:
+        type = 3
+
+    return {
+        "type": type,
+        "imports_data": imports_data
+    }
+
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
