@@ -1494,3 +1494,39 @@
     "pageType_google":"other",
     "page_type":"list_review"
 }
+
+{
+    'order_id': 261583779, 
+    'rma_id': '', 
+    'sender': {
+        'name': 'The Innovators SRL', 
+        'phone1': '400397', 
+        'phone2': '', 
+        'locality_id': 5480, 
+        'street': 'str Traian Vuia 208', 
+        'zipcode': '400397'
+    }, 
+    'receiver': {
+        'name': 'Athanasios Dimitriou', 
+        'contact': 'Athanasios Dimitriou', 
+        'phone1': '0722159244', 
+        'phone2': '0722159244', 
+        'legal_entity': 0, 
+        'locality_id': 9385, 
+        'street': 'Str. Lt. Ghe. Economu Nr 2A [EasyBox #11841]', 
+        'zipcode': ''
+    }, 
+    'locker_id': '', 
+    'is_oversize': True, 
+    'insured_value': Decimal('0'), 
+    'weight': Decimal('0'), 
+    'envelope_number': 0, 
+    'parcel_number': 0, 
+    'observation': '', 
+    'cod': Decimal('0'), 
+    'courier_account_id': 0, 
+    'pickup_and_return': True, 
+    'saturday_delivery': True, 
+    'sameday_delivery': True, 
+    'dropoff_locker': True
+}

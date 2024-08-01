@@ -34,11 +34,13 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
         },
         "receiver": {
             "name": db_awb.receiver_name,
+            "contact": db_awb.receiver_contact,
             "phone1": db_awb.receiver_phone1,
             "phone2": db_awb.receiver_phone1,
+            "legal_entity": db_awb.receiver_legal_entity,
             "locality_id": db_awb.receiver_locality_id,
             "street": db_awb.receiver_street,
-            "zipcode": db_awb.receiver_street
+            "zipcode": db_awb.receiver_zipcode
         },
         "locker_id": db_awb.locker_id,
         "is_oversize": db_awb.is_oversize,
@@ -54,6 +56,8 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
         "sameday_delivery": db_awb.sameday_delivery,
         "dropoff_locker": db_awb.dropoff_locker
     }
+
+    logging.info(data)
 
     result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
     market_place = result.scalars().first()
