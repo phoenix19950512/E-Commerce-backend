@@ -19,9 +19,9 @@ router = APIRouter()
 @router.post("/")
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
-    db.add(db_awb)
-    await db.commit()
-    await db.refresh(db_awb)
+    # db.add(db_awb)
+    # await db.commit()
+    # await db.refresh(db_awb)
     data = {
         "order_id": db_awb.order_id,
         "sender": {
