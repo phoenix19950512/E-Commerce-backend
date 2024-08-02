@@ -13,6 +13,7 @@ from app.utils.emag_returns import *
 from app.utils.emag_reviews import *
 from app.utils.emag_awbs import *
 from app.utils.emag_locality import *
+from app.utils.emag_courier import *
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
 from sqlalchemy.orm import Session
@@ -61,47 +62,49 @@ async def on_startup(db: AsyncSession = Depends(get_db)):
     
     async for db in get_db():
         async with db as session:
-            logging.info("Starting product refresh")
+            logging.info("Starting localities refresh")
             result = await session.execute(select(Marketplace))
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
-                logging.info("Refresh product from marketplace")
-                await refresh_localities(marketplace)
+                # logging.info("Refresh localities from marketplace")
+                # await refresh_localities(marketplace)
+                logging.info("Refresh couriers refresh")
+                await refresh_couriers(marketplace)
 
-@app.on_event("startup")
-@repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
-async def refresh_data(db: AsyncSession = Depends(get_db)): 
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting product refresh")
-            result = await session.execute(select(Marketplace))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                logging.info("Refresh product from marketplace")
-                await refresh_products(marketplace, session)
-                logging.info("Refresh refunds from marketplace")
-                await refresh_returns(marketplace)
-                logging.info("Refresh order from marketplace")
-                await refresh_orders(marketplace, session)
-                logging.info("Check hijacker and review")
-                await check_hijacker_and_bad_reviews(marketplace, session)
-                logging.info("Refresh awb from marketplace")
-                await refresh_awb(marketplace, session)
+# @app.on_event("startup")
+# @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
+# async def refresh_data(db: AsyncSession = Depends(get_db)): 
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting product refresh")
+#             result = await session.execute(select(Marketplace))
+#             marketplaces = result.scalars().all()
+#             logging.info(f"Success getting {len(marketplaces)} marketplaces")
+#             for marketplace in marketplaces:
+#                 logging.info("Refresh product from marketplace")
+#                 await refresh_products(marketplace, session)
+#                 logging.info("Refresh refunds from marketplace")
+#                 await refresh_returns(marketplace)
+#                 logging.info("Refresh order from marketplace")
+#                 await refresh_orders(marketplace, session)
+#                 logging.info("Check hijacker and review")
+#                 await check_hijacker_and_bad_reviews(marketplace, session)
+#                 # logging.info("Refresh awb from marketplace")
+#                 # await refresh_awb(marketplace, session)
 
 
-@app.on_event("startup")
-@repeat_every(seconds=600)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting orders refresh")
-            result = await session.execute(select(Marketplace))
-            marketplaces = result.scalars().all()
-            for marketplace in marketplaces:
-                logging.info("Refresh orders from marketplace")
-                await refresh_orders(marketplace, session)
+# @app.on_event("startup")
+# @repeat_every(seconds=600)
+# async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting orders refresh")
+#             result = await session.execute(select(Marketplace))
+#             marketplaces = result.scalars().all()
+#             for marketplace in marketplaces:
+#                 logging.info("Refresh orders from marketplace")
+#                 await refresh_orders(marketplace, session)
 
 if __name__ == "__main__":
     import uvicorn
