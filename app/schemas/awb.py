@@ -33,6 +33,12 @@ class AWBBase(BaseModel):
     saturday_delivery: Optional[int] = None
     sameday_delivery: Optional[int] = None
     dropoff_locker: Optional[int] = None
+    reservation_id: Optional[int] = None
+    courier_id: Optional[int] = None
+    courier_name: Optional[str] = None
+    awb_number: Optional[str] = None
+    awb_barcode: Optional[str]= None
+    awb_marketplace: Optional[str] = None
 
 class AWBCreate(AWBBase):
     pass
@@ -41,7 +47,7 @@ class AWBUpdate(AWBBase):
     pass
 
 class AWBRead(AWBBase):
-    id: int
+    order_id: int
 
     class Config:
         orm_mode = True

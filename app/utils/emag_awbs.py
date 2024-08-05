@@ -46,10 +46,10 @@ def save(MARKETPLACE_API_URL, awb_ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLI
 
     response = requests.post(url, data=json.dumps(data, default=convert_decimal_to_float), headers=headers, proxies=PROXIES)
     if response.status_code == 200:
-        products = response.json()
-        return products
+        awb = response.json()
+        return awb
     else:
-        logging.info(f"Failed to retrieve products: {response.status_code}")
+        logging.info(f"Failed to retrieve awbs: {response.status_code}")
         return None
 
 async def save_awb(marketplace: Marketplace, data, db: AsyncSession):

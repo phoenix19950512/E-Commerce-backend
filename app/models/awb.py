@@ -1,5 +1,5 @@
 # app/models/awb.py
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean, DECIMAL
+from sqlalchemy import Column, Integer, String, BigInteger, DECIMAL
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -7,8 +7,7 @@ from app.database import Base
 class AWB(Base):
     __tablename__ = "awbs"
     
-    id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, unique=True, index=True, nullable=False)
+    order_id = Column(Integer, primary_key=True, nullable=False)
     sender_name = Column(String, nullable=True)
     sender_phone1 = Column(String, nullable=True)
     sender_phone2 = Column(String, nullable=True)
@@ -36,3 +35,9 @@ class AWB(Base):
     saturday_delivery = Column(Integer, nullable=True)
     sameday_delivery = Column(Integer, nullable=True)
     dropoff_locker = Column(Integer, nullable=True)
+    reservation_id = Column(Integer, nullable=True)
+    courier_id = Column(Integer, nullable=True)
+    courier_name = Column(String, nullable=True)
+    awb_number = Column(String, nullable=True)
+    awb_barcode = Column(String, nullable=True)
+    awb_marketplace = Column(String, nullable=True)

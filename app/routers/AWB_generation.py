@@ -19,9 +19,7 @@ router = APIRouter()
 @router.post("/")
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
-    # db.add(db_awb)
-    # await db.commit()
-    # await db.refresh(db_awb)
+    
     data = {
         "order_id": db_awb.order_id,
         "sender": {
@@ -63,6 +61,17 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
     market_place = result.scalars().first()
 
     result = await save_awb(market_place, data, db)
+    db_awb.reservation_id = result['results'].get('reservation_id')
+    db_awb.courier_id = result['results'].get('courier_id')
+    db_awb.courier_name = result['results'].get('courier_name')
+    result_awb = result['results'].get('awb')
+    db_awb.awb_number = result_awb[0].get('awb_number')
+    db_awb.awb_barcode = result_awb[0].get('awb_barcode')
+
+    db.add(db_awb)
+    await db.commit()
+    await db.refresh(db_awb)
+
     return result
 
 @router.get("/customer")

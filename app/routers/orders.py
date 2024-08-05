@@ -9,6 +9,8 @@ from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.config import settings
+from sqlalchemy import any_
+from sqlalchemy import cast, String
 
 async def get_order(db: AsyncSession, order_id: int):
     result = await db.execute(select(Order).filter(Order.id == order_id))
@@ -44,6 +46,54 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(db_order)
     return db_order
 
+@router.get("/new_order", response_model=List[OrderRead])
+async def read_new_orders(
+    flag: bool = Query(1),
+    search_text: str = Query('', description="Text for searching"),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Order).filter(
+        (cast(Order.id, String).ilike(f"%{search_text}%")) |
+        (Order.payment_mode.ilike(f"%{search_text}%")) |
+        (Order.details.ilike(f"%{search_text}%")) |
+        (Order.order_market_place.ilike(f"%{search_text}%")) |
+        (Order.delivery_mode.ilike(f"%{search_text}%")) |
+        (Order.proforms.ilike(f"%{search_text}%"))
+    )
+    query = query.filter(Order.status == any_([1, 2, 3]))
+
+    if flag == True:
+        query = query.order_by(Order.date.desc())
+    else:
+        query = query.order_by(Order.date.asc())
+
+    result = await db.execute(query)
+    db_new_orders = result.scalars().all()
+
+    if db_new_orders is None:
+        raise HTTPException(status_code = 404, detail = "New order not found")
+
+    return db_new_orders
+
+@router.get("/count/new_order")
+async def count_new_orders(
+    search_text: str = Query('', description="Text for searching"),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Order).filter(
+        (cast(Order.id, String).ilike(f"%{search_text}%")) |
+        (Order.payment_mode.ilike(f"%{search_text}%")) |
+        (Order.details.ilike(f"%{search_text}%")) |
+        (Order.order_market_place.ilike(f"%{search_text}%")) |
+        (Order.delivery_mode.ilike(f"%{search_text}%")) |
+        (Order.proforms.ilike(f"%{search_text}%"))
+    )
+    query = query.filter(Order.status == any_([1, 2, 3]))
+
+    result = await db.execute(query)
+    db_new_orders = result.scalars().all()
+    return len(db_new_orders)
+
 @router.get("/", response_model=List[OrderRead])
 async def read_orders(
     flag: bool = Query(1),
@@ -56,7 +106,7 @@ async def read_orders(
     offset = (page - 1) * items_per_page
     if status == -1:
         query = select(Order).filter(
-            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
@@ -65,7 +115,7 @@ async def read_orders(
         ).offset(offset).limit(items_per_page)
     else :
         query = select(Order).where(Order.status == status).filter(
-            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
@@ -93,7 +143,7 @@ async def get_orders_count(
 ):
     if status == -1:
         result = await db.execute(select(func.count()).select_from(Order).filter(
-            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
@@ -102,7 +152,7 @@ async def get_orders_count(
         ))
     else:
         result = await db.execute(select(func.count()).select_from(Order).where(Order.status == status).filter(
-            (Order.vendor_name.ilike(f"%{search_text}%")) |
+            (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |

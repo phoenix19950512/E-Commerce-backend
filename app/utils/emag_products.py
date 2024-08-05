@@ -482,5 +482,39 @@ async def refresh_products(marketplace: Marketplace, db: AsyncSession):
             while currentPage <= pages:
                 products = get_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["read"], sign, currentPage, PUBLIC_KEY, True, proxies=PROXIES)
                 if products and not products['isError']:
-                    insert_products_into_db(products['results'], PUBLIC_KEY, products_table)
+                    insert_products_into_db(products['results'], PUBLIC_KEY)
                     currentPage += 1
+
+
+def save(MARKETPLACE_API_URL, ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLIC_KEY=None, usePublicKey=False):
+    url = f"{MARKETPLACE_API_URL}{ENDPOINT}/{save_ENDPOINT}"
+    if usePublicKey is True:
+        headers = {
+            "X-Request-Public-Key": f"{PUBLIC_KEY}",
+            "X-Request-Signature": f"{API_KEY}"
+        }
+    elif usePublicKey is False:
+        api_key = str(API_KEY).replace("b'", '').replace("'", "")
+        headers = {
+            "Authorization": f"Basic {api_key}",
+            "Content-Type": "application/json"
+        }
+
+    response = requests.post(url, data=json.dumps(data), headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        products = response.json()
+        return products
+    else:
+        logging.info(f"Failed to retrieve products: {response.status_code}")
+        return None
+
+async def save_product(data, marketplace:Marketplace, db: AsyncSession):
+    if marketplace.credentials["type"] == "user_pass":
+        USERNAME = marketplace.credentials["firstKey"]
+        PASSWORD = marketplace.credentials["secondKey"]
+        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+        endpoint = marketplace.products_crud['endpoint']
+        savepoint = marketplace.products_crud['savepoint']
+        result = save(marketplace.baseAPIURL, endpoint, savepoint, API_KEY, data)
+
+    return result
