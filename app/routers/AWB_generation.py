@@ -86,6 +86,15 @@ async def get_customer(
     db_customer = result.scalars().first()
     return db_customer
 
+@router.get("/order_id")
+async def get_awbs_order_id(
+    order_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
+    db_awb = result.scalars().first()
+    return db_awb
+
 @router.get("/", response_model=List[AWBRead])
 async def get_awbs(
     page: int = Query(1, ge=1, description="Page number"),
