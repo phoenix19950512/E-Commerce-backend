@@ -103,8 +103,11 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
             result = await session.execute(select(Marketplace))
             marketplaces = result.scalars().all()
             for marketplace in marketplaces:
+                logging.info("Refresh products from marketplace")
+                await refresh_products(marketplace, session)
                 logging.info("Refresh orders from marketplace")
                 await refresh_orders(marketplace, session)
+
 
 if __name__ == "__main__":
     import uvicorn
