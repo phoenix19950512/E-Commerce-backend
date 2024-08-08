@@ -162,7 +162,7 @@ async def get_product_info(
             days = (max_time[product_id] - min_time[product_id]).days + 1
             ave_sales = cnt[product_id] / days
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
-            stock_imports_days = int(((stock + imports) / ave_sales))
+            stock_imports_days = int(((stock + imports) / ave_sales)) if ave_sales > 0 else -1
 
             if  stock_imports_days < query_stock_days:
                 quantity = int(query_stock_days * ave_sales) - stock - imports
