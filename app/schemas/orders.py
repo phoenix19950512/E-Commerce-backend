@@ -13,7 +13,7 @@ class OrderBase(BaseModel):
     status: Optional[int] = None
     payment_status: Optional[int] = None
     customer_id: Optional[int] = None
-    product_id: Optional[List[int]] = None
+    product_id: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
     shipping_tax: Optional[float] = None
     shipping_tax_voucher_split: Optional[str] = None

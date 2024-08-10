@@ -137,7 +137,7 @@ async def insert_rmas_into_db(rmas, place:str):
             customer_name = rma.get('customer_name')
             customer_company = rma.get('customer_company')
             customer_phone = rma.get('customer_phone')
-            products = [int(product.get('product_id')) for product in rma.get('products')]
+            products = [str(product.get('product_id')) for product in rma.get('products')]
             quantity = [int(product.get('quantity')) for product in rma.get('products')]
             pickup_address = rma.get('pickup_address')
             return_reason = rma.get('observations')
@@ -179,7 +179,7 @@ async def insert_rmas_into_db(rmas, place:str):
     except Exception as e:
         print(f"Failed to insert refunds into database: {e}")
 
-async def refresh_returns(marketplace: Marketplace):
+async def refresh_emag_returns(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
     proxy = marketplace.proxy

@@ -13,7 +13,7 @@ class Order(Base):
     status = Column(Integer, nullable=True)
     payment_status = Column(Integer, nullable=True)
     customer_id = Column(BigInteger, nullable=True)
-    product_id = Column(ARRAY(BigInteger), nullable=True)
+    product_id = Column(ARRAY(String), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
     shipping_tax = Column(Float, nullable=True)
     shipping_tax_voucher_split = Column(String, nullable=True)

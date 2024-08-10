@@ -29,7 +29,7 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
+def count_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{COUNT_ENGPOINT}"
     if usePublicKey is False:
         api_key = str(API_KEY).replace("b'", '').replace("'", "")
@@ -56,7 +56,32 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
         logging.info(f"Failed to retrieve orders: {response.status_code}")
         return None
     
-def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
+def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
+    url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{COUNT_ENGPOINT}"
+    if usePublicKey is False:
+        api_key = str(API_KEY).replace("b'", '').replace("'", "")
+        headers = {
+            "Authorization": f"Basic {api_key}",
+            "Content-Type": "application/json"
+        }
+    else:
+        headers = {
+            "X-Request-Public-Key": f"{PUBLIC_KEY}",
+            "X-Request-Signature": f"{API_KEY}"
+        }
+
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
+    modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
+
+    response = requests.post(url, headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        logging.info("success to count orders")
+        return response.json()
+    else:
+        logging.info(f"Failed to retrieve orders: {response.status_code}")
+        return None
+    
+def get_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{READ_ENDPOINT}"
     if usePublicKey is True:
         headers = {
@@ -77,6 +102,35 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
         "itemsPerPage": 100,
         "currentPage": currentPage,
         "modifiedAfter": modifiedAfter_date
+    })
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        orders = response.json()
+        return orders
+    else:
+        print(f"Failed to retrieve orders: {response.status_code}")
+        return None
+
+def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
+    url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{READ_ENDPOINT}"
+    if usePublicKey is True:
+        headers = {
+            "X-Request-Public-Key": f"{PUBLIC_KEY}",
+            "X-Request-Signature": f"{API_KEY}"
+        }
+    elif usePublicKey is False:
+        api_key = str(API_KEY).replace("b'", '').replace("'", "")
+        headers = {
+            "Authorization": f"Basic {api_key}",
+            "Content-Type": "application/json"
+        }
+
+    modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
+    modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
+    
+    data = json.dumps({
+        "itemsPerPage": 100,
+        "currentPage": currentPage
     })
     response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
@@ -259,7 +313,7 @@ async def insert_orders(orders, mp_name:str):
             status = order.get('status')
             payment_status = order.get('payment_status')
             customer_id = customer_id
-            products_id = [int(product.get('product_id')) for product in order.get('products')]
+            products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = json.dumps(order.get('shipping_tax_voucher_split', []))
@@ -551,7 +605,7 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
             status = order.get('status')
             payment_status = order.get('payment_status')
             customer_id = customer_id
-            products_id = [int(product.get('product_id')) for product in order.get('products')]
+            products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = json.dumps(order.get('shipping_tax_voucher_split', []))
@@ -619,7 +673,46 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
     except Exception as e:
         print(f"Failed to insert orders into database: {e}")
 
-async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
+async def refresh_emag_orders(marketplace: Marketplace, db:AsyncSession):
+    # create_database()
+
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers".lower()
+    orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
+    
+    settings.customers_table_name.append(customer_table)
+    settings.orders_table_name.append(orders_table)
+
+    if marketplace.credentials["type"] == "user_pass":
+        USERNAME = marketplace.credentials["firstKey"]
+        PASSWORD = marketplace.credentials["secondKey"]
+        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+        result = count_orders(marketplace.baseAPIURL, marketplace.orders_crud["endpoint"], marketplace.orders_crud["count"], API_KEY)
+        if result:
+            pages = result['results']['noOfPages']
+            items = result['results']['noOfItems']
+
+            logging.info(f"Number of Pages: {pages}")
+            logging.info(f"Number of Items: {items}")
+
+            # currentPage = int(pages)
+            currentPage = 1
+            baseAPIURL = marketplace.baseAPIURL
+            endpoint = marketplace.orders_crud['endpoint']
+            read_endpoint = marketplace.orders_crud['read']
+            try:
+                while currentPage <= int(pages):
+                    orders = get_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
+                    print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
+                    if orders and orders['isError'] == False:
+                        # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
+                        await insert_orders(orders['results'], marketplace.marketplaceDomain)
+                    currentPage += 1
+            except Exception as e:
+                print('++++++++++++++++++++++++++++++++++++++++++')
+                print(e)
+
+async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
     # create_database()
 
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
@@ -657,5 +750,3 @@ async def refresh_orders(marketplace: Marketplace, db:AsyncSession):
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')
                 print(e)
-
-    

@@ -9,7 +9,7 @@ class Returns(Base):
     customer_name = Column(String, nullable=True)
     customer_company = Column(String, nullable=True)
     customer_phone = Column(String, nullable=True)
-    products = Column(ARRAY(Integer), nullable=True)
+    products = Column(ARRAY(String), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
     pickup_address = Column(String, nullable=True)
     return_reason = Column(String, nullable=True)

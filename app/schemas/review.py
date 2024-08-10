@@ -3,7 +3,7 @@ from typing import Optional
 
 class ReviewBase(BaseModel):
 
-    product_id: Optional[int] = None
+    product_id: Optional[str] = None
     review_id: Optional[int] = None
     user_id: Optional[int] = None
     user_name: Optional[str] = None

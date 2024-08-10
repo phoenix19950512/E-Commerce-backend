@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import any_
+from sqlalchemy.orm import aliased
 from app.models.product import Product
+from app.models.internal_product import Internal_Product
 from app.models.orders import Order
 from app.models.shipment import Shipment 
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
@@ -41,60 +43,69 @@ async def get_imports(ean: str, db:AsyncSession):
     return imports_data
 
 
-@router.get('shipment/product')
-async def get_product_info(
-    query_stock_days: int = Query(None),
-    ean: str = Query(...),
-    db: AsyncSession = Depends(get_db)
-):
-    query = await db.execute(select(Product).where(Product.ean == ean))
-    product = query.scalars().first()
-    product_id = product.id
+# @router.get('/shipment/product')
+# async def get_product_info(
+#     query_stock_days: int = Query(None),
+#     ean: str = Query(...),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     query = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+#     product = query.scalars().first()
+#     product_id = product.id
 
-    if product.weight < 350 and product.volumetric_weight < 350:
-        type = 1
-    elif product.battery:
-        type = 2
-    else:
-        type = 3
+#     if product.weight < 350 and product.volumetric_weight < 350:
+#         type = 1
+#     elif product.battery:
+#         type = 2
+#     else:
+#         type = 3
 
-    query = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
-    orders = query.scalars().all()
+#     query = await db.execute(select(Product).where(Product.ean == ean))
+#     products = query.scalars().all()
+
+#     product_list = []
+#     for product in products:
+#         product_list.append(product.id)
+
+#     query = await db.execute(
+#         select(Order).where(func.array(Order.product_id).op('&&')(product_list))
+#     )
+#     orders = query.scalars().all()
     
-    cnt = 0
-    min_time = datetime.datetime.today()
-    max_time = datetime.datetime(0, 0, 0, 0, 0, 0)
-    for order in orders:
-        product_ids = order.product_id
-        quantities = order.quantity
+#     cnt = 0
+#     min_time = datetime.datetime.today()
+#     max_time = datetime.datetime(0, 0, 0, 0, 0, 0)
+#     for order in orders:
+#         product_ids = order.product_id
+#         quantities = order.quantity
 
-        index = product_ids.index(product_id)
-        cnt += quantities[index]
-        min_time = min(min_time, order.date)
-        max_time = max(max_time, order.date)
+#         index = product_ids.index(product_id)
+#         cnt += quantities[index]
+#         min_time = min(min_time, order.date)
+#         max_time = max(max_time, order.date)
 
-    stock = product.stock
-    import_datas = await get_imports(ean, db)
-    imports = sum(import_data.get("quantity") for import_data in import_datas)
-    days = (max_time - min_time).days + 1
-    ave_sale = cnt / days
-    stock_days = int(stock / ave_sale) if ave_sale > 0 else -1
-    stock_imports_days = int((stock + imports) / ave_sale)
+#     stock = product.stock
+#     import_datas = await get_imports(ean, db)
+#     imports = sum(import_data.get("quantity") for import_data in import_datas)
+#     days = (max_time - min_time).days + 1
+#     ave_sale = cnt / days
+#     stock_days = int(stock / ave_sale) if ave_sale > 0 else -1
+#     stock_imports_days = int((stock + imports) / ave_sale)
 
-    if query_stock_days and stock_imports_days < query_stock_days:
-        quantity = int(query_stock_days * ave_sale) - stock - imports
-    else:
-        quantity = ""
+#     if query_stock_days and stock_imports_days < query_stock_days:
+#         quantity = int(query_stock_days * ave_sale) - stock - imports
+#     else:
+#         quantity = ""
 
-    return {
-        "type": type,
-        "quantity": quantity,
-        "image_link": product.image_link,
-        "wechat": product.supplier_id,
-        "stock_imports": [product.stock, ave_sale, imports],
-        "day_stock": [stock_days, stock_imports_days],
-        "imports_data": import_datas
-    }
+#     return {
+#         "type": type,
+#         "quantity": quantity,
+#         "image_link": product.image_link,
+#         "wechat": product.supplier_id,
+#         "stock_imports": [product.stock, ave_sale, imports],
+#         "day_stock": [stock_days, stock_imports_days],
+#         "imports_data": import_datas
+#     }
 
 @router.get('/product')
 async def get_product_info(
@@ -103,32 +114,41 @@ async def get_product_info(
     query_imports_stocks: int = Query(0),
     db: AsyncSession = Depends(get_db)
 ):
-    
-    order_result = await db.execute(select(Order))
-    orders = order_result.scalars().all()
 
     cnt = {}
     min_time = {}
     max_time = {}
 
-    for order in orders:
+    ProductAlias = aliased(Product)
+    query = select(Order, ProductAlias).join(
+        ProductAlias,
+        ProductAlias.id == func.any_(Order.product_id)
+    )
+
+    result = await db.execute(query)
+    orders_with_products = result.all()
+
+    for order, product in orders_with_products:
         product_ids = order.product_id
         quantities = order.quantity
         for i in range(len(product_ids)):
             if product_ids[i] not in cnt:
-                cnt[product_ids[i]] = 0
-                min_time[product_ids[i]] = order.date
-                max_time[product_ids[i]] = order.date
-            
-            cnt[product_ids[i]] += quantities[i]
-            min_time[product_ids[i]] = min(min_time[product_ids[i]], order.date)
-            max_time[product_ids[i]] = max(max_time[product_ids[i]], order.date)
+                if product.id == product_ids[i]:
+                    cnt[product.ean] = quantities[i]
+                    min_time[product.ean] = order.date
+                    max_time[product.ean] = order.date
+            else:
+                if product.id == product_ids[i]:
+                    cnt[product.ean] += quantities[i]
+                    min_time[product.ean] = min(min_time[product.ean], order.date)
+                    max_time[product.ean] = max(max_time[product.ean], order.date)
 
-    product_result = await db.execute(select(Product))
+    product_result = await db.execute(select(Internal_Product))
     products = product_result.scalars().all()
 
     product_data = []
     for product in products:
+
         if product.weight < 250 and product.volumetric_weight < 250:
             type = 1
         elif product.battery:
@@ -145,7 +165,7 @@ async def get_product_info(
         imports_datas = await get_imports(ean, db)
         imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
 
-        if product_id not in cnt:
+        if ean not in cnt:
             product_data.append({
                 "id": product.id,
                 "type": type,
@@ -159,8 +179,8 @@ async def get_product_info(
                 "imports_data": imports_datas
             })
         else:
-            days = (max_time[product_id] - min_time[product_id]).days + 1
-            ave_sales = cnt[product_id] / days
+            days = (max_time[ean] - min_time[ean]).days + 1
+            ave_sales = cnt[ean] / days
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
             stock_imports_days = int(((stock + imports) / ave_sales)) if ave_sales > 0 else -1
 
@@ -211,21 +231,21 @@ async def get_product_advanced_info(
                 product_type_list.append(name)
                 unique_names.add(name)
 
-    query = select(Product)
+    query = select(Internal_Product)
     if weight_min is not None:
-        query = query.where(Product.weight >= weight_min)
+        query = query.where(Internal_Product.weight >= weight_min)
     
     if weight_max is not None:
-        query = query.where(Product.weight <= weight_max)
+        query = query.where(Internal_Product.weight <= weight_max)
     
     if volumetric_weight_min is not None:
-        query = query.where(Product.volumetric_weight >= volumetric_weight_min)
+        query = query.where(Internal_Product.volumetric_weight >= volumetric_weight_min)
     
     if volumetric_weight_max is not None:
-        query = query.where(Product.volumetric_weight <= volumetric_weight_max)
+        query = query.where(Internal_Product.volumetric_weight <= volumetric_weight_max)
     
     if shipment_type is not None:
-        query = query.where(Product.product_name in product_type_list)
+        query = query.where(Internal_Product.product_name in product_type_list)
 
     result = await db.execute(query)
     products = result.scalars().all()
@@ -284,23 +304,3 @@ async def  get_shipment_info(
         })
 
     return shipment_data
-
-@router.post('/shipment')
-async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(get_db)):
-    db_shipment = Shipment(**shipment.dict())
-    db.add(db_shipment)
-    await db.commit()
-    await db.refresh(db_shipment)
-    return db_shipment
-
-@router.put("/shipment", response_model=ShipmentRead)
-async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
-    db_shipment = await db.execute(select(Shipment).filter(Shipment.id == shipment_id)).scalars().first()
-    if db_shipment is None:
-        raise HTTPException(status_code=404, detail="shipment not found")
-    for var, value in vars(shipment).items():
-        setattr(db_shipment, var, value) if value else None
-    await db.commit()
-    await db.refresh(db_shipment)
-    return db_shipment
-

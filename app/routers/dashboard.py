@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import text, and_, func, literal_column, cast, ARRAY, Integer, BigInteger
+from sqlalchemy import text, and_, func, literal_column, cast, ARRAY, Integer, BigInteger, String
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import joinedload
 from app.models.product import Product
@@ -31,9 +31,6 @@ async def get_vat_dict(db: AsyncSession):
     records = result.all()
     
     return {record.marketplaceDomain: record.vat for record in records}
-
-
-
 
 async def get_db_connection():
     return await asyncpg.connect(
@@ -74,12 +71,12 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
         )
     ).join(
         ProductAlias,
-        ProductAlias.id == func.any(Order.product_id)
+        ProductAlias.id == func.any_(Order.product_id)
     )
 
     if product_ids_list:
         query = query.where(
-            Order.product_id.op('&&')(cast(product_ids_list, ARRAY(BigInteger)))
+            Order.product_id.op('&&')(cast(product_ids_list, ARRAY(String)))
         )
     result = await db.execute(query)
     orders_with_products = result.all()
@@ -248,7 +245,7 @@ async def get_value(st_date, en_date, db:AsyncSession):
     query = text(f"""
         SELECT orders.*, products.*
         FROM orders AS orders
-        JOIN internal_products AS products ON products.id = ANY(orders.product_id)
+        JOIN products AS products ON products.id = ANY(orders.product_id)
         WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime
     """)
 
@@ -440,7 +437,7 @@ async def get_PL_data(product_ids: str = Query(None),  # Make product_ids requir
     PL_data = []
 
     if product_ids:
-        product_ids_list = [int(id.strip()) for id in product_ids.split(",")]
+        product_ids_list = [str(id.strip()) for id in product_ids.split(",")]
     else:
         product_ids_list = []
 
@@ -511,7 +508,7 @@ async def get_trends_info(
     trends_data = []
 
     if product_ids:
-        product_ids_list = [int(id.strip()) for id in product_ids.split(",")]
+        product_ids_list = [str(id.strip()) for id in product_ids.split(",")]
     else:
         product_ids_list = []
 

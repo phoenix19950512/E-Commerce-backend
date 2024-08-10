@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, returns, users, products, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse, team_member, locality, courier
+from app.routers import auth, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse, team_member, locality, courier
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +56,7 @@ async def on_startup():
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
-app.include_router(products.router, prefix="/api/products", tags=["products"])
+app.include_router(internal_products.router, prefix="/api/internal_products", tags=["internal_products"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
 app.include_router(marketplace.router, prefix="/api/marketplace", tags=["marketplace"])
 app.include_router(utils.router, prefix="/api/utils", tags=["utils"])

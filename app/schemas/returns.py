@@ -9,7 +9,7 @@ class ReturnsBase(BaseModel):
     customer_name: Optional[str] = None
     customer_company: Optional[str] = None
     customer_phone: Optional[str] = None
-    products: Optional[List[int]] = None
+    products: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
     pickup_address: Optional[str] = None
     return_reason: Optional[str] = None

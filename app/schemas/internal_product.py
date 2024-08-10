@@ -2,15 +2,14 @@ from pydantic import BaseModel
 from typing import Optional, List
 from decimal import Decimal
 
-class ProductBase(BaseModel):
-    id: Optional[str] = None
+class Internal_ProductBase(BaseModel):
+    id: Optional[int] = None
     part_number_key: Optional[str] = None
     product_name: Optional[str] = None
     model_name: Optional[str] = None
     buy_button_rank: Optional[int] = None
     price: Optional[Decimal] = None
     sale_price: Optional[Decimal] = None
-    sku: Optional[str] = None
     ean: str
     image_link: Optional[str] = None
     barcode_title: Optional[str] = None
@@ -36,17 +35,16 @@ class ProductBase(BaseModel):
     warehouse_id: Optional[int] = None
     internal_shipping_price: Optional[Decimal] = None
     observation: Optional[str] = None
-    marketplace: str
+    market_place: Optional[List[str]] = None
 
-class ProductCreate(ProductBase):
+class Internal_ProductCreate(Internal_ProductBase):
     pass
 
-class ProductRead(ProductBase):
+class Internal_ProductRead(Internal_ProductBase):
     ean: str
-    marketplace: str
 
     class Config:
         orm_mode = True
 
-class ProductUpdate(ProductBase):
+class Internal_ProductUpdate(Internal_ProductBase):
     pass

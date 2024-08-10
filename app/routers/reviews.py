@@ -3,7 +3,7 @@ from pydantic import BaseModel # type: ignore
 from typing import List, Dict
 import psycopg2
 from psycopg2 import sql
-from app.models.product import Product
+from app.models.internal_product import Internal_Product
 from app.models.notifications import Notification
 from app.models.review import Review
 from app.routers.notifications import create_new_notification
@@ -65,21 +65,17 @@ def check_hijacker(product_list):
     except Exception as e:
         logging.info("Can't Read hijackers", e)
 
-def check_bad_reviews(review_list: List[Review], threshold: int = 3):
+def check_bad_reviews(review_list: List[Review]):
     bad_reviews = []
 
     for review in review_list:
-        if review.rating <= threshold:
+        if review.rating <= 3:
             bad_reviews.append(review)
 
     return bad_reviews
 
 async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSession):
-    products_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_products".lower()
-    notifications_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_notifications".lower()
-    settings.notifications_table_name.append(notifications_table)
-    reviews_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_reviews".lower()
-    settings.reviews_table_name.append(reviews_table)
+
     conn = psycopg2.connect(
         dbname=settings.DB_NAME,
         user=settings.DB_USERNAME,
@@ -89,7 +85,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     )
     conn.set_client_encoding('UTF8')
     
-    result = await db.execute(text(f"SELECT * FROM {products_table}"))
+    result = await db.execute(text(f"SELECT * FROM products"))
     products = result.fetchall()
 
     product_dicts = []
@@ -167,7 +163,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         print("Can't add notification", e)
 
     await db.close()
-    await refresh_reviews(marketplace, db)
+    await refresh_emag_reviews(marketplace, db)
 
     result = await db.execute(select(Review))
     reviews = result.scalars().all()

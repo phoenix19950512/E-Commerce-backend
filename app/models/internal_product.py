@@ -1,15 +1,16 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, ARRAY, BigInteger
 from app.database import Base
+from sqlalchemy.orm import relationship
 
-class Product(Base):
-    __tablename__ = "products"
-    id = Column(String, nullable=True)
+class Internal_Product(Base):
+    __tablename__ = "internal_products"
+
+    id = Column(BigInteger, nullable=True)
     part_number_key = Column(String, nullable=True)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
     buy_button_rank = Column(Integer, nullable=True)
-    sku = Column(Text, nullable=True)
-    ean = Column(Text, primary_key=True)
+    ean = Column(Text, primary_key=True, unique=True)
     price = Column(Numeric(12, 4), nullable=True)
     sale_price = Column(Numeric(12, 4), nullable=True)
     image_link = Column(Text, nullable=True)
@@ -19,8 +20,8 @@ class Product(Base):
     price_1688 = Column(Numeric(12, 4), nullable=True)
     variation_name_1688 = Column(Text, nullable=True)
     pcs_ctn = Column(Text, nullable=True)
-    weight = Column(Numeric(12, 4), nullable=True)
-    volumetric_weight = Column(Numeric(12, 4), nullable=True)
+    weight = Column(Numeric(12, 6), nullable=True)
+    volumetric_weight = Column(Numeric(12, 6), nullable=True)
     dimensions = Column(Text, nullable=True)
     supplier_id = Column(Integer, nullable=True)
     english_name = Column(Text, nullable=True)
@@ -30,14 +31,11 @@ class Product(Base):
     hs_code = Column(Text, nullable=True)
     battery = Column(Boolean, nullable=True)
     default_usage = Column(Text, nullable=True)
-    production_time = Column(Numeric(12, 4), nullable=True)
+    production_time = Column(Numeric(12, 6), nullable=True)
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
     warehouse_id = Column(Integer, nullable=True)
-    internal_shipping_price = Column(Numeric(12, 4), nullable=True)
+    internal_shipping_price = Column(Numeric(12, 6), nullable=True)
     observation = Column(Text, nullable=True)
-    product_marketplace = Column(Text, nullable=True)
+    market_place = Column(ARRAY(Text), nullable=True)
     
-    __table_args__ = (
-        PrimaryKeyConstraint('ean', 'product_marketplace', name='pk_ean_product_marketplace'),
-    )

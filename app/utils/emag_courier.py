@@ -103,7 +103,7 @@ async def insert_couriers_into_db(couriers, place:str):
     except Exception as e:
         print(f"Failed to insert couriers into database: {e}")
 
-async def refresh_couriers(marketplace: Marketplace):
+async def refresh_emag_couriers(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 

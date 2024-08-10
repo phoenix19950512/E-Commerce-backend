@@ -6,7 +6,7 @@ from sqlalchemy import any_
 from typing import List
 from app.database import get_db
 from app.models.shipment import Shipment
-from app.models.product import Product
+from app.models.internal_product import Internal_Product
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
 router = APIRouter()
@@ -62,7 +62,7 @@ async def get_info(ean: str, db:AsyncSession = Depends(get_db)):
             "quantity": quantity
         })
 
-    result = await db.execute(select(Product).where(Product.ean == ean))
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
 
     if product.weight < 250 and product.volumetric_weight < 250:

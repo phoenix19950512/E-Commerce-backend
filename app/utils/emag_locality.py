@@ -146,7 +146,7 @@ async def insert_localities_into_db(localities, place:str):
     except Exception as e:
         print(f"Failed to insert localities into database: {e}")
 
-async def refresh_localities(marketplace: Marketplace):
+async def refresh_emag_localities(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 

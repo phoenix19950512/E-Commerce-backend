@@ -17,64 +17,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from app.database import get_db
 from decimal import Decimal
+from datetime import datetime
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 PROXIES = {
     'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
-    logging.info("counting start")
-    url = f"{MARKETPLACE_API_URL}{PRODUCTS_ENDPOINT}/{COUNT_ENGPOINT}"
-    if usePublicKey is False:
-        api_key = str(API_KEY).replace("b'", '').replace("'", "")
-        headers = {
-            "Authorization": f"Basic {api_key}",
-            "Content-Type": "application/json"
-        }
-    else:
-        headers = {
-            "X-Request-Public-Key": f"{PUBLIC_KEY}",
-            "X-Request-Signature": f"{API_KEY}"
-        }
-
-    response = requests.get(url, headers=headers, proxies=PROXIES)
-    if response.status_code == 200:
-        logging.info("success count")
-        return response.json()
-    else:
-        logging.error(f"Failed to retrieve products: {response.status_code}")
-        return None
-    
-def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
-    url = f"{MARKETPLACE_API_URL}{PRODUCTS_ENDPOINT}/{READ_ENDPOINT}"
-    if usePublicKey is True:
-        headers = {
-            "X-Request-Public-Key": f"{PUBLIC_KEY}",
-            "X-Request-Signature": f"{API_KEY}"
-        }
-    elif usePublicKey is False:
-        api_key = str(API_KEY).replace("b'", '').replace("'", "")
-        headers = {
-            "Authorization": f"Basic {api_key}",
-            "Content-Type": "application/json"
-        }
-    data = json.dumps({
-        "itemsPerPage": 100,
-        "currentPage": currentPage,
-    })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
-    if response.status_code == 200:
-        products = response.json()
-        return products
-    else:
-        logging.info(f"Failed to retrieve products: {response.status_code}")
-        return None
-
-
-async def insert_products(products, mp_name: str):
+async def insert_products(products, offers, mp_name):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -122,20 +74,21 @@ async def insert_products(products, mp_name: str):
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
-                stock = EXCLUDED.stock,
                 market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place)))
         """).format(sql.Identifier("internal_products"))
 
-        for product in products:
-            id = product.get('id')
-            part_number_key = product.get('part_number_key')
+        for i in range(len(products)):
+            product = products[i]
+            offer = offers[i]
+            id = 0
+            part_number_key = ""
             product_name = product.get('name')
             model_name = product.get('brand')
-            buy_button_rank = product.get('buy_button_rank')
+            buy_button_rank = 1
             price = 0
-            sale_price = Decimal(product.get('sale_price', '0.0'))
+            sale_price = offer.get('price')
             ean = str(product.get('ean')[0]) if product.get('ean') else None
-            image_link = product.get('images')[0]['url'] if product.get('images') else None
+            image_link = ""
             barcode_title = ""
             masterbox_title = ""
             link_address_1688 = ""
@@ -158,7 +111,7 @@ async def insert_products(products, mp_name: str):
             default_usage = ""
             production_time = Decimal('0')
             discontinued = False
-            stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
+            stock = offer.get('stock')[0].get('quantity') if offer.get('stock') else None
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
@@ -207,7 +160,7 @@ async def insert_products(products, mp_name: str):
     except Exception as e:
         print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
 
-async def insert_products_into_db(products, username, place):
+async def insert_products_into_db(products, offers,  place):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -259,15 +212,21 @@ async def insert_products_into_db(products, username, place):
                 stock = EXCLUDED.stock
         """).format(sql.Identifier("products"))
 
-        for product in products:
+        for i in range(len(products)):
+            product = products[i]
+            offer = offers[i]
+            if product.get('id') == offer.get('product_id'):
+                logging.info("*****************")
+            else:
+                return
             id = str(product.get('id'))
-            part_number_key = product.get('part_number_key')
+            part_number_key = ""
             product_name = product.get('name')
             model_name = product.get('brand')
-            buy_button_rank = product.get('buy_button_rank')
+            buy_button_rank = 1
             price = 0
-            sale_price = Decimal(product.get('sale_price', '0.0'))
-            sku = ""
+            sale_price = offer.get('price')
+            sku = product.get('sku')
             ean = str(product.get('ean')[0]) if product.get('ean') else None
             image_link = product.get('images')[0]['url'] if product.get('images') else None
             barcode_title = ""
@@ -276,10 +235,7 @@ async def insert_products_into_db(products, username, place):
             price_1688 = Decimal('0')
             variation_name_1688 = ""
             pcs_ctn = ""
-            weight_value = product.get('weight')
-            if isinstance(weight_value, str):
-                weight_value = weight_value.replace(',', '.')  # Handle any comma as decimal separator
-            weight = Decimal(weight_value) if weight_value else Decimal('0')
+            weight = 0
             volumetric_weight = 0
             dimensions = ""
             supplier_id = 0
@@ -292,7 +248,7 @@ async def insert_products_into_db(products, username, place):
             default_usage = ""
             production_time = Decimal('0')
             discontinued = False
-            stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
+            stock = offer.get('stock')[0].get('quantity') if offer.get('stock') else None
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             product_marketplace = place  # Ensure this is an array to use array_cat
@@ -341,52 +297,78 @@ async def insert_products_into_db(products, username, place):
     except Exception as e:
         print(f"Failed to insert products into database: {e}")
 
-async def refresh_emag_products(marketplace: Marketplace, db: AsyncSession):
+def generate_signature(public_key, private_key, params):
+
+    now = datetime.utcnow()
+    day = now.strftime('%d')
+    month = now.strftime('%m')
+    timestamp = f"{day}{month}"
+
+    print(timestamp)
+    string_to_hash = f"{public_key}||{hashlib.sha512(private_key.encode()).hexdigest()}||{params}||{timestamp}"
+    hash_result = hashlib.sha512(string_to_hash.encode()).hexdigest().lower()
+    signature = f"{timestamp}{hash_result}"
+    # signature = timestamp + hash_result
+    return signature
+
+def get_products(url, public_key, private_key, page_nr):
+
+    params = f"page_nr={page_nr}"
+    url = f"{url}catalog/product/?{params}"
+    signature = generate_signature(public_key, private_key, params)
+    headers = {
+        'X-Request-Public-Key': public_key,
+        'X-Request-Signature': signature
+    }
+    response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
+    return response.json()
+
+def get_offers(url, public_key, private_key, page_nr):
+
+    params = f"page_nr={page_nr}"
+    url = f"{url}catalog/offer/?{params}"
+    signature = generate_signature(public_key, private_key, params)
+    headers = {
+        'X-Request-Public-Key': public_key,
+        'X-Request-Signature': signature
+    }
+    response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
+    return response.json()
+
+async def refresh_altex_products(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
-    if marketplace.credentials["type"] == "user_pass":
-        
-        USERNAME = marketplace.credentials["firstKey"]
-        PASSWORD = marketplace.credentials["secondKey"]
-        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], API_KEY)
-        if result:
-            pages = result['results']['noOfPages']
-            items = result['results']['noOfItems']
+    PUBLIC_KEY = marketplace.credentials["firstKey"]
+    PRIVATE_KEY = marketplace.credentials["secondKey"]
+    logging.info("starting count")
+    logging.info(PUBLIC_KEY)
+    logging.info(PRIVATE_KEY)
+    page_nr = 1
+    while True:
+        try:
+            logging.info(page_nr)
+            result = get_products(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
+            # logging.info(f"Result: {result}")
+            if result['status'] == 'error':
+                logging.error("Error in result")
+                break
+            data = result['data']
+            products = data.get("items")
 
-            print("------------pages--------------", pages)
-            print("------------items--------------", items)
-            currentPage = 1
-            baseAPIURL = marketplace.baseAPIURL
-            endpoint = marketplace.products_crud['endpoint']
-            read_endpoint = marketplace.products_crud['read']
-            try:
-                while currentPage <= int(pages):
-                    products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
+            result = get_offers(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
+            data = result['data']
+            offers = data.get("items")
 
-                    logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
-                    if products and not products.get('isError'):
-                        await insert_products_into_db(products['results'], USERNAME, marketplace.marketplaceDomain)
-                        await insert_products(products['results'], marketplace.marketplaceDomain)
-                    currentPage += 1
-            except Exception as e:
-                print('++++++++++++++++++++++++++++++++++++++++++')
-                print(e)
-    elif marketplace.credentials["type"] == "pub_priv":
-        PUBLIC_KEY = marketplace.credentials["firstKey"]
-        PRIVATE_KEY = marketplace.credentials["secondKey"]
-        logging.info("starting count")
-        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], sign, PUBLIC_KEY, True, proxies=PROXIES)
-        if result:
-            pages = result['results']['noOfPages']
-            currentPage = 1
-            while currentPage <= pages:
-                products = get_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["read"], sign, currentPage, PUBLIC_KEY, True, proxies=PROXIES)
-                if products and not products['isError']:
-                    insert_products_into_db(products['results'], PUBLIC_KEY)
-                    currentPage += 1
+            logging.info(len(products))
+            logging.info(len(offers))
 
+            await insert_products(products, offers, marketplace.marketplaceDomain)
+            await insert_products_into_db(products, offers, marketplace.marketplaceDomain)
+            page_nr += 1
+        except Exception as e:
+            logging.error(f"Exception occurred: {e}")
+            break
 
 def save(MARKETPLACE_API_URL, ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ENDPOINT}/{save_ENDPOINT}"

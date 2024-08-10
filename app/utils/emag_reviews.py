@@ -1,7 +1,7 @@
 import logging
 import requests
 import base64
-from app.models.product import Product
+from app.models.internal_product import Internal_Product
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -115,8 +115,8 @@ async def insert_reviews_into_db(reviews, place):
     for review in reviews:
         await insert_review_into_db(review, place)
 
-async def refresh_reviews(marketplace: Marketplace, db: AsyncSession):
-    result = await db.execute(select(Product))
+async def refresh_emag_reviews(marketplace: Marketplace, db: AsyncSession):
+    result = await db.execute(select(Internal_Product))
     products = result.scalars().all()
 
     logging.info(f"Number of products: {len(products)}")
