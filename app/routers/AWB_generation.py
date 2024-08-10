@@ -8,7 +8,7 @@ from app.models.awb import AWB
 from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
-from app.models.internal_product import Product
+from app.models.internal_product import Internal_Product
 from app.models.customer import Customers
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
@@ -139,7 +139,7 @@ async def get_warehouse(
     db_order = result.scalars().first()
     db_product_list = db_order.product_id
     
-    result = await db.execute(select(Product).where(Product.id == any_(db_product_list)))
+    result = await db.execute(select(Internal_Product).where(Internal_Product.id == any_(db_product_list)))
     db_products = result.scalars().all()
 
     warehouse_id_list = []

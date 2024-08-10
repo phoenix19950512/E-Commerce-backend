@@ -135,8 +135,6 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
 
             finally:
                 await session.close()
-                        
-
 
 if __name__ == "__main__":
     import uvicorn
