@@ -10,7 +10,7 @@ class Internal_Product(Base):
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
     buy_button_rank = Column(Integer, nullable=True)
-    ean = Column(Text, primary_key=True, unique=True)
+    ean = Column(Text, primary_key=True)
     price = Column(Numeric(12, 4), nullable=True)
     sale_price = Column(Numeric(12, 4), nullable=True)
     image_link = Column(Text, nullable=True)
