@@ -12,7 +12,7 @@ from app.models.internal_product import Product
 from app.models.customer import Customers
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
-from app.utils.altex_awb import save_altex_awbs
+from app.utils.altex_awb import save_altex_awb
 from sqlalchemy import any_
 
 router = APIRouter()
@@ -26,8 +26,23 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
 
     if market_place.marketplaceDomain == "altex.ro":
         data = {
-
+            "courier_id": db_awb.courier_account_id,
+            "location_id": db_awb.receiver_locality_id,
+            "sender_name": db_awb.sender_name,
+            "sender_contact_person": None,
+            "sender_phone": db_awb.sender_phone1,
+            "sender_address": db_awb.sender_street,
+            "sender_country": None,
+            "sender_city": None,
+            "sender_postalcode": db_awb.sender_zipcode,
+            "destination_contact_person ": db_awb.receiver_contact,
+            "destination_phone": db_awb.receiver_phone1,
+            "destination_address": db_awb.receiver_street,
+            "destination_county ": None,
+            "destination_postalcode ": db_awb.receiver_zipcode,
         }
+
+        result = await save_altex_awb(market_place, data, db_awb.order_id, db)
     else:
         data = {
             "order_id": db_awb.order_id,
@@ -64,9 +79,9 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
             "dropoff_locker": db_awb.dropoff_locker
         }
 
-    logging.info(data)
+        logging.info(data)
 
-    result = await save_awb(market_place, data, db)
+        result = await save_awb(market_place, data, db)
     db_awb.reservation_id = result['results'].get('reservation_id')
     db_awb.courier_id = result['results'].get('courier_id')
     db_awb.courier_name = result['results'].get('courier_name')
