@@ -8,10 +8,11 @@ from app.models.awb import AWB
 from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
-from app.models.product import Product
+from app.models.internal_product import Product
 from app.models.customer import Customers
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
+from app.utils.altex_awb import save_altex_awbs
 from sqlalchemy import any_
 
 router = APIRouter()
@@ -19,46 +20,51 @@ router = APIRouter()
 @router.post("/")
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
-    
-    data = {
-        "order_id": db_awb.order_id,
-        "sender": {
-            "name": db_awb.sender_name,
-            "phone1": db_awb.sender_phone1,
-            "phone2": db_awb.sender_phone2,
-            "locality_id": db_awb.sender_locality_id,
-            "street": db_awb.sender_street,
-            "zipcode": db_awb.sender_zipcode
-        },
-        "receiver": {
-            "name": db_awb.receiver_name,
-            "contact": db_awb.receiver_contact,
-            "phone1": db_awb.receiver_phone1,
-            "phone2": db_awb.receiver_phone1,
-            "legal_entity": db_awb.receiver_legal_entity,
-            "locality_id": db_awb.receiver_locality_id,
-            "street": db_awb.receiver_street,
-            "zipcode": db_awb.receiver_zipcode
-        },
-        "locker_id": db_awb.locker_id,
-        "is_oversize": db_awb.is_oversize,
-        "insured_value": db_awb.insured_value,
-        "weight": db_awb.weight,
-        "envelope_number": db_awb.envelope_number,
-        "parcel_number": db_awb.parcel_number,
-        "observation": db_awb.observation,
-        "cod": db_awb.cod,
-        "courier_account_id": db_awb.courier_account_id,
-        "pickup_and_return": db_awb.pickup_and_return,
-        "saturday_delivery": db_awb.saturday_delivery,
-        "sameday_delivery": db_awb.sameday_delivery,
-        "dropoff_locker": db_awb.dropoff_locker
-    }
-
-    logging.info(data)
 
     result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
     market_place = result.scalars().first()
+
+    if market_place.marketplaceDomain == "altex.ro":
+        data = {
+
+        }
+    else:
+        data = {
+            "order_id": db_awb.order_id,
+            "sender": {
+                "name": db_awb.sender_name,
+                "phone1": db_awb.sender_phone1,
+                "phone2": db_awb.sender_phone2,
+                "locality_id": db_awb.sender_locality_id,
+                "street": db_awb.sender_street,
+                "zipcode": db_awb.sender_zipcode
+            },
+            "receiver": {
+                "name": db_awb.receiver_name,
+                "contact": db_awb.receiver_contact,
+                "phone1": db_awb.receiver_phone1,
+                "phone2": db_awb.receiver_phone1,
+                "legal_entity": db_awb.receiver_legal_entity,
+                "locality_id": db_awb.receiver_locality_id,
+                "street": db_awb.receiver_street,
+                "zipcode": db_awb.receiver_zipcode
+            },
+            "locker_id": db_awb.locker_id,
+            "is_oversize": db_awb.is_oversize,
+            "insured_value": db_awb.insured_value,
+            "weight": db_awb.weight,
+            "envelope_number": db_awb.envelope_number,
+            "parcel_number": db_awb.parcel_number,
+            "observation": db_awb.observation,
+            "cod": db_awb.cod,
+            "courier_account_id": db_awb.courier_account_id,
+            "pickup_and_return": db_awb.pickup_and_return,
+            "saturday_delivery": db_awb.saturday_delivery,
+            "sameday_delivery": db_awb.sameday_delivery,
+            "dropoff_locker": db_awb.dropoff_locker
+        }
+
+    logging.info(data)
 
     result = await save_awb(market_place, data, db)
     db_awb.reservation_id = result['results'].get('reservation_id')

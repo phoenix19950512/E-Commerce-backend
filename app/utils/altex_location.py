@@ -132,9 +132,7 @@ async def refresh_altex_locations(marketplace: Marketplace):
 
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
-    logging.info("starting count")
-    logging.info(PUBLIC_KEY)
-    logging.info(PRIVATE_KEY)
+
     page_nr = 1
     while True:
         try:
