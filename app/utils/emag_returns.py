@@ -137,7 +137,7 @@ async def insert_rmas_into_db(rmas, place:str):
             quantity = [int(product.get('quantity')) for product in rma.get('products')]
             observations = [str(product.get('observations')) for product in rma.get('products')]
             pickup_address = rma.get('pickup_address')
-            return_reason = rma.get('observations')
+            return_reason = str(rma.get('return_reason'))
             return_type = rma.get('return_type')
             replacement_product_emag_id = rma.get('replacement_product_emag_id')
             replacement_product_id = rma.get('replacement_product_id')
@@ -208,7 +208,6 @@ async def refresh_emag_returns(marketplace: Marketplace):
                 logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
                 logging.info(rmas['results'][1])
                 await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain)
-                break
                 current_page += 1
         except Exception as e:
             print('++++++++++++++++++++++++++++++++++++++++++')
