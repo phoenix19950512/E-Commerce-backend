@@ -722,11 +722,15 @@ async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
     settings.customers_table_name.append(customer_table)
     settings.orders_table_name.append(orders_table)
 
+    endpoint = "/order"
+    read_endpoint = "/read"
+    count_endpoint = "/count"
+
     if marketplace.credentials["type"] == "user_pass":
         USERNAME = marketplace.credentials["firstKey"]
         PASSWORD = marketplace.credentials["secondKey"]
         API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        result = count_all_orders(marketplace.baseAPIURL, marketplace.orders_crud["endpoint"], marketplace.orders_crud["count"], API_KEY)
+        result = count_all_orders(marketplace.baseAPIURL, endpoint, count_endpoint, API_KEY)
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
@@ -737,8 +741,6 @@ async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
             # currentPage = int(pages)
             currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
-            endpoint = marketplace.orders_crud['endpoint']
-            read_endpoint = marketplace.orders_crud['read']
             try:
                 while currentPage <= int(pages):
                     orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)

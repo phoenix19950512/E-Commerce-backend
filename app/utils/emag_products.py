@@ -347,12 +347,16 @@ async def refresh_emag_products(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    endpoint = "/product_offer"
+    count_point = "/count"
+    read_endpoint = "/read"
+
     if marketplace.credentials["type"] == "user_pass":
         
         USERNAME = marketplace.credentials["firstKey"]
         PASSWORD = marketplace.credentials["secondKey"]
         API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], API_KEY)
+        result = count_all_products(marketplace.baseAPIURL, endpoint, count_point, API_KEY)
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
@@ -361,8 +365,6 @@ async def refresh_emag_products(marketplace: Marketplace):
             print("------------items--------------", items)
             currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
-            endpoint = marketplace.products_crud['endpoint']
-            read_endpoint = marketplace.products_crud['read']
             try:
                 while currentPage <= int(pages):
                     products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
