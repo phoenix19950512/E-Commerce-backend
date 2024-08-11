@@ -11,6 +11,7 @@ class Returns(Base):
     customer_phone = Column(String, nullable=True)
     products = Column(ARRAY(String), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
+    observations = Column(ARRAY(String), nullable=True)
     pickup_address = Column(String, nullable=True)
     return_reason = Column(String, nullable=True)
     return_type = Column(Integer, nullable=True)

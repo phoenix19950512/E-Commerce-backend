@@ -195,6 +195,7 @@ async def get_product_info(
                     "type": type,
                     "product_name": product.product_name,
                     "ean": product.ean,
+                    "sales_per_day": ave_sales,
                     "quantity": quantity,
                     "image_link": product.image_link,
                     "wechat": product.supplier_id,

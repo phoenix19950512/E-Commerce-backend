@@ -56,7 +56,7 @@ def check_hijacker(product_list):
             if buy_button_rank > 1:
                 hijackers.append({
                         "product_id": product_id,
-                        "name": product.get("name"),
+                        "name": product.get("product_name"),
                         "ean": product.get("ean")
                     })
         
