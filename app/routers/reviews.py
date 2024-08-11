@@ -97,7 +97,14 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     hijackers = check_hijacker(product_dicts)
 
-    print(hijackers)
+    await refresh_emag_reviews(marketplace, db)
+
+    result = await db.execute(select(Review).where(Review.review_marketplace == marketplace.marketplaceDomain))
+    reviews = result.scalars().all()
+
+    bad_reviews = check_bad_reviews(reviews)
+
+    print("@@@@@@@@@", bad_reviews)
 
     result = await db.execute(select(Notification))
     notifications = result.scalars().all()
@@ -110,67 +117,83 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     # delete_notifications_query = sql.SQL("DELETE FROM {}").format(sql.Identifier("notifications"))
     # cursor.execute(delete_notifications_query)
-    try:
-        insert_notification_query = sql.SQL("""
-            INSERT INTO {} (
-                id,
-                title,
-                description,
-                time,
-                ean,
-                state,
-                read,
-                user_id,
-                market_place
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s                          
-            ) ON CONFLICT (ean, market_place) DO UPDATE SET
-                time = EXCLUDED.time,
-                user_id = EXCLUDED.user_id       
-        """).format(sql.Identifier("notifications"))
 
-        
-        for hijacker in hijackers:
-            date_str = datetime.now()            
-            title = "Detected Hijacker"
-            description = hijacker["name"]
-            time = date_str.strftime('%Y-%m-%dT%H:%M:%S')
-            ean = hijacker["ean"]
-            state = "error"
-            read = False
-            user_id = admin_id
-            market_place = marketplace.marketplaceDomain.lower()
+    insert_notification_query = sql.SQL("""
+        INSERT INTO {} (
+            id,
+            title,
+            description,
+            time,
+            ean,
+            state,
+            read,
+            user_id,
+            market_place
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s                          
+        ) ON CONFLICT (ean, market_place) DO UPDATE SET
+            time = EXCLUDED.time,
+            user_id = EXCLUDED.user_id       
+    """).format(sql.Identifier("notifications"))
 
-            values = (
-                id,
-                title,
-                description,
-                time,
-                ean,
-                state,
-                read,
-                user_id,
-                market_place
-            )
+    for bad_review in bad_reviews:
+        date_str = datetime.now()
+        title = "Bad Review"
+        description = bad_review.content
+        ean = bad_review.ean
+        state = bad_review.user_name
+        read = False
+        user_id = admin_id
+        market_place = marketplace.marketplaceDomain.lower()
 
-            id += 1
+        values = {
+            id,
+            title,
+            description,
+            time,
+            ean,
+            state,
+            read,
+            user_id,
+            market_place,
+        }
 
-            cursor.execute(insert_notification_query, values)
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print("Can't add notification", e)
+        id += 1
+        cursor.execute(insert_notification_query, values)
+
+    for hijacker in hijackers:
+        date_str = datetime.now()            
+        title = "Detected Hijacker"
+        description = hijacker["name"]
+        time = date_str.strftime('%Y-%m-%dT%H:%M:%S')
+        ean = hijacker["ean"]
+        state = "error"
+        read = False
+        user_id = admin_id
+        market_place = marketplace.marketplaceDomain.lower()
+
+        values = (
+            id,
+            title,
+            description,
+            time,
+            ean,
+            state,
+            read,
+            user_id,
+            market_place
+        )
+
+        id += 1
+
+        cursor.execute(insert_notification_query, values)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
     await db.close()
-    await refresh_emag_reviews(marketplace, db)
 
-    result = await db.execute(select(Review))
-    reviews = result.scalars().all()
-
-    bad_reviews = check_bad_reviews(reviews)
-    
-    print("@@@@@@@@@@@@@@@@", bad_reviews)
     # for bad_review in bad_reviews:
     #     date_str = datetime.now()
     #     create_new_notification({

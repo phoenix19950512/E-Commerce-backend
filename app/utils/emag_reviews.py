@@ -1,7 +1,7 @@
 import logging
 import requests
 import base64
-from app.models.internal_product import Internal_Product
+from app.models.product import Product
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -11,8 +11,13 @@ from psycopg2 import sql
 
 
 PROXIES = {
-    'http': 'http://Gb7Pib5JMe4BDolM8jsY8RondrahTp:iWCCSqNRkZQxqikn_country-ro@proxy.resi.gg:8082',
-    'https': 'http://Gb7Pib5JMe4BDolM8jsY8RondrahTp:iWCCSqNRkZQxqikn_country-ro@proxy.resi.gg:8082',
+    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+}
+
+PROXIES = {
+    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
 }
 
 async def get_review_by_product(product_id, product_part_number_key, marketplace: Marketplace):
@@ -44,7 +49,7 @@ async def get_all_reviews(product_id_list, product_part_number_key_list, marketp
             })
     return await get_review_by_product(product_id_list[i], product_part_number_key_list[i], marketplace)
 
-async def insert_review_into_db(review, place):
+async def insert_review_into_db(review, place, ean):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -58,7 +63,8 @@ async def insert_review_into_db(review, place):
 
         insert_query = sql.SQL("""
             INSERT INTO {} (
-                product_id,
+                product_id
+                ean,
                 review_id,
                 user_id,
                 user_name,
@@ -68,9 +74,8 @@ async def insert_review_into_db(review, place):
                 brand_id,
                 review_marketplace               
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, review_id, review_marketplace) DO UPDATE SET
-                product_id = EXCLUDED.product_id,
                 user_id = EXCLUDED.user_id,
                 user_name = EXCLUDED.user_name,
                 content = EXCLUDED.content,
@@ -91,6 +96,7 @@ async def insert_review_into_db(review, place):
 
         values = (
             product_id,
+            ean,
             review_id,
             user_id,
             user_name,
@@ -101,44 +107,49 @@ async def insert_review_into_db(review, place):
             review_marketplace
         )
 
-        print(f'Inserting review: {values}')
         cursor.execute(insert_query, values)
         conn.commit()
-        print(f"Successfully inserted review: {values}")
+        print(f"Successfully inserted review")
 
         cursor.close()
         conn.close()
     except Exception as inner_e:
         print(f"Error inserting review {review_id}: {inner_e}")
 
-async def insert_reviews_into_db(reviews, place):
+async def insert_reviews_into_db(reviews, place, ean):
     for review in reviews:
-        await insert_review_into_db(review, place)
+        await insert_review_into_db(review, place, ean)
 
 async def refresh_emag_reviews(marketplace: Marketplace, db: AsyncSession):
-    result = await db.execute(select(Internal_Product))
+    result = await db.execute(select(Product))
     products = result.scalars().all()
 
     logging.info(f"Number of products: {len(products)}")
 
     cnt = 0
-    try:
-        for product in products:
-            cnt += 1
+    for product in products:
+        marketplacedomain = product.product_marketplace
+        if marketplacedomain.lower()[:4] != "emag":
+            continue
+        cnt += 1
+
+        try:
             logging.info(f"Processing product {cnt}/{len(products)}: {product.id}")
 
             result = await get_review_by_product(product.id, product.part_number_key, marketplace)
 
-            if result == "nothing" or result.get("reviews").get("count") == 0:
-                logging.info(f"No reviews for product {product.id}")
-                continue
+        except Exception as e:
+            logging.error(f"Error processing reviews: {e}")
 
-            reviews = result.get("reviews").get("items")
+        if result == "nothing" or result.get("reviews").get("count") == 0:
+            logging.info(f"No reviews for product {product.id}")
+            continue
 
-            await insert_reviews_into_db(reviews, marketplace.marketplaceDomain)
-        
-        logging.info(f"Processed {cnt} products")
-    except Exception as e:
-        logging.error(f"Error processing reviews: {e}")
+        reviews = result.get("reviews").get("items")
+
+        await insert_reviews_into_db(reviews, marketplace.marketplaceDomain, product.ean)
+    
+    logging.info(f"Processed {cnt} products")
+    
 
     print(cnt)

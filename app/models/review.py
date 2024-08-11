@@ -5,6 +5,7 @@ class Review(Base):
     __tablename__ = "reviews"
     id = Column(Integer, primary_key=True, autoincrement=True)  # Ensure id is a primary key and auto-incrementing
     product_id = Column(Text, nullable=True)
+    ean = Column(Text, nullable=True)
     review_id = Column(Integer, nullable=False)  # Removed primary_key=True
     user_id = Column(Integer, nullable=True)
     user_name = Column(Text, nullable=True)
