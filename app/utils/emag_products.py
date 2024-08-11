@@ -198,6 +198,8 @@ async def insert_products(products, mp_name: str):
                 market_place
             )
 
+
+
             cursor.execute(insert_query, values)
             conn.commit()
         
@@ -341,7 +343,7 @@ async def insert_products_into_db(products, username, place):
     except Exception as e:
         print(f"Failed to insert products into database: {e}")
 
-async def refresh_emag_products(marketplace: Marketplace, db: AsyncSession):
+async def refresh_emag_products(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 

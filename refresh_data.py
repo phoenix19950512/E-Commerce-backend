@@ -125,7 +125,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     await refresh_altex_orders(marketplace)
                 else:
                     logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace, session)
+                    await refresh_emag_products(marketplace)
                     logging.info("Refresh orders from marketplace")
                     await refresh_emag_orders(marketplace, session)
                     continue

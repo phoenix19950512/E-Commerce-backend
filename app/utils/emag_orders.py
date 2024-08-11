@@ -673,7 +673,7 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
     except Exception as e:
         print(f"Failed to insert orders into database: {e}")
 
-async def refresh_emag_orders(marketplace: Marketplace, db:AsyncSession):
+async def refresh_emag_orders(marketplace: Marketplace):
     # create_database()
 
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
