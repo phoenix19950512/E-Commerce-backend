@@ -87,6 +87,28 @@ async def init_models():
 #                     continue
 
 @app.on_event("startup")
+@repeat_every(seconds=600)
+async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        async with db as session:
+            logging.info("Starting orders refresh")
+            result = await session.execute(select(Marketplace))
+            marketplaces = result.scalars().all()
+            for marketplace in marketplaces:
+                if marketplace.marketplaceDomain == "altex.ro":
+                    logging.info("Refresh products from marketplace")
+                    await refresh_altex_products(marketplace)
+                    
+                    logging.info("Refresh orders from marketplace")
+                    await refresh_altex_orders(marketplace)
+                else:
+                    logging.info("Refresh products from marketplace")
+                    await refresh_emag_products(marketplace)
+                    logging.info("Refresh orders from marketplace")
+                    await refresh_emag_orders(marketplace)
+                    continue
+
+@app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
 async def refresh_data(db: AsyncSession = Depends(get_db)): 
     async for db in get_db():
@@ -106,30 +128,6 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                     await check_hijacker_and_bad_reviews(marketplace, session)
                     # logging.info("Refresh awb from marketplace")
                     # await refresh_emag_awb(marketplace, session)
-
-
-@app.on_event("startup")
-@repeat_every(seconds=600)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting orders refresh")
-            result = await session.execute(select(Marketplace))
-            marketplaces = result.scalars().all()
-            for marketplace in marketplaces:
-                if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh products from marketplace")
-                    await refresh_altex_products(marketplace)
-                    
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_altex_orders(marketplace)
-                else:
-                    logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace)
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_emag_orders(marketplace, session)
-                    continue
-
 
 if __name__ == "__main__":
     import uvicorn
