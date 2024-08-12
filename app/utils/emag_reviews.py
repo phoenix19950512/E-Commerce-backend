@@ -15,10 +15,16 @@ from psycopg2 import sql
 #     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 # }
 
+# PROXIES = {
+#     'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+#     'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+# }
+
 PROXIES = {
-    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'http': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
+    'https': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
 }
+
 
 async def get_review_by_product(product_id, product_part_number_key, marketplace: Marketplace):
     url = f'{marketplace.baseURL.replace("marketplace", "www")}/product-feedback/{product_id}/pd/{product_part_number_key}/reviews/list'

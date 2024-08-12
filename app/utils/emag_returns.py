@@ -203,10 +203,9 @@ async def refresh_emag_returns(marketplace: Marketplace):
             print("------------items--------------", items)
         try:
             current_page  = 1
-            while current_page <= 2:
+            while current_page <= int(pages):
                 rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
                 logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
-                logging.info(rmas['results'][1])
                 await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain)
                 current_page += 1
         except Exception as e:
