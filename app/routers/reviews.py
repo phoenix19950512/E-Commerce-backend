@@ -98,8 +98,9 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     hijackers = check_hijacker(product_dicts)
 
     # await refresh_emag_reviews(marketplace, db)
-
-    result = await db.execute(select(Review).where(Review.review_marketplace == marketplace.marketplaceDomain))
+    marketplacename = marketplace.marketplaceDomain
+    logging.info(marketplacename)
+    result = await db.execute(select(Review).where(Review.review_marketplace == marketplacename))
     reviews = result.scalars().all()
 
     bad_reviews = check_bad_reviews(reviews)
@@ -139,8 +140,11 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     for bad_review in bad_reviews:
         date_str = datetime.now()
         title = "Bad Review"
+        
         description = bad_review.content
         ean = bad_review.ean
+        
+        logging.info("#####", ean)
         state = bad_review.user_name
         read = False
         user_id = admin_id
@@ -157,6 +161,8 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             user_id,
             market_place,
         }
+
+        logging.info("##########", values)
 
         id += 1
         cursor.execute(insert_notification_query, values)
