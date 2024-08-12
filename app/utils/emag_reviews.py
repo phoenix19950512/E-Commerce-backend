@@ -24,8 +24,8 @@ async def get_review_by_product(product_id, product_part_number_key, marketplace
     url = f'{marketplace.baseURL.replace("marketplace", "www")}/product-feedback/{product_id}/pd/{product_part_number_key}/reviews/list'
     print('------------------', url)
 
-    # response = requests.get(url, proxies=PROXIES)
-    response = requests.get(url)
+    response = requests.get(url, proxies=PROXIES)
+    # response = requests.get(url)
     if response.status_code == 200:
         logging.info("success count")
         return response.json()
