@@ -6,6 +6,7 @@ from sqlalchemy import func
 from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
+from app.models.product import Product
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.config import settings
@@ -162,6 +163,24 @@ async def get_orders_count(
     count = result.scalar()
     return count
 
+@router.get("/{order_id}/total")
+async def get_total(order_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
+    marketplace = db_order.order_market_place
+    product_list = db_order.product_id
+    quantity_list = db_order.quantity
+    total = 0.0
+    for i in range(len(product_list)):
+        quantity = quantity_list[i]
+        product_id = product_list[i]
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        db_product = result.scalars().first()
+        total += db_product.sale_price * quantity
+
+    return {
+        "total": total
+    }
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):
