@@ -107,8 +107,8 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     print("@@@@@@@@@", bad_reviews)
 
-    result = await db.execute(select(Notification))
-    notifications = result.scalars().all()
+    result = await db.execute(text(f"SELECT * FROM notifications"))
+    notifications = result.fetchall()
     
     id = len(notifications) + 1
 
