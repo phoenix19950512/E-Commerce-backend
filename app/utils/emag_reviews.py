@@ -69,7 +69,7 @@ async def insert_review_into_db(review, place, ean):
 
         insert_query = sql.SQL("""
             INSERT INTO {} (
-                product_id
+                product_id,
                 ean,
                 review_id,
                 user_id,
