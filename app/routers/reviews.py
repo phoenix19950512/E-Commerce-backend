@@ -97,7 +97,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     hijackers = check_hijacker(product_dicts)
 
-    await refresh_emag_reviews(marketplace, db)
+    # await refresh_emag_reviews(marketplace, db)
 
     result = await db.execute(select(Review).where(Review.review_marketplace == marketplace.marketplaceDomain))
     reviews = result.scalars().all()
