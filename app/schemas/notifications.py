@@ -21,7 +21,6 @@ class NotificationUpdate(NotificationBase):
     pass
 
 class NotificationRead(NotificationBase):
-    id: int
     title: str
     ean: str
     market_place: str

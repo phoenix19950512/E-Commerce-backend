@@ -109,6 +109,10 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     admin_id = 1
 
+    result = await db.execute(select(Notification))
+    notifications = result.scalars().all()
+    id = len(notifications) + 1
+
     cursor = conn.cursor()
 
     # delete_notifications_query = sql.SQL("DELETE FROM {}").format(sql.Identifier("notifications"))
@@ -116,6 +120,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     insert_notification_query = sql.SQL("""
         INSERT INTO {} (
+            id,
             title,
             description,
             time,
@@ -125,8 +130,8 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             user_id,
             market_place
         ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s                     
-        ) ON CONFLICT (id, title, ean, market_place) DO UPDATE SET
+            %s, %s, %s, %s, %s, %s, %s, %s, %s                     
+        ) ON CONFLICT (title, ean, market_place) DO UPDATE SET
             time = EXCLUDED.time,
             user_id = EXCLUDED.user_id       
     """).format(sql.Identifier("notifications"))
@@ -136,15 +141,16 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         title = "Bad Review"
         
         description = bad_review.content
+        time = date_str.strftime('%Y-%m-%dT%H:%M:%S')
         ean = bad_review.ean
-        
-        logging.info("#####", ean)
         state = bad_review.user_name
         read = False
         user_id = admin_id
         market_place = marketplace.marketplaceDomain.lower()
 
-        values = {
+
+        values = (
+            id,
             title,
             description,
             time,
@@ -153,12 +159,15 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             read,
             user_id,
             market_place,
-        }
+        )
 
-        logging.info("##########", values)
-
-        cursor.execute(insert_notification_query, values)
-
+        try:
+            cursor.execute(insert_notification_query, values)
+            id += 1
+            print("Success to insert review into notification")
+        except Exception as e:
+            print(f"Failed to insert review into notification: {e}")
+            
     for hijacker in hijackers:
         date_str = datetime.now()            
         title = "Detected Hijacker"
@@ -171,6 +180,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         market_place = marketplace.marketplaceDomain.lower()
 
         values = (
+            id,
             title,
             description,
             time,
@@ -182,6 +192,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         )
 
         cursor.execute(insert_notification_query, values)
+        id += 1
     conn.commit()
     cursor.close()
     conn.close()

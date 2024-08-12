@@ -4,7 +4,7 @@ from app.database import Base
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer)
     title = Column(Text, nullable=True)
     description = Column(Text, nullable=True)
     time = Column(DateTime, nullable=True)
@@ -15,5 +15,5 @@ class Notification(Base):
     market_place = Column(Text, nullable=True)
 
     __table_args__ = (
-        PrimaryKeyConstraint('id', 'title', 'ean', 'market_place', name='pk_notifi_ean_market_place'),
+        PrimaryKeyConstraint('title', 'ean', 'market_place', name='pk_notifi_ean_market_place'),
     )
