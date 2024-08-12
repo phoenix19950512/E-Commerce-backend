@@ -4,8 +4,8 @@ from typing import Optional
 from datetime import datetime
 
 class NotificationBase(BaseModel):
-    id: Optional[int] = None
-    title: Optional[str] = None
+    id: int
+    title: str
     description: Optional[str] = None
     time: Optional[datetime] = None
     ean: str
@@ -21,6 +21,8 @@ class NotificationUpdate(NotificationBase):
     pass
 
 class NotificationRead(NotificationBase):
+    id: int
+    title: str
     ean: str
     market_place: str
 

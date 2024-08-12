@@ -107,11 +107,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     print("@@@@@@@@@", bad_reviews)
 
-    result = await db.execute(text(f"SELECT * FROM notifications"))
-    notifications = result.fetchall()
-    
-    id = len(notifications) + 1
-
     admin_id = 1
 
     cursor = conn.cursor()
@@ -121,7 +116,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     insert_notification_query = sql.SQL("""
         INSERT INTO {} (
-            id,
             title,
             description,
             time,
@@ -131,8 +125,8 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             user_id,
             market_place
         ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s                          
-        ) ON CONFLICT (ean, market_place) DO UPDATE SET
+            %s, %s, %s, %s, %s, %s, %s, %s                     
+        ) ON CONFLICT (id, title, ean, market_place) DO UPDATE SET
             time = EXCLUDED.time,
             user_id = EXCLUDED.user_id       
     """).format(sql.Identifier("notifications"))
@@ -151,7 +145,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         market_place = marketplace.marketplaceDomain.lower()
 
         values = {
-            id,
             title,
             description,
             time,
@@ -164,7 +157,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
         logging.info("##########", values)
 
-        id += 1
         cursor.execute(insert_notification_query, values)
 
     for hijacker in hijackers:
@@ -179,7 +171,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         market_place = marketplace.marketplaceDomain.lower()
 
         values = (
-            id,
             title,
             description,
             time,
@@ -189,8 +180,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             user_id,
             market_place
         )
-
-        id += 1
 
         cursor.execute(insert_notification_query, values)
     conn.commit()
