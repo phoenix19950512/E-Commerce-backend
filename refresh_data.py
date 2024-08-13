@@ -78,10 +78,10 @@ async def on_startup(db: AsyncSession = Depends(get_db)):
                     logging.info("Refresh couriers from altex")
                     await refresh_altex_couriers(marketplace)
                 else:
-                    logging.info("Refresh localities from marketplace")
-                    await refresh_emag_localities(marketplace)
-                    logging.info("Refresh couriers refresh")
-                    await refresh_emag_couriers(marketplace)
+                    # logging.info("Refresh localities from marketplace")
+                    # await refresh_emag_localities(marketplace)
+                    # logging.info("Refresh couriers refresh")
+                    # await refresh_emag_couriers(marketplace)
                     logging.info("Refresh orders form marketplace")
                     await refresh_emag_all_orders(marketplace, session)
                     continue
@@ -102,6 +102,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     
                     logging.info("Refresh orders from marketplace")
                     await refresh_altex_orders(marketplace)
+                    continue
                 else:
                     logging.info("Refresh products from marketplace")
                     await refresh_emag_products(marketplace)

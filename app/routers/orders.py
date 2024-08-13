@@ -7,11 +7,14 @@ from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
 from app.models.product import Product
+from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.config import settings
 from sqlalchemy import any_
 from sqlalchemy import cast, String
+from decimal import Decimal
+import json
 
 async def get_order(db: AsyncSession, order_id: int):
     result = await db.execute(select(Order).filter(Order.id == order_id))
@@ -36,6 +39,45 @@ async def delete_order(db: Session, order_id: int):
         db.delete(db_order)
         db.commit()
     return db_order
+
+async def get_total(order_id: int, db: AsyncSession):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
+    marketplace = db_order.order_market_place
+    product_list = db_order.product_id
+    quantity_list = db_order.quantity
+    sale_price = db_order.sale_price
+    total = Decimal(0)
+    for i in range(len(product_list)):
+        quantity = quantity_list[i]
+        price = sale_price[i]
+        total += Decimal(price) * quantity
+
+    result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
+    db_marketplace = result.scalars().first()
+    vat = db_marketplace.vat
+    total = total * (100 + vat) / 100
+
+
+    if db_order.shipping_tax:
+        total += Decimal(db_order.shipping_tax)
+    if db_order.vouchers:
+        vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
+        for voucher in vouchers:
+            # if isinstance(voucher, str):
+            #     try:
+            #         # Attempt to parse the voucher string as JSON
+            #         voucher = json.loads(voucher)
+            #     except json.JSONDecodeError as e:
+            #         # Log the error and the problematic voucher
+            #         print(f"Failed to decode voucher JSON: {e} | voucher: {voucher}")
+            #         continue  # Skip this voucher and move on
+
+            total += Decimal(voucher.get("sale_price", "0"))
+            total += Decimal(voucher.get("sale_price_vat", "0"))
+
+    return total
+
 
 router = APIRouter()
 
@@ -95,7 +137,7 @@ async def count_new_orders(
     db_new_orders = result.scalars().all()
     return len(db_new_orders)
 
-@router.get("/", response_model=List[OrderRead])
+@router.get("/")
 async def read_orders(
     flag: bool = Query(1),
     page: int = Query(1, ge=1, description="Page number"),
@@ -134,7 +176,16 @@ async def read_orders(
     
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
-    return db_orders
+    
+    rlt = []
+
+    for db_order in db_orders:
+        total_price = await get_total(db_order.id, db)
+        rlt.append({
+            "order": db_order,
+            "total": total_price
+        })
+    return rlt
 
 @router.get('/count')
 async def get_orders_count(
@@ -162,25 +213,6 @@ async def get_orders_count(
         ))
     count = result.scalar()
     return count
-
-@router.get("/{order_id}/total")
-async def get_total(order_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    db_order = result.scalars().first()
-    marketplace = db_order.order_market_place
-    product_list = db_order.product_id
-    quantity_list = db_order.quantity
-    total = 0.0
-    for i in range(len(product_list)):
-        quantity = quantity_list[i]
-        product_id = product_list[i]
-        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-        db_product = result.scalars().first()
-        total += db_product.sale_price * quantity
-
-    return {
-        "total": total
-    }
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):

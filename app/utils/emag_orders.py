@@ -202,6 +202,7 @@ async def insert_orders(orders, mp_name:str):
                 customer_id,
                 product_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -222,7 +223,7 @@ async def insert_orders(orders, mp_name:str):
                 payment_mode_id,
                 order_market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, order_market_place) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -232,6 +233,7 @@ async def insert_orders(orders, mp_name:str):
                 payment_status = EXCLUDED.payment_status,
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,
+                sale_price = EXCLUDED.sale_price,
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
                 refunded_amount = EXCLUDED.refunded_amount,
@@ -315,6 +317,7 @@ async def insert_orders(orders, mp_name:str):
             customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
+            sale_price = [Decimal(product.get('sale_price', '0')) for product in order.get('products')]
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = json.dumps(order.get('shipping_tax_voucher_split', []))
             vouchers = json.dumps(order.get('vouchers'))
@@ -351,6 +354,7 @@ async def insert_orders(orders, mp_name:str):
                 customer_id,
                 products_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -482,6 +486,7 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
                 customer_id,
                 product_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -502,11 +507,12 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
                 payment_mode_id,
                 market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 payment_mode = EXCLUDED.payment_mode,
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,
+                sale_price = EXCLUDED.sale_price,
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
                 emag_club = EXCLUDED.emag_club,
@@ -607,6 +613,8 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
             customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
+            sale_price = [Decimal(product.get('sale_price')) for product in order.get('products')]
+            print(sale_price)
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = json.dumps(order.get('shipping_tax_voucher_split', []))
             vouchers = json.dumps(order.get('vouchers'))
@@ -642,6 +650,7 @@ async def insert_orders_into_db(orders, customers_table, orders_table, place):
                 customer_id,
                 products_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -703,6 +712,7 @@ async def refresh_emag_orders(marketplace: Marketplace):
             try:
                 while currentPage <= int(pages):
                     orders = get_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
+                    print(orders['results'][0])
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
