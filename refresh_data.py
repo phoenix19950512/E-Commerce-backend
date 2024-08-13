@@ -68,7 +68,7 @@ async def on_startup(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting localities refresh")
-            result = await session.execute(select(Marketplace))
+            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
@@ -92,7 +92,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting orders refresh")
-            result = await session.execute(select(Marketplace))
+            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
@@ -116,7 +116,7 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting product refresh")
-            result = await session.execute(select(Marketplace))
+            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
             marketplaces = result.scalars().all()
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
