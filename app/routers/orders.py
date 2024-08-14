@@ -48,16 +48,15 @@ async def get_total(order_id: int, db: AsyncSession):
     quantity_list = db_order.quantity
     sale_price = db_order.sale_price
     total = Decimal(0)
-    for i in range(len(product_list)):
-        quantity = quantity_list[i]
-        price = sale_price[i]
-        total += Decimal(price) * quantity
-
     result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
     db_marketplace = result.scalars().first()
     vat = db_marketplace.vat
-    total = total * (100 + vat) / 100
 
+    for i in range(len(product_list)):
+        quantity = quantity_list[i]
+        price = sale_price[i]
+        real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+        total += real_price * quantity
 
     if db_order.shipping_tax:
         total += Decimal(db_order.shipping_tax)

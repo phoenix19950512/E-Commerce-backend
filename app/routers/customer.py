@@ -19,7 +19,7 @@ async def create_customers_(customers: CustomersCreate, db: AsyncSession = Depen
 
 @router.get('/count')
 async def get_customers_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Customers.order_id))
+    result = await db.execute(func.count(Customers.id))
     count = result.scalar()
     return count
 
