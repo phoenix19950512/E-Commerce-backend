@@ -21,6 +21,7 @@ class OrderBase(BaseModel):
     vouchers: Optional[str] = None
     proforms: Optional[str] = None
     attachments: Optional[str] = None  # JSON field to List[dict]
+    shipping_address: Optional[str] = None
     cashed_co: Optional[float] = None
     cashed_cod: Optional[float] = None
     refunded_amount: Optional[float] = None

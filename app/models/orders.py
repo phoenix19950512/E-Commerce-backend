@@ -21,6 +21,7 @@ class Order(Base):
     vouchers = Column(String, nullable=True)
     proforms = Column(String, nullable=True)
     attachments = Column(String, nullable=True)
+    shipping_address = Column(String, nullable=True)
     cashed_co = Column(Float, nullable=True)
     cashed_cod = Column(Float, nullable=True)
     refunded_amount = Column(Float, nullable=True)
