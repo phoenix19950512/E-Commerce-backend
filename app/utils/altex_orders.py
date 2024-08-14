@@ -133,6 +133,7 @@ async def insert_orders(orders, mp_name:str):
                 vouchers,
                 proforms,
                 attachments,
+                shipping_address,
                 cashed_co,
                 cashed_cod,
                 refunded_amount,
@@ -148,7 +149,7 @@ async def insert_orders(orders, mp_name:str):
                 payment_mode_id,
                 order_market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, order_market_place) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -243,6 +244,7 @@ async def insert_orders(orders, mp_name:str):
             vouchers = ""
             proforms = ""
             attachments = ''
+            shipping_address = customer_shipping_street
             cashed_co = Decimal('0')
             cashed_cod = 0
             refunded_amount = 0
@@ -276,6 +278,7 @@ async def insert_orders(orders, mp_name:str):
                 vouchers,
                 proforms,
                 attachments,
+                shipping_address,
                 cashed_co,
                 cashed_cod,
                 refunded_amount,

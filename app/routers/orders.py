@@ -55,7 +55,10 @@ async def get_total(order_id: int, db: AsyncSession):
     for i in range(len(product_list)):
         quantity = quantity_list[i]
         price = sale_price[i]
-        real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+        if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
+            real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+        else:
+            real_price = round(Decimal(price) * (100 + vat) / 100, 4)
         total += real_price * quantity
 
     if db_order.shipping_tax:
