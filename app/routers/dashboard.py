@@ -369,7 +369,7 @@ async def get_chart_data(
     chart_data = []
 
     if product_ids:
-        product_ids_list = [int(id.strip()) for id in product_ids.split(",")]
+        product_ids_list = [str(id.strip()) for id in product_ids.split(",")]
     else:
         product_ids_list = []
 
