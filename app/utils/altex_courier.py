@@ -101,7 +101,7 @@ def generate_signature(public_key, private_key, params):
 def get_couriers(url, public_key, private_key, page_nr):
 
     params = f"page_nr={page_nr}"
-    url = f"{url}sales/location/?{params}"
+    url = f"{url}sales/courier/?{params}"
     signature = generate_signature(public_key, private_key, params)
     headers = {
         'X-Request-Public-Key': public_key,
@@ -122,7 +122,7 @@ async def refresh_altex_couriers(marketplace: Marketplace):
         try:
             logging.info(page_nr)
             result = get_couriers(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
-            # logging.info(f"Result: {result}")
+            logging.info(f"Result: {result}")
             if result['status'] == 'error':
                 logging.error("Error in result")
                 break
