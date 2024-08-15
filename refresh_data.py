@@ -73,8 +73,8 @@ async def on_startup(db: AsyncSession = Depends(get_db)):
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
                 if marketplace.marketplaceDomain == "altex.ro":
-                    # logging.info("Refresh locations from altex")
-                    # await refresh_altex_locations(marketplace)
+                    logging.info("Refresh locations from altex")
+                    await refresh_altex_locations(marketplace)
                     logging.info("Refresh couriers from altex")
                     await refresh_altex_couriers(marketplace)
                 else:

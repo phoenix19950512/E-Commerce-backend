@@ -71,7 +71,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
         )
     ).join(
         ProductAlias,
-        ProductAlias.id == func.any_(Order.product_id)
+        ProductAlias.id == any_(Order.product_id)
     )
 
     if product_ids_list:
@@ -122,12 +122,12 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
         )
     ).join(
         ProductAlias,
-        ProductAlias.id == func.any(Order.product_id)
+        ProductAlias.id == any_(Order.product_id)
     )
 
     if product_ids_list:
         query = query.where(
-            Order.product_id.op('&&')(cast(product_ids_list, ARRAY(BigInteger)))
+            Order.product_id.op('&&')(cast(product_ids_list, ARRAY(String)))
         )
     result = await db.execute(query)
     orders_with_products = result.all()
