@@ -178,7 +178,8 @@ async def get_product_info(
                 "wechat": product.supplier_id,
                 "stock_imports": [product.stock, 0, imports],
                 "day_stock": [0, 0],
-                "imports_data": imports_datas
+                "imports_data": imports_datas,
+                "observation": product.observation
             })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
@@ -205,7 +206,8 @@ async def get_product_info(
                     "wechat": product.supplier_id,
                     "stock_imports": [product.stock, ave_sales, imports],
                     "day_stock": [stock_days, stock_imports_days],
-                    "imports_data": imports_datas
+                    "imports_data": imports_datas,
+                    "observation": product.observation
                 })
     return product_data
 
