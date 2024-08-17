@@ -258,12 +258,14 @@ async def get_products(
         supplier_id_list = [int(id.strip()) for id  in supplier_ids.split(",")]
         result = await db.execute(select(Internal_Product).filter(
             (Internal_Product.supplier_id == any_(supplier_id_list)) | 
+            (Internal_Product.id .ilike(f"%{search_text}")) |
             (Internal_Product.product_name.ilike(f"%{search_text}%")) |
             (Internal_Product.model_name.ilike(f"%{search_text}%")) |
             (Internal_Product.ean.ilike(f"%{search_text}%"))
         ).order_by(Internal_Product.id).offset(offset).limit(items_per_page))
     else:
         result = await db.execute(select(Internal_Product).filter(
+            (Internal_Product.id .ilike(f"%{search_text}")) |
             (Internal_Product.product_name.ilike(f"%{search_text}%")) |
             (Internal_Product.model_name.ilike(f"%{search_text}%")) |
             (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page))
