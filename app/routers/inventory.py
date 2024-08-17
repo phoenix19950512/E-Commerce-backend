@@ -11,7 +11,7 @@ from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 from app.database import get_db
 from app.utils.emag_products import *
 from sqlalchemy import func, and_, text
-import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import barcode
 from barcode.writer import ImageWriter
@@ -124,6 +124,10 @@ async def get_product_info(
         ProductAlias,
         ProductAlias.id == func.any_(Order.product_id)
     )
+
+    time = datetime.now()
+    thirty_days_ago = time - timedelta(days=30)
+    query = query.where(Order.date > thirty_days_ago)
 
     result = await db.execute(query)
     orders_with_products = result.all()
