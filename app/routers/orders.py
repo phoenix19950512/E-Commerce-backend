@@ -40,48 +40,6 @@ async def delete_order(db: Session, order_id: int):
         db.commit()
     return db_order
 
-async def get_total(order_id: int, db: AsyncSession):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    db_order = result.scalars().first()
-    marketplace = db_order.order_market_place
-    product_list = db_order.product_id
-    quantity_list = db_order.quantity
-    sale_price = db_order.sale_price
-    total = Decimal(0)
-    result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
-    db_marketplace = result.scalars().first()
-    vat = db_marketplace.vat
-
-    for i in range(len(product_list)):
-        quantity = quantity_list[i]
-        price = sale_price[i]
-        if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
-            real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-        elif marketplace.lower() == 'emag.hu':
-            real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-        else:
-            real_price = round(Decimal(price) * (100 + vat) / 100, 4)
-        total += real_price * quantity
-
-    if db_order.shipping_tax:
-        total += Decimal(db_order.shipping_tax)
-    if db_order.vouchers:
-        vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
-        for voucher in vouchers:
-            # if isinstance(voucher, str):
-            #     try:
-            #         # Attempt to parse the voucher string as JSON
-            #         voucher = json.loads(voucher)
-            #     except json.JSONDecodeError as e:
-            #         # Log the error and the problematic voucher
-            #         print(f"Failed to decode voucher JSON: {e} | voucher: {voucher}")
-            #         continue  # Skip this voucher and move on
-
-            total += Decimal(voucher.get("sale_price", "0"))
-            total += Decimal(voucher.get("sale_price_vat", "0"))
-
-    return total
-
 
 router = APIRouter()
 
@@ -93,7 +51,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(db_order)
     return db_order
 
-@router.get("/new_order", response_model=List[OrderRead])
+@router.get("/new_order")
 async def read_new_orders(
     flag: bool = Query(1),
     search_text: str = Query('', description="Text for searching"),
@@ -116,11 +74,59 @@ async def read_new_orders(
 
     result = await db.execute(query)
     db_new_orders = result.scalars().all()
+    new_order_data = []
+    for db_order in db_new_orders:
+        image_link = []
+        stock = []
+        marketplace = db_order.order_market_place
+        product_list = db_order.product_id
+        quantity_list = db_order.quantity
+        sale_price = db_order.sale_price
+        total = Decimal(0)
+        result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
+        db_marketplace = result.scalars().first()
+        vat = db_marketplace.vat
 
-    if db_new_orders is None:
-        raise HTTPException(status_code = 404, detail = "New order not found")
+        for i in range(len(product_list)):
+            quantity = quantity_list[i]
+            price = sale_price[i]
+            if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+            elif marketplace.lower() == 'emag.hu':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+            else:
+                real_price = round(Decimal(price) * (100 + vat) / 100, 4)
+            total += real_price * quantity
 
-    return db_new_orders
+        if db_order.shipping_tax:
+            total += Decimal(db_order.shipping_tax)
+        if db_order.vouchers:
+            vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
+            for voucher in vouchers:
+                total += Decimal(voucher.get("sale_price", "0"))
+                total += Decimal(voucher.get("sale_price_vat", "0"))
+
+        for i in range(len(product_list)):
+            image_link.append("")
+            product_id = product_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            db_products = result.scalars().all()
+            for db_product in db_products:
+                if db_product.product_marketplace.lower() == 'emag.ro':
+                    image_link[i] = db_product.image_link
+                    break
+            for db_product in db_products:
+                stock.append(db_product.stock)
+                break
+
+        new_order_data.append({
+            "order": db_order,
+            "total_price": total,
+            "image_link": image_link,
+            "stock": stock
+        })
+
+    return new_order_data
 
 @router.get("/count/new_order")
 async def count_new_orders(
@@ -181,15 +187,59 @@ async def read_orders(
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    rlt = []
+    orders_data = []
 
     for db_order in db_orders:
-        total_price = await get_total(db_order.id, db)
-        rlt.append({
+        image_link = []
+        stock = []
+        marketplace = db_order.order_market_place
+        product_list = db_order.product_id
+        quantity_list = db_order.quantity
+        sale_price = db_order.sale_price
+        total = Decimal(0)
+        result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
+        db_marketplace = result.scalars().first()
+        vat = db_marketplace.vat
+
+        for i in range(len(product_list)):
+            quantity = quantity_list[i]
+            price = sale_price[i]
+            if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+            elif marketplace.lower() == 'emag.hu':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+            else:
+                real_price = round(Decimal(price) * (100 + vat) / 100, 4)
+            total += real_price * quantity
+
+        if db_order.shipping_tax:
+            total += Decimal(db_order.shipping_tax)
+        if db_order.vouchers:
+            vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
+            for voucher in vouchers:
+                total += Decimal(voucher.get("sale_price", "0"))
+                total += Decimal(voucher.get("sale_price_vat", "0"))
+
+        for i in range(len(product_list)):
+            image_link.append("")
+            product_id = product_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            db_products = result.scalars().all()
+            for db_product in db_products:
+                if db_product.product_marketplace.lower() == 'emag.ro':
+                    image_link[i] = db_product.image_link
+                    break
+            for db_product in db_products:
+                stock.append(db_product.stock)
+                break
+
+        orders_data.append({
             "order": db_order,
-            "total": total_price
+            "total_price": total,
+            "image_link": image_link,
+            "stock": stock
         })
-    return rlt
+    return orders_data
 
 @router.get('/count')
 async def get_orders_count(
