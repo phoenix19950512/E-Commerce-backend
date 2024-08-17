@@ -93,7 +93,7 @@ async def read_new_orders(
             if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
                 real_price = round(Decimal(price) * (100 + vat) / 100, 2)
             elif marketplace.lower() == 'emag.hu':
-                real_price = round(Decimal(price) * (100 + vat) / 100, 0)
+                real_price = round(Decimal(price) * (100 + vat) / 100, 1)
             else:
                 real_price = round(Decimal(price) * (100 + vat) / 100, 4)
             total += real_price * quantity
