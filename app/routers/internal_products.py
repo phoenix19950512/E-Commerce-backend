@@ -12,6 +12,7 @@ from app.models.customer import Customers
 from app.models.internal_product import Internal_Product
 from app.schemas.internal_product import Internal_ProductCreate, Internal_ProductRead, Internal_ProductUpdate
 from app.models.shipment import Shipment
+from sqlalchemy import cast, String
 from app.models.marketplace import Marketplace
 import json
 
@@ -254,22 +255,20 @@ async def get_products(
 ):
     
     offset = (page - 1) * items_per_page
+    query = select(Internal_Product)
     if supplier_ids:
         supplier_id_list = [int(id.strip()) for id  in supplier_ids.split(",")]
-        result = await db.execute(select(Internal_Product).filter(
-            (Internal_Product.supplier_id == any_(supplier_id_list)) | 
-            (Internal_Product.id .ilike(f"%{search_text}")) |
-            (Internal_Product.product_name.ilike(f"%{search_text}%")) |
-            (Internal_Product.model_name.ilike(f"%{search_text}%")) |
-            (Internal_Product.ean.ilike(f"%{search_text}%"))
-        ).order_by(Internal_Product.id).offset(offset).limit(items_per_page))
-    else:
-        result = await db.execute(select(Internal_Product).filter(
-            (Internal_Product.id .ilike(f"%{search_text}")) |
-            (Internal_Product.product_name.ilike(f"%{search_text}%")) |
-            (Internal_Product.model_name.ilike(f"%{search_text}%")) |
-            (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page))
+        query = query.filter(Internal_Product.supplier_id == any_(supplier_id_list))
+        
+    query = query.filter(
+        (cast(Internal_Product.id, String).ilike(f"%{search_text}")) |
+        (Internal_Product.product_name.ilike(f"%{search_text}%")) |
+        (Internal_Product.model_name.ilike(f"%{search_text}%")) |
+        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
+
+    result = await db.execute(query)
     db_products = result.scalars().all()
+
     if db_products is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
     return db_products
