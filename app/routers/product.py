@@ -214,7 +214,7 @@ async def get_shipment_info(ean: str, db: AsyncSession):
         shipment_data.append({
             "shipment_id": shipment.id,
             "shipment_title": shipment.title,
-            "shipment_date": shipment.date,
+            "shipment_date": shipment.create_date,
             "shipment_quantity": total_quantity,
             "supplier_name": shipment.supplier_name[index],
             "shipment_status": shipment.status,
