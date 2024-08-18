@@ -76,8 +76,8 @@ async def read_notification(notification_id: int, db:AsyncSession = Depends(get_
     db_notification = await get_notification(db, notification_id)
     db_notification.read = True
 
-    db.commit()
-    db.refresh(db_notification)
+    await db.commit()
+    await db.refresh(db_notification)
     return db_notification
 
 @router.put("/{notification_id}", response_model=NotificationRead)
