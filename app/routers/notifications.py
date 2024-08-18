@@ -71,6 +71,15 @@ async def read_notification(notification_id: int, db: AsyncSession = Depends(get
         raise HTTPException(status_code=404, detail="Notification not found")
     return notifications
 
+@router.get("/read/{notification_id}", response_model=NotificationRead)
+async def read_notification(notification_id: int, db:AsyncSession = Depends(get_db)):
+    db_notification = await get_notification(db, notification_id)
+    db_notification.read = True
+
+    db.commit()
+    db.refresh(db_notification)
+    return db_notification
+
 @router.put("/{notification_id}", response_model=NotificationRead)
 async def update_existing_notification(notification_id: int, notifications: NotificationUpdate, db: AsyncSession = Depends(get_db)):
     updated_notification = await update_notification(db, notification_id, notifications)

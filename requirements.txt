@@ -16,3 +16,5 @@ requests
 fastapi_utils
 python-barcode
 bs4
+pydantic[email]
+python-multipart
