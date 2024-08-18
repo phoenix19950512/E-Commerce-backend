@@ -109,7 +109,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, db:Async
 
     # Commit and refresh shipment_2
 
-    await db.flush()
+    await db.commit()
     await db.refresh(shipment_2)
 
     logging.info(f"@@@@@After update: {shipment_2}")
