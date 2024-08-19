@@ -30,6 +30,7 @@ class ShipmentBase(BaseModel):
     document: Optional[List[str]] = None
     date_added: Optional[List[datetime]] = None
     date_agent: Optional[List[datetime]] = None
+    supplier_name: Optional[List[str]] = None
     before: Optional[List[str]] = None
     user: Optional[List[int]] = None
 

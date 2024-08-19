@@ -42,13 +42,15 @@ async def get_shipments(
     return db_shipments
 
 @router.get("/move", response_model=ShipmentRead)
-async def move_products(shipment_id1: int, shipment_id2: int, ean: str, db:AsyncSession = Depends(get_db)):
+async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier_name:str, db:AsyncSession = Depends(get_db)):
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id1))
     shipment_1 = result.scalars().first()
 
     ean_list = shipment_1.ean
-    index = ean_list.index(ean)
-    logging.info(index)
+    for i in range(len(ean_list)):
+        if ean_list[i] == ean and supplier_name[i] == supplier_name:
+            index = i
+            break
     quantity = shipment_1.quantity[index]
     item_per_box = shipment_1.item_per_box[index]
     pdf_sent = shipment_1.pdf_sent[index]
@@ -79,6 +81,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, db:Async
     shipment_1.document = shipment_1.document[:index] + shipment_1.document[index+1:]
     shipment_1.date_added = shipment_1.date_added[:index] + shipment_1.date_added[index+1:]
     shipment_1.date_agent = shipment_1.date_agent[:index] + shipment_1.date_agent[index+1:]
+    shipment_1.supplier_name = shipment_1.supplier_name[:index] + shipment_1.supplier_name[index+1:]
     shipment_1.before = shipment_1.before[:index] + shipment_1.before[index+1:]
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
 
@@ -104,6 +107,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, db:Async
     shipment_2.document = shipment_2.document + [document]
     shipment_2.date_added = shipment_2.date_added + [date_added]
     shipment_2.date_agent = shipment_2.date_agent + [date_agent]
+    shipment_2.supplier_name = shipment_2.supplier_name + [supplier_name]
     shipment_2.before = shipment_2.before + [before]
     shipment_2.user = shipment_2.user + [user]
 
@@ -117,7 +121,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, db:Async
     return shipment_2
 
 @router.get("/product_info")
-async def get_info(ean: str, db:AsyncSession = Depends(get_db)):
+async def get_info(ean: str, item_per_box: int, db:AsyncSession = Depends(get_db)):
     query = select(Shipment).where(ean == any_(Shipment.ean))
     result = await db.execute(query)
 
@@ -141,18 +145,29 @@ async def get_info(ean: str, db:AsyncSession = Depends(get_db)):
 
     result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
+ 
+    dimension = product.dimensions
+    numbers = dimension.split('*')
+    w,h,d = map(int, numbers)
+    if item_per_box:
+        volumetric_weight = w * h * d / 5000 / item_per_box
 
-    if product.weight < 250 and product.volumetric_weight < 250:
-        type = 1
-    elif product.battery:
-        type = 2
+        if product.weight < 350 and volumetric_weight < 350:
+            type = 1
+        elif product.battery:
+            type = 2
+        else:
+            type = 3
+
+        return {
+            "type": type,
+            "imports_data": imports_data
+        }
     else:
-        type = 3
-
-    return {
-        "type": type,
-        "imports_data": imports_data
-    }
+        return {
+            "type": 1,
+            "imports_data": imports_data
+        }
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):

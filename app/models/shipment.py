@@ -31,5 +31,6 @@ class Shipment(Base):
     document = Column(ARRAY(Text), nullable=True)
     date_added = Column(ARRAY(DateTime), nullable=True)
     date_agent = Column(ARRAY(DateTime), nullable=True)
+    supplier_name = Column(ARRAY(Text), nullable=True)
     before = Column(ARRAY(Text), nullable=True)
     user = Column(ARRAY(Integer), nullable=True)
