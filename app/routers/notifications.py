@@ -73,7 +73,8 @@ async def read_notification(notification_id: int, db: AsyncSession = Depends(get
 
 @router.get("/read/{notification_id}", response_model=NotificationRead)
 async def read_notification(notification_id: int, db:AsyncSession = Depends(get_db)):
-    db_notification = await get_notification(db, notification_id)
+    result = await db.execute(select(Notification).where(Notification.id == notification_id))
+    db_notification = result.scalars().first()
     db_notification.read = True
 
     await db.commit()
