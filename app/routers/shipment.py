@@ -147,8 +147,11 @@ async def get_info(ean: str, item_per_box: int, db:AsyncSession = Depends(get_db
     product = result.scalars().first()
  
     dimension = product.dimensions
-    numbers = dimension.split('*')
-    w,h,d = map(int, numbers)
+    if dimension:
+        numbers = dimension.split('*')
+        w,h,d = map(int, numbers)
+    else:
+        w,h,d = (0, 0, 0)
     if item_per_box:
         volumetric_weight = w * h * d / 5000 / item_per_box
 

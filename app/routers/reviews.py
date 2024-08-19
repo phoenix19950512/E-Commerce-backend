@@ -111,7 +111,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     result = await db.execute(select(Notification))
     notifications = result.scalars().all()
-    id = len(notifications) + 1
+    id = max(notification.id for notification in notifications) + 1
 
     cursor = conn.cursor()
 
