@@ -47,8 +47,9 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_1 = result.scalars().first()
 
     ean_list = shipment_1.ean
+
     for i in range(len(ean_list)):
-        if ean_list[i] == ean and supplier_name[i] == supplier_name:
+        if ean_list[i] == ean and shipment_1.supplier_name[i] == supplier_name:
             index = i
             break
     quantity = shipment_1.quantity[index]

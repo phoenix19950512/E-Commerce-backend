@@ -153,6 +153,7 @@ async def read_new_orders(
 @router.get("/count/new_order")
 async def count_new_orders(
     search_text: str = Query('', description="Text for searching"),
+    warehouse_id: int = Query('', description="warehouse_id"),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Order).filter(
@@ -167,7 +168,31 @@ async def count_new_orders(
 
     result = await db.execute(query)
     db_new_orders = result.scalars().all()
-    return len(db_new_orders)
+    if warehouse_id:
+        cnt = 0
+        for db_new_order in db_new_orders:
+            product_list = db_new_order.product_id
+            flag = 1
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id))
+                db_product = result.scalars().first()
+
+                ean = db_product.ean
+                
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
+
+                if db_internal_product.warehouse_id != warehouse_id:
+                    flag = 0
+                    break
+
+            if flag == 0:
+                continue
+            cnt += 1
+        return cnt
+    else:
+        return len(db_new_orders)
 
 @router.get("/")
 async def read_orders(
