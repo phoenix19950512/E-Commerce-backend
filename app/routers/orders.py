@@ -89,23 +89,24 @@ async def read_new_orders(
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
 
-        flag = 1
-        for i in range(len(product_list)):
-            product_id = product_list[i]
-            result = await db.execute(select(Product).where(Product.id == product_id))
-            db_product = result.scalars().first()
+        if warehouse_id:
+            flag = 1
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id))
+                db_product = result.scalars().first()
 
-            ean = db_product.ean
-            
-            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-            db_internal_product = result.scalars().first()
+                ean = db_product.ean
+                
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
 
-            if db_internal_product.warehouse_id != warehouse_id:
-                flag = 0
-                break
+                if db_internal_product.warehouse_id != warehouse_id:
+                    flag = 0
+                    break
 
-        if flag == 0:
-            continue
+            if flag == 0:
+                continue
 
         for i in range(len(product_list)):
             quantity = quantity_list[i]
@@ -223,23 +224,24 @@ async def read_orders(
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
 
-        flag = 1
-        for i in range(len(product_list)):
-            product_id = product_list[i]
-            result = await db.execute(select(Product).where(Product.id == product_id))
-            db_product = result.scalars().first()
+        if warehouse_id:
+            flag = 1
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id))
+                db_product = result.scalars().first()
 
-            ean = db_product.ean
-            
-            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-            db_internal_product = result.scalars().first()
+                ean = db_product.ean
+                
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
 
-            if db_internal_product.warehouse_id != warehouse_id:
-                flag = 0
-                break
+                if db_internal_product.warehouse_id != warehouse_id:
+                    flag = 0
+                    break
 
-        if flag == 0:
-            continue
+            if flag == 0:
+                continue
 
         for i in range(len(product_list)):
             quantity = quantity_list[i]
