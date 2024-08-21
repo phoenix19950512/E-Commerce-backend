@@ -20,6 +20,12 @@ router = APIRouter()
 @router.post("/")
 async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
+    order_id = db_awb.order_id
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
+    awb = result.scalars().first()
+
+    if awb:
+        return awb
 
     result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
     market_place = result.scalars().first()
