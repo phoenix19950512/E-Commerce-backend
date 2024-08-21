@@ -26,6 +26,12 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
+def change_string(ean_str):
+    if len(ean_str) == 12:
+        return '0' + ean_str
+    else:
+        return ean_str
+
 async def insert_products(products, offers, mp_name):
     try:
         conn = psycopg2.connect(
@@ -88,6 +94,7 @@ async def insert_products(products, offers, mp_name):
             price = 0
             sale_price = offer.get('price')
             ean = str(product.get('ean')[0]) if product.get('ean') else None
+            ean = change_string(ean)
             image_link = ""
             barcode_title = ""
             masterbox_title = ""
@@ -228,6 +235,7 @@ async def insert_products_into_db(products, offers,  place):
             sale_price = offer.get('price')
             sku = product.get('sku')
             ean = str(product.get('ean')[0]) if product.get('ean') else None
+            ean = change_string(ean)
             image_link = product.get('images')[0]['url'] if product.get('images') else None
             barcode_title = ""
             masterbox_title = ""

@@ -128,6 +128,7 @@ async def insert_orders(orders, mp_name:str):
                 customer_id,
                 product_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
@@ -239,6 +240,7 @@ async def insert_orders(orders, mp_name:str):
             customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
+            sale_price = [product.get('selling_price') for product in order.get('products')]
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = ""
             vouchers = ""
@@ -273,6 +275,7 @@ async def insert_orders(orders, mp_name:str):
                 customer_id,
                 products_id,
                 quantity,
+                sale_price,
                 shipping_tax,
                 shipping_tax_voucher_split,
                 vouchers,
