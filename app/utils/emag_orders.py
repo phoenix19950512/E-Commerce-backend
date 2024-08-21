@@ -439,7 +439,6 @@ async def refresh_emag_orders(marketplace: Marketplace):
             try:
                 while currentPage <= int(pages):
                     orders = get_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
-                    print(orders['results'][0])
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)

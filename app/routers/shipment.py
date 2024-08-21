@@ -6,9 +6,11 @@ from sqlalchemy import any_
 from typing import List
 from app.database import get_db
 from app.models.shipment import Shipment
+from app.models.supplier import Supplier
 from app.models.internal_product import Internal_Product
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 import logging
+import json
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 router = APIRouter()
@@ -65,7 +67,22 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     document = shipment_1.document[index]
     date_added = shipment_1.date_added[index]
     date_agent = shipment_1.date_agent[index]
-    before = shipment_1.title
+
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+    db_product = result.scalars().first()
+    supplier_id = db_product.supplier_id
+
+    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id))
+    db_supplier = result.scalars().first()
+    supplier_name = db_supplier.name
+
+    before = shipment_1.before[index]
+    if before:
+        before = json.loads(before)
+        before = before + [shipment_1.id]
+        before = str(before)
+    else:
+        before = str([shipment_1.id])
     user = shipment_1.user[index]
 
     shipment_1.ean = shipment_1.ean[:index] + shipment_1.ean[index+1:]
