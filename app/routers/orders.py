@@ -7,6 +7,7 @@ from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
 from app.models.product import Product
+from app.models.internal_product import Internal_Product
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
@@ -55,6 +56,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
 async def read_new_orders(
     flag: bool = Query(1),
     search_text: str = Query('', description="Text for searching"),
+    warehouse_id: int = Query('', description='warehouse_id'),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Order).filter(
@@ -87,6 +89,24 @@ async def read_new_orders(
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
 
+        flag = 1
+        for i in range(len(product_list)):
+            product_id = product_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            db_product = result.scalars().first()
+
+            ean = db_product.ean
+            
+            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+            db_internal_product = result.scalars().first()
+
+            if db_internal_product.warehouse_id != warehouse_id:
+                flag = 0
+                break
+
+        if flag == 0:
+            continue
+
         for i in range(len(product_list)):
             quantity = quantity_list[i]
             price = sale_price[i]
@@ -118,7 +138,8 @@ async def read_new_orders(
             for db_product in db_products:
                 stock.append(db_product.stock)
                 break
-
+        
+        
         new_order_data.append({
             "order": db_order,
             "total_price": total,
@@ -154,6 +175,7 @@ async def read_orders(
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     status: int = Query(-1, description="Status of the order"),
     search_text: str = Query('', description="Text for searching"),
+    warehouse_id: int = Query('', description="warehouse_id"),
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
@@ -200,6 +222,24 @@ async def read_orders(
         result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
+
+        flag = 1
+        for i in range(len(product_list)):
+            product_id = product_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            db_product = result.scalars().first()
+
+            ean = db_product.ean
+            
+            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+            db_internal_product = result.scalars().first()
+
+            if db_internal_product.warehouse_id != warehouse_id:
+                flag = 0
+                break
+
+        if flag == 0:
+            continue
 
         for i in range(len(product_list)):
             quantity = quantity_list[i]
