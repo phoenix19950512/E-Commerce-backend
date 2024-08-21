@@ -140,7 +140,21 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
         print(f"Failed to retrieve orders: {response.status_code}")
         return None
 
-async def insert_orders(orders, mp_name:str):
+def acknowledge(MARKETPLACE_API_URL, ORDERS_ENDPOINT, API_KEY, order_id):
+    url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/acknowledge/{order_id}"
+    api_key = str(API_KEY).replace("b'", '').replace("'", "")
+    headers = {
+        "Authorization": f"Basic {api_key}",
+        "Content-Type": "application/json"
+    }
+    response = requests.get(url, headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to retrieve orders: {response.status_code}")
+        return None
+    
+async def insert_orders(orders, marketplace: Marketplace):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -275,7 +289,7 @@ async def insert_orders(orders, mp_name:str):
             customer_modified = customer.get('modified')
             customer_legal_entity = customer.get('legal_entity')
             customer_is_vat_payer = customer.get('is_vat_payer')
-            market_place = mp_name
+            market_place = marketplace.marketplaceDomain
 
             customer_value = (
                 customer_id,
@@ -314,6 +328,13 @@ async def insert_orders(orders, mp_name:str):
             detailed_payment_method = order.get('detailed_payment_method')
             delivery_mode = order.get('delivery_mode')
             status = order.get('status')
+            if status == 1:
+                logging.info(f"order_{id} is new order")
+                USERNAME = marketplace.credentials["firstKey"]
+                PASSWORD = marketplace.credentials["secondKey"]
+                API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+                result = acknowledge(marketplace.baseAPIURL, marketplace.orders_crud["endpoint"], API_KEY, id)
+                logging.info(result)
             payment_status = order.get('payment_status')
             customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
@@ -341,7 +362,7 @@ async def insert_orders(orders, mp_name:str):
             finalization_date = order.get('finalization_date')
             details = json.dumps(order.get('details'))
             payment_mode_id = order.get('payment_mode_id')
-            order_martet_place = mp_name
+            order_martet_place = marketplace.marketplaceDomain
             
             values = (
                 id,
@@ -388,7 +409,6 @@ async def insert_orders(orders, mp_name:str):
     except Exception as e:
         print(f"Failed to insert orders into database: {e}")
 
-
 async def refresh_emag_orders(marketplace: Marketplace):
     # create_database()
 
@@ -423,7 +443,7 @@ async def refresh_emag_orders(marketplace: Marketplace):
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
-                        await insert_orders(orders['results'], marketplace.marketplaceDomain)
+                        await insert_orders(orders['results'], marketplace)
                     currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')
@@ -464,7 +484,7 @@ async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
-                        await insert_orders(orders['results'], marketplace.marketplaceDomain)
+                        await insert_orders(orders['results'], marketplace)
                     currentPage += 1
             except Exception as e:
                 print('++++++++++++++++++++++++++++++++++++++++++')
