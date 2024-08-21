@@ -85,11 +85,9 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
             "dropoff_locker": db_awb.dropoff_locker
         }
 
-        logging.info(data)
-
         result = await save_awb(market_place, data, db)
 
-    logging.info(result)
+    logging.info(f">>>>>>>>>>>>>>>>>>> {result}")
     db_awb.reservation_id = result['results'].get('reservation_id')
     db_awb.courier_id = result['results'].get('courier_id')
     db_awb.courier_name = result['results'].get('courier_name')
