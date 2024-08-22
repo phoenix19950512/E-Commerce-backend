@@ -8,6 +8,7 @@ class Replacement(Base):
     order_id = Column(Integer, nullable=True)
     date = Column(DateTime, nullable=True)
     product_ean = Column(ARRAY(Text), nullable=True)
+    quantity = Column(ARRAY(Integer), nullable=True)
     marketplace = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
     awb = Column(Text, nullable=True)
