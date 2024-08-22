@@ -7,6 +7,7 @@ class Internal_Product(Base):
 
     id = Column(BigInteger, nullable=True)
     part_number_key = Column(String, nullable=True)
+    product_code = Column(String, nullable=True)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
     buy_button_rank = Column(Integer, nullable=True)

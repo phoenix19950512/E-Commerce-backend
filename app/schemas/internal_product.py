@@ -5,6 +5,7 @@ from decimal import Decimal
 class Internal_ProductBase(BaseModel):
     id: Optional[int] = None
     part_number_key: Optional[str] = None
+    product_code: Optional[str] = None
     product_name: Optional[str] = None
     model_name: Optional[str] = None
     buy_button_rank: Optional[int] = None
