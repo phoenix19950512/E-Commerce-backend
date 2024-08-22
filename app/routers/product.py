@@ -39,6 +39,12 @@ async def get_products_count(db: AsyncSession = Depends(get_db)):
     count = result.scalars().all()
     return len(count)
 
+@router.get("/products", response_model=List[ProductRead])
+async def read_products(db:AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Product))
+    db_products = result.scalars().all()
+    return db_products
+
 @router.get("/{product_id}", response_model=ProductRead)
 async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).filter(Product.id == product_id))
@@ -48,7 +54,6 @@ async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
     return product
 
 @router.get("/info/{ean}")
-
 async def get_info(
     ean: str,
     type: int,

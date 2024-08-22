@@ -103,8 +103,6 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_1.before = shipment_1.before[:index] + shipment_1.before[index+1:]
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
 
-    # logging.info("@@@@@@@@@", shipment_1.ean)
-
     await db.flush()
     await db.refresh(shipment_1)
 
@@ -128,8 +126,6 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_2.supplier_name = shipment_2.supplier_name + [supplier_name]
     shipment_2.before = shipment_2.before + [before]
     shipment_2.user = shipment_2.user + [user]
-
-    # Commit and refresh shipment_2
 
     await db.commit()
     await db.refresh(shipment_2)

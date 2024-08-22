@@ -312,28 +312,55 @@ async def read_orders(
 async def get_orders_count(
     status: int = Query(-1, description="Status of the order"),
     search_text: str = Query('', description="Text for searching"),
+    warehouse_id: int = Query('', description="warehoues_id"),
     db: AsyncSession = Depends(get_db)
 ):
     if status == -1:
-        result = await db.execute(select(func.count()).select_from(Order).filter(
+        query = select(Order).filter(
             (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
-        ))
+        )
     else:
-        result = await db.execute(select(func.count()).select_from(Order).where(Order.status == status).filter(
+        query = select(Order).where(Order.status == status).filter(
             (cast(Order.id, String).ilike(f"%{search_text}%")) |
             (Order.payment_mode.ilike(f"%{search_text}%")) |
             (Order.details.ilike(f"%{search_text}%")) |
             (Order.order_market_place.ilike(f"%{search_text}%")) |
             (Order.delivery_mode.ilike(f"%{search_text}%")) |
             (Order.proforms.ilike(f"%{search_text}%"))
-        ))
-    count = result.scalar()
-    return count
+        )
+    
+    result = await db.execute(query)
+    db_orders = result.scalars().all()
+    if warehouse_id:
+        cnt = 0
+        for db_order in db_orders:
+            product_list = db_order.product_id
+            flag = 1
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id))
+                db_product = result.scalars().first()
+
+                ean = db_product.ean
+                
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
+
+                if db_internal_product.warehouse_id != warehouse_id:
+                    flag = 0
+                    break
+
+            if flag == 0:
+                continue
+            cnt += 1
+        return cnt
+    else:
+        return len(db_orders)
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def read_order(order_id: int, db: Session = Depends(get_db)):

@@ -236,7 +236,6 @@ async def get_refunded_info(ean: str, db: AsyncSession):
     }
 
 async def get_shipment_info(ean: str, db: AsyncSession):
-
     result = await db.execute(select(Shipment).where(ean == any_(Shipment.ean)))
     shipments = result.scalars().all()
 
