@@ -5,6 +5,7 @@ from decimal import Decimal
 
 class ReplacementsBase(BaseModel):
     order_id: Optional[int] = None
+    number: Optional[int] = 1
     date: Optional[datetime] = None
     product_ean: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
@@ -16,7 +17,8 @@ class ReplacementsBase(BaseModel):
     customer_name: Optional[str] = None
     customer_address: Optional[str] = None
     customer_email: Optional[str] = None
-    review:Optional[bool] = None
+    review: Optional[bool] = None
+    review_content: Optional[str] = None
     customer_comment: Optional[str] = None
     
 class ReplacementsCreate(ReplacementsBase):

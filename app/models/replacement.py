@@ -6,6 +6,7 @@ class Replacement(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     order_id = Column(Integer, nullable=True)
+    number = Column(Integer, nullable=True, default=1)
     date = Column(DateTime, nullable=True)
     product_ean = Column(ARRAY(Text), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
@@ -18,6 +19,7 @@ class Replacement(Base):
     customer_address = Column(Text, nullable=True)
     customer_email = Column(Text, nullable=True)
     review = Column(Boolean, nullable=True)
+    review_content = Column(Text, nullable=True)
     customer_comment = Column(Text, nullable=True)
 
     

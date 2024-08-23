@@ -25,19 +25,22 @@ async def get_return_count(db: AsyncSession = Depends(get_db)):
 
 @router.get("/", response_model=List[ReturnsRead])
 async def get_returns(
+    page: int = Query(1, ge=1, description="page number"),
+    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Returns))
+    offset = (page - 1) * items_per_page
+    result = await db.execute(select(Returns).offset(offset).limit(items_per_page))
     db_returns = result.scalars().all()
     if db_returns is None:
         raise HTTPException(status_code=404, detail="return not found")
     return db_returns
 
-@router.get("/replacement")
-async def get_replacement(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).filter(Returns.return_type == any_([1, 2])))
-    db_replacements = result.scalars().all()
-    return db_replacements
+@router.get("/awb")
+async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).filter(Returns.awb == awb))
+    db_return = result.scalars().first()
+    return db_return
 
 @router.put("/{return_id}", response_model=ReturnsRead)
 async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession = Depends(get_db)):

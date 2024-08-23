@@ -2,34 +2,57 @@ from psycopg2 import sql
 from urllib.parse import urlparse
 from app.config import settings
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.internal_product import Internal_Product
+from sqlalchemy import select
 import requests
 from requests.auth import HTTPBasicAuth
 import base64
 import json
 import logging
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# PROXIES = {
-#     'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-#     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-# }
+PROXIES = {
+    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+}
 
 def get_stock():
-    USERNAME = "003|5c070dde3f5ed393cf1ff6a610748779"
-    PASSWORD = "RO41996145"
+    today = datetime.today()
+    today = today.strftime("%Y-%m-%d")
+    USERNAME = "theinnovatorssrl@gmail.com"
+    PASSWORD = "003|5c070dde3f5ed393cf1ff6a610748779"
     url = "https://ws.smartbill.ro/SBORO/api/stocks"
+    params = {
+    "cif": "RO41996145",
+    "date": f"{today}"
+    }
+    credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
-    "accept": "application/json",
+        "Authorization": f"Basic {credentials}",
+        "accept": "application/json",
     }
 
     # Replace 'username' and 'password' with the actual credentials
-    auth = HTTPBasicAuth(USERNAME, PASSWORD)
-    response = requests.get(url, headers=headers, auth=auth)
+    response = requests.get(url, headers=headers, params=params, proxies=PROXIES)
+    # Replace 'username' and 'password' with the actual credentials
     if response.status_code == 200:
-        return response.json()
+        result = response.json()
+        products = result.get('list')
+        return products
     else:
-        return f"{response.status_code} error, {response.json().get('errorText')}"
+        return response.json().get('errorText')
+
+async def update_stock(db: AsyncSession):
+    results = get_stock()
+    for product_list in results:
+        products = product_list.get('products')
+        for product in products:
+            product_code = product.get('productCode')
+            result = await db.execute(select)
+
 
 def generate_invoice(data):
     USERNAME = "003|5c070dde3f5ed393cf1ff6a610748779"

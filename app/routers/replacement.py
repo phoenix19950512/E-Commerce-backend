@@ -10,8 +10,13 @@ from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, Replac
 router = APIRouter()
 
 @router.post("/", response_model=ReplacementsRead)
-async def create_replacement(replacements: ReplacementsCreate, db: AsyncSession = Depends(get_db)):
-    db_replacement = Replacement(**replacements.dict())
+async def create_replacement(replacement: ReplacementsCreate, db: AsyncSession = Depends(get_db)):
+    db_replacement = Replacement(**replacement.dict())
+    order_id = db_replacement.order_id
+    result = await db.execute(select(Replacement).where(Replacement.order_id == order_id))
+    replacements = result.scalars().all()
+    count = len(replacements)
+    db_replacement.number = count + 1
     db.add(db_replacement)
     await db.commit()
     await db.refresh(db_replacement)
