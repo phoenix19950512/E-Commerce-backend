@@ -20,7 +20,7 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
     invoice = result.scalars().first()
 
     if invoice:
-        return get_invoices
+        return invoice
     
     data = {
         "companyVatCode": db_invoice.companyVatCode,
@@ -29,6 +29,8 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
         "issueDate": db_invoice.issueDate,
         "products": json.loads(db_invoice.products)
     }
+
+    print(data)
 
     # result = generate_invoice(data=data)
     # if result.get['successfully'] == False:

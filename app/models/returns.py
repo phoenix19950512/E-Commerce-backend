@@ -22,6 +22,7 @@ class Returns(Base):
     date = Column(DateTime, nullable=True)
     request_status = Column(Integer, nullable=True)
     return_market_place = Column(String, nullable=True)
+    awb = Column(String, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('order_id', 'return_market_place', name='pk_order_id_return_market_place'),

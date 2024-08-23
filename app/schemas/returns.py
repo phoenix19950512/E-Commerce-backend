@@ -22,6 +22,7 @@ class ReturnsBase(BaseModel):
     date: Optional[datetime] = None
     request_status: Optional[int] = None
     return_market_place: Optional[str] = None
+    awb: Optional[str] = None
 
 class ReturnsCreate(ReturnsBase):
     pass
