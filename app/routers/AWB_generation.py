@@ -138,6 +138,8 @@ async def get_order(
 ):
     result = await db.execute(select(AWB).where(AWB.awb_number == awb_number))
     db_awb = result.scalars().first()
+    if db_awb is None:
+        raise HTTPException(status_code=404, detail="awb not found")
     order_id = db_awb.order_id
     result = await db.execute(select(Order).where(Order.id == order_id))
     db_order = result.scalars().first()
