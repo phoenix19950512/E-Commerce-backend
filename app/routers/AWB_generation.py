@@ -131,6 +131,19 @@ async def get_awbs_order_id(
     db_awb = result.scalars().first()
     return db_awb
 
+@router.get("/awb_number")
+async def get_order(
+    awb_number: str,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(AWB).where(AWB.awb_number == awb_number))
+    db_awb = result.scalars().first()
+    order_id = db_awb.order_id
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
+
+    return db_order
+
 @router.get("/", response_model=List[AWBRead])
 async def get_awbs(
     page: int = Query(1, ge=1, description="Page number"),

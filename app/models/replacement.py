@@ -18,5 +18,6 @@ class Replacement(Base):
     customer_address = Column(Text, nullable=True)
     customer_email = Column(Text, nullable=True)
     review = Column(Boolean, nullable=True)
+    customer_comment = Column(Text, nullable=True)
 
     

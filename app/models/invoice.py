@@ -6,7 +6,7 @@ class Invoice(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     order_id = Column(Integer, nullable=True)
-    companyVatCode = Column(Integer, nullable=True)
+    companyVatCode = Column(Text, nullable=True)
     seriesName = Column(Text, nullable=True)
     client = Column(Text, nullable=True)
     issueDate = Column(DateTime, nullable=True)
