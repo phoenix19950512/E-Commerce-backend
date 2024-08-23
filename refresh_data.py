@@ -19,6 +19,7 @@ from app.utils.altex_orders import refresh_altex_orders
 from app.utils.altex_courier import refresh_altex_couriers
 from app.utils.altex_returns import refresh_altex_rmas
 from app.utils.altex_location import refresh_altex_locations
+from app.utils.emag_awb import refresh_emag_awbs
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
 from sqlalchemy.orm import Session
@@ -86,29 +87,29 @@ async def init_models():
 #                     await refresh_emag_all_orders(marketplace, session)
 #                     continue
 
-@app.on_event("startup")
-@repeat_every(seconds=600)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting orders refresh")
-            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh products from marketplace")
-                    await refresh_altex_products(marketplace)
+# @app.on_event("startup")
+# @repeat_every(seconds=600)
+# async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting orders refresh")
+#             result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
+#             marketplaces = result.scalars().all()
+#             logging.info(f"Success getting {len(marketplaces)} marketplaces")
+#             for marketplace in marketplaces:
+#                 if marketplace.marketplaceDomain == "altex.ro":
+#                     logging.info("Refresh products from marketplace")
+#                     await refresh_altex_products(marketplace)
                     
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_altex_orders(marketplace)
-                    continue
-                else:
-                    logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace)
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_emag_orders(marketplace)
-                    continue
+#                     logging.info("Refresh orders from marketplace")
+#                     await refresh_altex_orders(marketplace)
+#                     continue
+#                 else:
+#                     logging.info("Refresh products from marketplace")
+#                     await refresh_emag_products(marketplace)
+#                     logging.info("Refresh orders from marketplace")
+#                     await refresh_emag_orders(marketplace)
+#                     continue
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
@@ -121,16 +122,18 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
                 if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh rmas from altex")
-                    await refresh_altex_rmas(marketplace)
+                    # logging.info("Refresh rmas from altex")
+                    # await refresh_altex_rmas(marketplace)
                     continue
                 else:
-                    logging.info("Refresh refunds from marketplace")
-                    await refresh_emag_returns(marketplace)
-                    logging.info("Refresh reviews from emag")
-                    await refresh_emag_reviews(marketplace, session)
-                    logging.info("Check hijacker and review")
-                    await check_hijacker_and_bad_reviews(marketplace, session)
+                    # logging.info("Refresh refunds from marketplace")
+                    # await refresh_emag_returns(marketplace)
+                    # logging.info("Refresh reviews from emag")
+                    # await refresh_emag_reviews(marketplace, session)
+                    # logging.info("Check hijacker and review")
+                    # await check_hijacker_and_bad_reviews(marketplace, session)
+                    logging.info("Refresh awb")
+                    await refresh_emag_awbs(marketplace)
                     # logging.info("Refresh awb from marketplace")
                     # await refresh_emag_awb(marketplace, session)
 

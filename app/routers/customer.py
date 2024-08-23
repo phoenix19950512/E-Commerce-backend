@@ -49,7 +49,7 @@ async def update_customers(customer_id: int, customer: CustomersUpdate, db: Asyn
     await db.refresh(db_customers)
     return db_customers
 
-@router.delete("/{customers__id}", response_model=CustomersRead)
+@router.delete("/{customers_id}", response_model=CustomersRead)
 async def delete_customers(customers_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Customers).filter(Customers.id == customers_id))
     customers = result.scalars().first()

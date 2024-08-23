@@ -4,7 +4,6 @@ from datetime import datetime
 from decimal import Decimal
 
 class ReplacementsBase(BaseModel):
-    id: int
     order_id: Optional[int] = None
     date: Optional[datetime] = None
     product_ean: Optional[List[str]] = None

@@ -88,14 +88,20 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
         result = await save_awb(market_place, data, db)
 
     logging.info(f">>>>>>>>>>>>>>>>>>> {result}")
-    if result['isError'] == 'True':
+    
+    if result.status_code != 200:
+        return result.text()
+    
+    result = result.json()
+    if result['isError'] == True:
         return result
-    db_awb.reservation_id = result['results'].get('reservation_id')
-    db_awb.courier_id = result['results'].get('courier_id')
-    db_awb.courier_name = result['results'].get('courier_name')
-    result_awb = result['results'].get('awb')
-    db_awb.awb_number = result_awb[0].get('awb_number')
-    db_awb.awb_barcode = result_awb[0].get('awb_barcode')
+    results = result['results']
+    db_awb.reservation_id = results.get('reservation_id') if results.get('reservation_id') else 0
+    db_awb.courier_id = results.get('courier_id') if results.get('courier_id') else 0
+    db_awb.courier_name = results.get('courier_name') if results.get('courier_name') else ""
+    result_awb = results.get('awb')
+    db_awb.awb_number = result_awb[0].get('awb_number') if result_awb else ""
+    db_awb.awb_barcode = result_awb[0].get('awb_barcode') if result_awb else ""
 
     db.add(db_awb)
     await db.commit()

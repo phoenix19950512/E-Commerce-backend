@@ -43,7 +43,6 @@ async def delete_order(db: Session, order_id: int):
 
 
 router = APIRouter()
-
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
 async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     db_order = Order(**order.dict())
@@ -368,6 +367,8 @@ async def read_order(order_id: int, db: Session = Depends(get_db)):
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
+
+
 
 @router.put("/{order_id}", response_model=OrderRead)
 async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):

@@ -51,7 +51,7 @@ async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession
     await db.refresh(db_return)
     return db_return
 
-@router.delete("/{return__id}", response_model=ReturnsRead)
+@router.delete("/{return_id}", response_model=ReturnsRead)
 async def delete_return(return_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Returns).filter(Returns.order_id == return_id))
     returns = result.scalars().first()

@@ -49,7 +49,7 @@ async def update_couriers(courier_id: int, courier: CouriersUpdate, db: AsyncSes
     await db.refresh(db_courier)
     return db_courier
 
-@router.delete("/{couriers__id}", response_model=CouriersRead)
+@router.delete("/{couriers_id}", response_model=CouriersRead)
 async def delete_couriers(courier_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Courier).filter(Courier.id == courier_id))
     couriers = result.scalars().first()
