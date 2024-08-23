@@ -28,6 +28,11 @@ class CustomersBase(BaseModel):
     legal_entity: Optional[int] = None
     is_vat_payer: Optional[int] = None
     market_place: Optional[str] = None
+    code: Optional[str] = None
+    bank: Optional[str] = None
+    iban: Optional[str] = None
+    email: Optional[str] = None
+    registration_number: Optional[str] = None
 
 
 class CustomersCreate(CustomersBase):

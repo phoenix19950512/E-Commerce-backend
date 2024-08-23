@@ -29,6 +29,11 @@ class Customers(Base):
     legal_entity = Column(Integer, nullable=True)
     is_vat_payer = Column(Integer, nullable=True)
     market_place = Column(String, nullable=True)
+    code = Column(String, nullable=True)
+    bank = Column(String, nullable=True)
+    iban = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    registration_number = Column(String, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('id', 'market_place', name='pk_id_market_place'),

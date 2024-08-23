@@ -192,9 +192,14 @@ async def insert_orders(orders, marketplace: Marketplace):
                 modified,
                 legal_entity,
                 is_vat_payer,
-                market_place
+                market_place,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, market_place) DO UPDATE SET
                 mkt_id = EXCLUDED.mkt_id,
                 legal_entity = EXCLUDED.legal_entity,
@@ -290,6 +295,11 @@ async def insert_orders(orders, marketplace: Marketplace):
             customer_legal_entity = customer.get('legal_entity')
             customer_is_vat_payer = customer.get('is_vat_payer')
             market_place = marketplace.marketplaceDomain
+            code = customer.get('code')
+            bank = customer.get('bank')
+            iban = customer.get('iban')
+            email = customer.get('email')
+            registration_number = customer.get('registration_number')
 
             customer_value = (
                 customer_id,
@@ -316,8 +326,14 @@ async def insert_orders(orders, marketplace: Marketplace):
                 customer_modified,
                 customer_legal_entity,
                 customer_is_vat_payer,
-                market_place
+                market_place,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             )
+
             cursor_order.execute(insert_customers_query, customer_value)
 
             id = order.get('id')
