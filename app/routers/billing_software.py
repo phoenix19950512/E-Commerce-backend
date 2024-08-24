@@ -30,6 +30,8 @@ async def get_billing_softwares(db: AsyncSession = Depends(get_db)):
 
     if db_billing_softwares is None:
         raise HTTPException(status_code=404, detail="Billing Software not found")
+    
+    return db_billing_softwares
 
 @router.get("/{user_id}", response_model=Billing_softwaresRead)
 async def get_billing_software(user_id: int, db: AsyncSession = Depends(get_db)):
