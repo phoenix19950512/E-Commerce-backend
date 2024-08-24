@@ -7,7 +7,16 @@ class InvoicesBase(BaseModel):
     companyVatCode: Optional[str] = None
     seriesName: Optional[str] = None
     client: Optional[str] = None
+    usestock: Optional[bool] = None
+    isdraft: Optional[bool] = None
     issueDate: Optional[datetime] = None
+    mentions: Optional[str] = None
+    observations: Optional[str] = None
+    language: Optional[str] = None
+    precision: Optional[int] = None
+    useEstimateDetails: Optional[bool] = None
+    estimate: Optional[str] = None
+    currency: Optional[str] = None
     products: Optional[str] = None
     number: Optional[str] = None
     series: Optional[str] = None

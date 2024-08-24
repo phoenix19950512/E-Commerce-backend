@@ -3,7 +3,7 @@ from app.database import Base
 
 class Order(Base):
     __tablename__ = "orders"
-    id = Column(BigInteger, primary_key=True)
+    id = Column(BigInteger, primary_key=True, index=True)
     vendor_name = Column(String, nullable=True)
     type = Column(Integer, nullable=True)
     date = Column(DateTime, nullable=True)

@@ -26,19 +26,28 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
         "companyVatCode": db_invoice.companyVatCode,
         "seriesName": db_invoice.seriesName,
         "client": json.loads(db_invoice.client),
+        "useStock": db_invoice.usestock,
+        "isDraft": db_invoice.isdraft,
+        "mentions": db_invoice.mentions,
+        "observations": db_invoice.observations,
+        "language": db_invoice.language,
+        "precision": db_invoice.precision,
+        "useEstimateDetails": db_invoice.useEstimateDetails,
+        "estimate": json.loads(db_invoice.estimate),
+        "currency": db_invoice.currency,
         "issueDate": db_invoice.issueDate,
         "products": json.loads(db_invoice.products)
     }
 
     print(data)
 
-    # result = generate_invoice(data=data)
-    # if result.get['successfully'] == False:
-    #     return result.get['errorText']
+    result = generate_invoice(data=data)
+    if result.get['successfully'] == False:
+        return result.get['errorText']
     
-    # db_invoice.number = result.get['number']
-    # db_invoice.series = result.get['series']
-    # db_invoice.url = result.get['url']
+    db_invoice.number = result.get['number']
+    db_invoice.series = result.get['series']
+    db_invoice.url = result.get['url']
 
     db.add(db_invoice)
     await db.commit()

@@ -51,8 +51,9 @@ async def update_stock(db: AsyncSession):
         products = product_list.get('products')
         for product in products:
             product_code = product.get('productCode')
-            result = await db.execute(select)
-
+            result = await db.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
+            db_product = result.scalars.first()
+            db_product.stock = product.get('quantity')
 
 def generate_invoice(data):
     USERNAME = "003|5c070dde3f5ed393cf1ff6a610748779"

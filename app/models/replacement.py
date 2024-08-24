@@ -10,6 +10,7 @@ class Replacement(Base):
     date = Column(DateTime, nullable=True)
     product_ean = Column(ARRAY(Text), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
+    price = Column(ARRAY(Numeric(12, 4)), nullable=True)
     marketplace = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
     awb = Column(Text, nullable=True)

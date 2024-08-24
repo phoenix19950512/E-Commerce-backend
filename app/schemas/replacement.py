@@ -9,6 +9,7 @@ class ReplacementsBase(BaseModel):
     date: Optional[datetime] = None
     product_ean: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
+    price: Optional[List[Decimal]] = None
     marketplace: Optional[str] = None
     reason: Optional[str] = None
     awb: Optional[str] = None
