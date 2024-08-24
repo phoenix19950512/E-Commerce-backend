@@ -33,6 +33,8 @@ class Internal_ProductBase(BaseModel):
     production_time: Optional[Decimal] = None
     discontinued: Optional[bool] = None
     stock: Optional[int] = None
+    smartbill_stock: Optional[int] = None
+    damaged_goods: Optional[int] = None
     warehouse_id: Optional[int] = None
     internal_shipping_price: Optional[Decimal] = None
     observation: Optional[str] = None
