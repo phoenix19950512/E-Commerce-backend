@@ -3,20 +3,20 @@ from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
-class Smartbill_accountsBase(BaseModel):
+class Billing_softwaresBase(BaseModel):
     user_id: Optional[int] = None
     username: Optional[str] = None
     password: Optional[str] = None
     cif_info: Optional[str] = None
     
-class Smartbill_accountsCreate(Smartbill_accountsBase):
+class Billing_softwaresCreate(Billing_softwaresBase):
     pass
 
-class Smartbill_accountsRead(Smartbill_accountsBase):
+class Billing_softwaresRead(Billing_softwaresBase):
     id:int
 
     class Config:
         orm_mode = True
 
-class Smartbill_accountsUpdate(Smartbill_accountsBase):
+class Billing_softwaresUpdate(Billing_softwaresBase):
     pass
