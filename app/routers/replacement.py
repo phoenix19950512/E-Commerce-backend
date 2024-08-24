@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func, any_
+from sqlalchemy import func, any_, or_
 from typing import List
 from app.database import get_db
 from app.models.replacement import Replacement
@@ -27,6 +27,13 @@ async def get_replacement_count(db: AsyncSession = Depends(get_db)):
     result = await db.execute(func.count(Replacement.id))
     count = result.scalar()
     return count
+
+@router.get('/count_without_awb')
+async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Replacement).where(or_(Replacement.awb == '', Replacement.awb == None)))
+    db_replacements = result.scalars().all()
+
+    return len(db_replacements)
 
 @router.get("/", response_model=List[ReplacementsRead])
 async def get_replacements(

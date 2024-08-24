@@ -19,8 +19,10 @@ from app.utils.altex_orders import refresh_altex_orders
 from app.utils.altex_courier import refresh_altex_couriers
 from app.utils.altex_returns import refresh_altex_rmas
 from app.utils.altex_location import refresh_altex_locations
+from app.utils.smart_api import get_stock
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
+from app.models.billing_software import Billing_software
 from sqlalchemy.orm import Session
 import ssl
 import logging
@@ -111,9 +113,16 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     await refresh_emag_orders(marketplace)
                     continue
 
-# @app.on_event("startup")
-# @repeat_every(seconds=7200)
-# async def 
+@app.on_event("startup")
+@repeat_every(seconds=7200)
+async def refresh_stock(db: AsyncSession = Depends(get_db)):
+    logging.info("Starting stock refresh")
+    result = await db.execute(select(Billing_software))
+    db_smart = result.scalars().all()
+    if db_smart is None:
+        logging.info("Can't find billing software")
+    else:
+        products = get_stock(db_smart)
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days

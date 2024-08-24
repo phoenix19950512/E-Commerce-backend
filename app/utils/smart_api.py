@@ -4,6 +4,7 @@ from app.config import settings
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.internal_product import Internal_Product
+from app.models.billing_software import Billing_software
 from sqlalchemy import select
 import requests
 from requests.auth import HTTPBasicAuth
@@ -19,16 +20,18 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-def get_stock():
+def get_stock(smartbill: Billing_software):
     today = datetime.today()
     today = today.strftime("%Y-%m-%d")
-    USERNAME = "theinnovatorssrl@gmail.com"
-    PASSWORD = "003|5c070dde3f5ed393cf1ff6a610748779"
+
+    USERNAME = smartbill.username
+    PASSWORD = smartbill.password
     url = "https://ws.smartbill.ro/SBORO/api/stocks"
-    params = {
-    "cif": "RO41996145",
-    "date": f"{today}"
-    }
+    if smartbill.warehouse_name:
+        params = {
+        "cif": "RO41996145",
+        "date": f"{today}"
+        }
     credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
         "Authorization": f"Basic {credentials}",

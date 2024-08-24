@@ -6,9 +6,11 @@ from decimal import Decimal
 class Billing_softwaresBase(BaseModel):
     user_id: Optional[int] = None
     site_domain: Optional[str] = None
+    company_name: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
-    cif_info: Optional[str] = None
+    registration_number: Optional[str] = None
+    warehouse_name: Optional[str] = None
     
 class Billing_softwaresCreate(Billing_softwaresBase):
     pass
