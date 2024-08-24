@@ -118,9 +118,10 @@ async def insert_rmas_into_db(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                return_market_place
+                return_market_place,
+                awb
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (order_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status               
@@ -146,6 +147,7 @@ async def insert_rmas_into_db(rmas, place:str):
             date = rma.get('date')
             request_status = rma.get('request_status')
             return_market_place = place
+            awb = ""
 
             value = (
                 emag_id,
@@ -166,7 +168,8 @@ async def insert_rmas_into_db(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                return_market_place
+                return_market_place,
+                awb
             )
             cursor.execute(insert_query, value)
             conn.commit()
