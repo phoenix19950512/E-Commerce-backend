@@ -131,7 +131,7 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                         products = products.get('products')
                         for product in products:
                             logging.info(product)
-                            product_code = product.get('product_code')
+                            product_code = product.get('productCode')
                             logging.info(f"Update stock {product_code}")
                             result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
                             db_product = result.scalars().first()
