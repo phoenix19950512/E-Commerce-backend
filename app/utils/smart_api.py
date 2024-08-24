@@ -27,11 +27,11 @@ def get_stock(smartbill: Billing_software):
     USERNAME = smartbill.username
     PASSWORD = smartbill.password
     url = "https://ws.smartbill.ro/SBORO/api/stocks"
-    if smartbill.warehouse_name:
-        params = {
-        "cif": "RO41996145",
-        "date": f"{today}"
-        }
+    params = {
+    "cif": smartbill.registration_number,
+    "date": today,
+    "warehouseName": smartbill.warehouse_name
+    }
     credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
         "Authorization": f"Basic {credentials}",
