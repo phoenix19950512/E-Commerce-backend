@@ -23,10 +23,20 @@ async def get_billing_software_count(db: AsyncSession = Depends(get_db)):
     count = result.scalar()
     return count
 
+@router.get("/", response_model=List[Billing_softwaresRead])
+async def get_billing_softwares(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Billing_software))
+    db_billing_softwares = result.scalars().all()
+
+    if db_billing_softwares is None:
+        raise HTTPException(status_code=404, detail="Billing Software not found")
+
 @router.get("/{user_id}", response_model=Billing_softwaresRead)
 async def get_billing_software(user_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Billing_software).filter(Billing_software.user_id == user_id))
     db_billing_software = result.scalars().first()
+    if db_billing_software is None:
+        raise HTTPException(status_code=404, detail="Billing Software not found")
     return db_billing_software
 
 @router.put("/{billing_software_id}", response_model=Billing_softwaresRead)
