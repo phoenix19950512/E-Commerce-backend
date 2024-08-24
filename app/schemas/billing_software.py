@@ -5,6 +5,7 @@ from decimal import Decimal
 
 class Billing_softwaresBase(BaseModel):
     user_id: Optional[int] = None
+    site_domain: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
     cif_info: Optional[str] = None
