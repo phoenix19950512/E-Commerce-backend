@@ -244,7 +244,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 order_market_place
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id, order_market_place) DO UPDATE SET
+            ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
                 date = EXCLUDED.date,

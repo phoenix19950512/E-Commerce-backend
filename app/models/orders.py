@@ -37,7 +37,3 @@ class Order(Base):
     payment_mode_id = Column(Integer, nullable=True)
     order_market_place = Column(String, nullable=True)
 
-    __table_args__ = (
-        PrimaryKeyConstraint('id', 'order_market_place', name='pk_id_order_market_place'),
-    )
-
