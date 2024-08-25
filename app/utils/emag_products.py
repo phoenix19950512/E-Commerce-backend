@@ -123,12 +123,13 @@ async def insert_products(products, mp_name: str):
                 discontinued,
                 stock,
                 smartbill_stock,
+                orders_stock,
                 damaged_goods, 
                 warehouse_id,
                 internal_shipping_price,
                 market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
@@ -173,6 +174,7 @@ async def insert_products(products, mp_name: str):
             discontinued = False
             stock = int(product.get('stock')[0].get('value') if product.get('stock') else 0)
             smartbill_stock = 0
+            orders_stock = 0
             damaged_goods = 0
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
@@ -210,6 +212,7 @@ async def insert_products(products, mp_name: str):
                 discontinued,
                 stock,
                 smartbill_stock,
+                orders_stock,
                 damaged_goods,
                 warehouse_id,
                 internal_shipping_price,

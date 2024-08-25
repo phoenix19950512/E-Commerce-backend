@@ -46,6 +46,7 @@ async def insert_products(products, offers, mp_name):
             INSERT INTO {} (
                 id,
                 part_number_key,
+                product_code,
                 product_name,
                 model_name,
                 buy_button_rank,
@@ -73,11 +74,14 @@ async def insert_products(products, offers, mp_name):
                 production_time,
                 discontinued,
                 stock,
+                smartbill_stock,
+                orders_stock,
+                damaged_goods,
                 warehouse_id,
                 internal_shipping_price,
                 market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place)))
@@ -88,6 +92,7 @@ async def insert_products(products, offers, mp_name):
             offer = offers[i]
             id = 0
             part_number_key = ""
+            product_code = ""
             product_name = product.get('name')
             model_name = product.get('brand')
             buy_button_rank = 1
@@ -119,6 +124,9 @@ async def insert_products(products, offers, mp_name):
             production_time = Decimal('0')
             discontinued = False
             stock = offer.get('stock')[0].get('quantity') if offer.get('stock') else None
+            smartbill_stock = 0
+            orders_stock = 0
+            damaged_goods = 0
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
@@ -126,6 +134,7 @@ async def insert_products(products, offers, mp_name):
             values = (
                 id,
                 part_number_key,
+                product_code,
                 product_name,
                 model_name,
                 buy_button_rank,
@@ -153,6 +162,9 @@ async def insert_products(products, offers, mp_name):
                 production_time,
                 discontinued,
                 stock,
+                smartbill_stock,
+                orders_stock,
+                damaged_goods,
                 warehouse_id,
                 internal_shipping_price,
                 market_place
