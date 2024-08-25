@@ -127,6 +127,8 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
             if db_new_orders is None:
                 logging.info("Can't find new orders")
                 return
+            else:
+                logging.info(f"Find {len(db_new_orders)} new orders")
             for db_new_order in db_new_orders:
                 product_id_list = db_new_order.product_id
                 quantity_list = db_new_order.quantity
