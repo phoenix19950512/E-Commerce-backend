@@ -131,12 +131,16 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     product_id = product_id_list[i]
                     quantity = quantity_list[i]
                 
-                    result = await session.execute(select(Product).where(Product.id == product_id, marketplace == Product.product_marketplace))
+                    result = await session.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
                     db_product = result.scalars().first()
+                    if db_product is None:
+                        logging.info(f"Can't find {product_id} in {marketplace}")
                     ean = db_product.ean
 
                     result = await session.execute(select(Internal_Product).where(Internal_Product.ean == ean))
                     db_internal_product = result.scalars().first()
+                    if db_internal_product is None:
+                        logging.info(f"Can't find {ean}")
                     db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
 
                     await db.commit()
