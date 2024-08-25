@@ -131,9 +131,14 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     product_id = product_id_list[i]
                     quantity = quantity_list[i]
                 
-                    result = await session.execute(select(Internal_Product).where(Internal_Product.id == product_id, marketplace == any_(Internal_Product.market_place)))
+                    result = await session.execute(select(Product).where(Product.id == product_id, marketplace == Product.product_marketplace))
                     db_product = result.scalars().first()
-                    db_product.orders_stock = db_product.orders_stock + quantity
+                    ean = db_product.ean
+
+                    result = await session.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                    db_internal_product = result.scalars().first()
+                    db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
+
                     await db.commit()
                     await db.refresh(db_product)
             logging.info("Sync stock")
