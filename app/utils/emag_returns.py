@@ -18,8 +18,8 @@ from decimal import Decimal
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 PROXIES = {
-    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'http': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
+    'https': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
 }
 
 def get_attachments(API_KEY):
