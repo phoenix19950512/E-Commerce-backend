@@ -116,84 +116,162 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
 @app.on_event("startup")
 @repeat_every(seconds=900)
 async def send_stock(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Init orders_stock")
-            await session.execute(update(Internal_Product).values(orders_stock=0))
-            logging.info("Calculate orders_stock")
-            result = await session.execute(select(Order).where(Order.status == any_([1,2,3])))
-            db_new_orders = result.scalars().all()
-            for db_new_order in db_new_orders:
-                product_id_list = db_new_order.product_id
-                quantity_list = db_new_order.quantity
-                marketplace = db_new_order.order_market_place
-                for i in range(len(product_id_list)):
-                    product_id = product_id_list[i]
-                    quantity = quantity_list[i]
+    logging.info("Init orders_stock")
+    await db.execute(update(Internal_Product).values(orders_stock=0))
+    logging.info("Calculate orders_stock")
+    result = await db.execute(select(Order).where(Order.status == any_([1,2,3])))
+    db_new_orders = result.scalars().all()
+    for db_new_order in db_new_orders:
+        product_id_list = db_new_order.product_id
+        quantity_list = db_new_order.quantity
+        marketplace = db_new_order.order_market_place
+        for i in range(len(product_id_list)):
+            product_id = product_id_list[i]
+            quantity = quantity_list[i]
+        
+            result = await db.execute(select(Product).where(Product.id == product_id, marketplace == Product.product_marketplace))
+            db_product = result.scalars().first()
+            ean = db_product.ean
+
+            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+            db_internal_product = result.scalars().first()
+            db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
+
+            await db.commit()
+            await db.refresh(db_product)
+    logging.info("Sync stock")
+    result = await db.execute(select(Internal_Product))
+    db_products = result.scalars().all()
+    for product in db_products:
+        ean = product.ean
+        marketplaces = product.market_place
+        for domain in marketplaces:
+            result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+            marketplace = result.scalars().first()
+
+            result = await db.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
+            db_product = result.scalars().first()
+            product_id = db_product.id
+            stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+            
+            if marketplace.marketplaceDomain == "altex.ro":
+                if db_product.barcode_title == "":
+                    continue
+                post_stock_altex(marketplace, db_product.barcode_title, stock)
+            else:
+                post_stock_emag(marketplace, product_id, stock)  
+
+# @app.on_event("startup")
+# @repeat_every(seconds=900)
+# async def send_stock(db:AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Init orders_stock")
+#             await session.execute(update(Internal_Product).values(orders_stock=0))
+#             logging.info("Calculate orders_stock")
+#             result = await session.execute(select(Order).where(Order.status == any_([1,2,3])))
+#             db_new_orders = result.scalars().all()
+#             for db_new_order in db_new_orders:
+#                 product_id_list = db_new_order.product_id
+#                 quantity_list = db_new_order.quantity
+#                 marketplace = db_new_order.order_market_place
+#                 for i in range(len(product_id_list)):
+#                     product_id = product_id_list[i]
+#                     quantity = quantity_list[i]
                 
-                    result = await session.execute(select(Product).where(Product.id == product_id, marketplace == Product.product_marketplace))
-                    db_product = result.scalars().first()
-                    ean = db_product.ean
+#                     result = await session.execute(select(Product).where(Product.id == product_id, marketplace == Product.product_marketplace))
+#                     db_product = result.scalars().first()
+#                     ean = db_product.ean
 
-                    result = await session.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                    db_internal_product = result.scalars().first()
-                    db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
+#                     result = await session.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+#                     db_internal_product = result.scalars().first()
+#                     db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
 
-                    await db.commit()
-                    await db.refresh(db_product)
-            logging.info("Sync stock")
-            result = await session.execute(select(Internal_Product))
-            db_products = result.scalars().all()
-            for product in db_products:
-                ean = product.ean
-                marketplaces = product.market_place
-                for domain in marketplaces:
-                    result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
-                    marketplace = result.scalars().first()
+#                     await db.commit()
+#                     await db.refresh(db_product)
+#             logging.info("Sync stock")
+#             result = await session.execute(select(Internal_Product))
+#             db_products = result.scalars().all()
+#             for product in db_products:
+#                 ean = product.ean
+#                 marketplaces = product.market_place
+#                 for domain in marketplaces:
+#                     result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+#                     marketplace = result.scalars().first()
 
-                    result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
-                    db_product = result.scalars().first()
-                    product_id = db_product.id
-                    stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+#                     result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
+#                     db_product = result.scalars().first()
+#                     product_id = db_product.id
+#                     stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
                     
-                    if marketplace.marketplaceDomain == "altex.ro":
-                        if db_product.barcode_title == "":
-                            continue
-                        post_stock_altex(marketplace, db_product.barcode_title, stock)
-                    else:
-                        post_stock_emag(marketplace, product_id, stock)                    
+#                     if marketplace.marketplaceDomain == "altex.ro":
+#                         if db_product.barcode_title == "":
+#                             continue
+#                         post_stock_altex(marketplace, db_product.barcode_title, stock)
+#                     else:
+#                         post_stock_emag(marketplace, product_id, stock)                    
+
+# @app.on_event("startup")
+# @repeat_every(seconds=7200)
+# async def refresh_stock(db: AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting stock refresh")
+#             result = await session.execute(select(Billing_software))
+#             db_smarts = result.scalars().all()
+#             if db_smarts is None:
+#                 logging.info("Can't find billing software")
+#             else:
+#                 logging.info("Fetch stock via smarbill api")
+#                 product_code_list = []
+#                 for db_smart in db_smarts:
+#                     products_list = get_stock(db_smart)
+#                     for products in products_list:
+#                         products = products.get('products')
+#                         for product in products:
+#                             logging.info(product)
+#                             product_code = product.get('productCode')
+#                             logging.info(f"Update stock {product_code}")
+#                             result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
+#                             db_product = result.scalars().first()
+#                             if db_product is None:
+#                                 product_code_list.append(product_code)
+#                                 continue
+#                             db_product.smartbill_stock = int(product.get('quantity'))
+#                             await db.commit()
+#                             await db.refresh(db_product)
+#                 logging.info(f"product_code_list: {product_code_list}")
+#                 logging.info("Finish sync stock")
 
 @app.on_event("startup")
 @repeat_every(seconds=7200)
 async def refresh_stock(db: AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting stock refresh")
-            result = await session.execute(select(Billing_software))
-            db_smarts = result.scalars().all()
-            if db_smarts is None:
-                logging.info("Can't find billing software")
-            else:
-                logging.info("Fetch stock via smarbill api")
-                product_code_list = []
-                for db_smart in db_smarts:
-                    products_list = get_stock(db_smart)
-                    for products in products_list:
-                        products = products.get('products')
-                        for product in products:
-                            logging.info(product)
-                            product_code = product.get('productCode')
-                            logging.info(f"Update stock {product_code}")
-                            result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
-                            db_product = result.scalars().first()
-                            if db_product is None:
-                                product_code_list.append(product_code)
-                                continue
-                            db_product.smartbill_stock = int(product.get('quantity'))
-                            await db.commit()
-                            await db.refresh(db_product)
-                logging.info(f"product_code_list: {product_code_list}")
-                logging.info("Finish sync stock")
+    logging.info("Starting stock refresh")
+    result = await db.execute(select(Billing_software))
+    db_smarts = result.scalars().all()
+    if db_smarts is None:
+        logging.info("Can't find billing software")
+    else:
+        logging.info("Fetch stock via smarbill api")
+        product_code_list = []
+        for db_smart in db_smarts:
+            products_list = get_stock(db_smart)
+            for products in products_list:
+                products = products.get('products')
+                for product in products:
+                    logging.info(product)
+                    product_code = product.get('productCode')
+                    logging.info(f"Update stock {product_code}")
+                    result = await db.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
+                    db_product = result.scalars().first()
+                    if db_product is None:
+                        product_code_list.append(product_code)
+                        continue
+                    db_product.smartbill_stock = int(product.get('quantity'))
+                    await db.commit()
+                    await db.refresh(db_product)
+        logging.info(f"product_code_list: {product_code_list}")
+        logging.info("Finish sync stock")
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
