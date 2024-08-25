@@ -222,9 +222,9 @@ async def insert_products(products, mp_name: str):
         
         cursor.close()
         conn.close()
-        print("$$$$$$$$$$$$Products inserted into Products successfully")
+        logging.info("$$$$$$$$$$$$Products inserted into Products successfully")
     except Exception as e:
-        print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
+        logging.info(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
 
 async def insert_products_into_db(products, username, place):
     try:
@@ -357,9 +357,9 @@ async def insert_products_into_db(products, username, place):
         
         cursor.close()
         conn.close()
-        print("Products inserted successfully")
+        logging.info("Products inserted successfully")
     except Exception as e:
-        print(f"Failed to insert products into database: {e}")
+        logging.info(f"Failed to insert products into database: {e}")
 
 async def refresh_emag_products(marketplace: Marketplace):
     # create_database()
