@@ -151,7 +151,7 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     if db_internal_product is None:
                         logging.info(f"Can't find {ean}")
                     db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
-
+                    logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
                     await db.commit()
                     await db.refresh(db_internal_product)
             logging.info("Sync stock")
