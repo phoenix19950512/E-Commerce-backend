@@ -133,6 +133,7 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                 product_id_list = db_new_order.product_id
                 quantity_list = db_new_order.quantity
                 marketplace = db_new_order.order_market_place
+                logging.info(f"@#@#!#@#@##!@#@#@ order_id is {db_new_order.id}")
                 for i in range(len(product_id_list)):
                     product_id = product_id_list[i]
                     quantity = quantity_list[i]
@@ -152,7 +153,7 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
 
                     await db.commit()
-                    await db.refresh(db_product)
+                    await db.refresh(db_internal_product)
             logging.info("Sync stock")
             result = await session.execute(select(Internal_Product))
             db_products = result.scalars().all()
