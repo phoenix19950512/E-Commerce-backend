@@ -373,7 +373,7 @@ async def insert_orders(orders, marketplace: Marketplace):
             refunded_amount = order.get('refunded_amount')
             is_complete = order.get('is_complete')
             cancellation_request = order.get('cancellation_request')
-            cancellation_reason = order.get('cancellation_reason')
+            cancellation_reason = order.get('reason_cancellation')
             refund_status = order.get('refund_status')
             maximum_date_for_shipment = order.get('maximum_date_for_shipment')
             late_shipment = order.get('late_shipment')

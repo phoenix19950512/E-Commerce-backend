@@ -35,6 +35,6 @@ class Order(Base):
     emag_club = Column(Integer, nullable=True)
     finalization_date = Column(DateTime, nullable=True)
     details = Column(String, nullable=True)
-    payment_mode_id = Column(Integer, nullable=True)
+    payment_mode_id = Column(Integer, nullable=True)    
     order_market_place = Column(String, nullable=True)
 
