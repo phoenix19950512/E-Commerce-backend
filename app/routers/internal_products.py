@@ -34,7 +34,7 @@ async def create_product(product: Internal_ProductCreate, db: AsyncSession = Dep
     db_product = Internal_Product(**product.dict())
     db.add(db_product)
     await db.commit()
-    await db.refresh(db_product)
+    db.refresh(db_product)
     return db_product
 
 @router.get('/count')
@@ -296,7 +296,7 @@ async def update_product(product_id: int, product: Internal_ProductUpdate, db: A
         setattr(db_product, var, value) if value else None
 
     await db.commit()
-    await db.refresh(db_product)
+    db.refresh(db_product)
     return db_product
 
 @router.delete("/{product_id}", response_model=Internal_ProductRead)

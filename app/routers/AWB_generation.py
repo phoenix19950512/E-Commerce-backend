@@ -106,7 +106,7 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
 
     db.add(db_awb)
     await db.commit()
-    await db.refresh(db_awb)
+    db.refresh(db_awb)
 
     return result
 
@@ -192,7 +192,7 @@ async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(ge
     for key, value in update_data.items():
         setattr(awb, key, value)
     await db.commit()
-    await db.refresh(db_awb)
+    db.refresh(db_awb)
     return db_awb
 
 @router.delete("/{awbs__id}", response_model=AWBRead)

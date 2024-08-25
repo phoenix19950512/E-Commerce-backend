@@ -19,7 +19,7 @@ async def create_replacement(replacement: ReplacementsCreate, db: AsyncSession =
     db_replacement.number = count + 1
     db.add(db_replacement)
     await db.commit()
-    await db.refresh(db_replacement)
+    db.refresh(db_replacement)
     return db_replacement
 
 @router.get('/count')
@@ -63,7 +63,7 @@ async def update_replacement(replacement_id: int, replacement: ReplacementsUpdat
     for var, value in vars(replacement).items():
         setattr(db_replacement, var, value) if value else None
     await db.commit()
-    await db.refresh(db_replacement)
+    db.refresh(db_replacement)
     return db_replacement
 
 @router.delete("/{replacement_id}", response_model=ReplacementsRead)

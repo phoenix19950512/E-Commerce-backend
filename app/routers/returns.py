@@ -14,7 +14,7 @@ async def create_return(returns: ReturnsCreate, db: AsyncSession = Depends(get_d
     db_return = Returns(**returns.dict())
     db.add(db_return)
     await db.commit()
-    await db.refresh(db_return)
+    db.refresh(db_return)
     return db_return
 
 @router.get('/count')
@@ -51,7 +51,7 @@ async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession
     for var, value in vars(returns).items():
         setattr(db_return, var, value) if value else None
     await db.commit()
-    await db.refresh(db_return)
+    db.refresh(db_return)
     return db_return
 
 @router.delete("/{return_id}", response_model=ReturnsRead)

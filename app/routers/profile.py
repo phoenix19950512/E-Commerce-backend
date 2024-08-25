@@ -17,7 +17,7 @@ async def create_profile(db: AsyncSession, profile: ProfileCreate, user_id: int)
     db_profile = Profile(**profile.dict(), user_id=user_id)
     db.add(db_profile)
     await db.commit()
-    await db.refresh(db_profile)
+    db.refresh(db_profile)
     return db_profile
 
 async def update_profile(db: AsyncSession, profile: ProfileUpdate, user_id: int):
@@ -26,7 +26,7 @@ async def update_profile(db: AsyncSession, profile: ProfileUpdate, user_id: int)
         for key, value in profile.dict(exclude_unset=True).items():
             setattr(db_profile, key, value)
         await db.commit()
-        await db.refresh(db_profile)
+        db.refresh(db_profile)
     return db_profile
 
 @router.get("/profile", response_model=ProfileRead)

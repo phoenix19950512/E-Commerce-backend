@@ -135,7 +135,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     db_product = result.scalars().first()
                     db_product.orders_stock = db_product.orders_stock + quantity
                     await db.commit()
-                    await db.refresh()
+                    db.refresh()
             logging.info("Sync stock")
             result = await session.execute(select(Internal_Product))
             db_products = result.scalars().all()
@@ -171,6 +171,7 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                 logging.info("Can't find billing software")
             else:
                 logging.info("Fetch stock via smarbill api")
+                product_code_list = []
                 for db_smart in db_smarts:
                     products_list = get_stock(db_smart)
                     for products in products_list:
@@ -178,6 +179,7 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                         for product in products:
                             logging.info(product)
                             product_code = product.get('productCode')
+                            product_code_list.append(product_code)
                             logging.info(f"Update stock {product_code}")
                             result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
                             db_product = result.scalars().first()
@@ -185,7 +187,8 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                                 continue
                             db_product.smartbill_stock = int(product.get('quantity'))
                             await db.commit()
-                await db.refresh(db_product)
+                db.refresh(db_product)
+                logging.info(f"product_code_list: {product_code_list}")
                 logging.info("Finish sync stock")
 
 @app.on_event("startup")
@@ -205,8 +208,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                 else:
                     logging.info("Refresh refunds from marketplace")
                     await refresh_emag_returns(marketplace)
-                    logging.info("Refresh reviews from emag")
-                    await refresh_emag_reviews(marketplace, session)
+                    # logging.info("Refresh reviews from emag")
+                    # await refresh_emag_reviews(marketplace, session)
                     logging.info("Check hijacker and review")
                     await check_hijacker_and_bad_reviews(marketplace, session)
 if __name__ == "__main__":

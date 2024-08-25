@@ -14,7 +14,7 @@ async def create_customers_(customers: CustomersCreate, db: AsyncSession = Depen
     db_customers = Customers(**customers.dict())
     db.add(db_customers)
     await db.commit()
-    await db.refresh(db_customers)
+    db.refresh(db_customers)
     return db_customers
 
 @router.get('/count')
@@ -46,7 +46,7 @@ async def update_customers(customer_id: int, customer: CustomersUpdate, db: Asyn
     for var, value in vars(customer).items():
         setattr(db_customers, var, value) if value else None
     await db.commit()
-    await db.refresh(db_customers)
+    db.refresh(db_customers)
     return db_customers
 
 @router.delete("/{customers_id}", response_model=CustomersRead)

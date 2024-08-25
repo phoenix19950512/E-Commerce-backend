@@ -112,7 +112,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     )
     db.add(db_profile)
     await db.commit()
-    await db.refresh(db_user)
+    db.refresh(db_user)
     
     user = await authenticate_user(db, user.email, user.password)
     if not user:
@@ -195,7 +195,7 @@ async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends
         db_user.hashed_password = get_password_hash(user.password)
     db_user.updated_at = datetime.utcnow()
     await db.commit()
-    await db.refresh(db_user)
+    db.refresh(db_user)
     return db_user
 
 @router.delete("/{user_id}", response_model=UserRead)

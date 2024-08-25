@@ -48,7 +48,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     db_order = Order(**order.dict())
     db.add(db_order)
     await db.commit()
-    await db.refresh(db_order)
+    db.refresh(db_order)
     return db_order
 
 @router.get("/new_order")

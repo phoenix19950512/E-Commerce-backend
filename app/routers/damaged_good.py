@@ -20,10 +20,10 @@ async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession
         product = result.scalars().first()
         product.damaged_goods = product.damaged_goods + db_damaged_good.quantity[i]
         await db.commit()
-        await db.refresh(product)
+        db.refresh(product)
     db.add(db_damaged_good)
     await db.commit()
-    await db.refresh(db_damaged_good)
+    db.refresh(db_damaged_good)
     return db_damaged_good
 
 @router.get('/count')

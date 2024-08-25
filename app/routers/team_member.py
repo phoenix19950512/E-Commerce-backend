@@ -14,7 +14,7 @@ async def create_team_member(team_member: Team_memberCreate, db: AsyncSession = 
     db_team_member = Team_member(**team_member.dict())
     db.add(db_team_member)
     await db.commit()
-    await db.refresh(db_team_member)
+    db.refresh(db_team_member)
     return db_team_member
 
 @router.get('/count')
@@ -44,7 +44,7 @@ async def update_team_member(team_member_id: int, team_member: Team_memberUpdate
         setattr(db_team_member, var, value) if value else None
     db.add(db_team_member)
     await db.commit()
-    await db.refresh(db_team_member)
+    db.refresh(db_team_member)
     return db_team_member
 
 @router.delete("/{team_member_id}", response_model=Team_memberRead)
