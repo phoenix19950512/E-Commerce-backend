@@ -22,8 +22,8 @@ from decimal import Decimal
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 PROXIES = {
-    'http': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
-    'https': 'http://ab4mojudsn-mobile.res-country-RO-hold-query-session-66a940669734f:DHXMncAFmQwa0gNc@185.21.60.181:9999',
+    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
 def change_string(ean_str):

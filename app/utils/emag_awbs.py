@@ -21,8 +21,8 @@ from decimal import Decimal
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 PROXIES = {
-    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
 def convert_decimal_to_float(obj):
