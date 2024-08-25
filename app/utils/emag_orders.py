@@ -463,8 +463,6 @@ async def refresh_emag_orders(marketplace: Marketplace):
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
-                        print(orders['results'][0])
-                        break
                         await insert_orders(orders['results'], marketplace)
                     currentPage += 1
             except Exception as e:
