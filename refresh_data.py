@@ -20,6 +20,7 @@ from app.utils.altex_orders import refresh_altex_orders
 from app.utils.altex_courier import refresh_altex_couriers
 from app.utils.altex_returns import refresh_altex_rmas
 from app.utils.altex_location import refresh_altex_locations
+from app.utils.stock_sync import calc_order_stock
 from app.utils.smart_api import get_stock
 from app.routers.reviews import *
 from app.models.marketplace import Marketplace
@@ -30,7 +31,7 @@ import ssl
 import logging
 from sqlalchemy import update
 
-from contextlib import asynccontextmanager
+
 
 # member
 from fastapi import FastAPI, HTTPException
@@ -65,11 +66,6 @@ app.add_middleware(
 async def init_models():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-@asynccontextmanager
-async def get_session():
-    async with get_db() as session:
-        yield session
 
 # @app.on_event("startup")
 # async def on_startup(db: AsyncSession = Depends(get_db)):
@@ -120,87 +116,38 @@ async def get_session():
 
 @app.on_event("startup")
 @repeat_every(seconds=900)
-async def send_stock():
-    async with get_session() as db:
-        try:
+async def send_stock(db:AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        async with db as session:
             logging.info("Init orders_stock")
-            
-            # Reset orders_stock to 0 for all internal products
-            await db.execute(update(Internal_Product).values(orders_stock=0))
-            await db.commit()
-
+            await session.execute(update(Internal_Product).values(orders_stock=0))
+            await session.commit()
             logging.info("Calculate orders_stock")
-            
-            # Fetch orders with status 1, 2, or 3
-            result = await db.execute(select(Order).where(Order.status.in_([1, 2, 3])))
-            db_new_orders = result.scalars().all()
-            
-            for db_new_order in db_new_orders:
-                product_id_list = db_new_order.product_id
-                quantity_list = db_new_order.quantity
-                marketplace = db_new_order.order_market_place
-                
-                for i in range(len(product_id_list)):
-                    product_id = product_id_list[i]
-                    quantity = quantity_list[i]
-
-                    result = await db.execute(
-                        select(Product).where(
-                            Product.id == product_id,
-                            Product.product_marketplace == marketplace
-                        )
-                    )
-                    db_product = result.scalars().first()
-
-                    if db_product:
-                        ean = db_product.ean
-
-                        result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                        db_internal_product = result.scalars().first()
-
-                        if db_internal_product:
-                            db_internal_product.orders_stock += quantity
-                            await db.commit()
-                            await db.refresh(db_internal_product)
-                            logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
+            await calc_order_stock(session)
             
             logging.info("Sync stock")
-
-            # Sync stock with the marketplace
-            result = await db.execute(select(Internal_Product))
+            result = await session.execute(select(Internal_Product))
             db_products = result.scalars().all()
-            
             for product in db_products:
                 ean = product.ean
                 marketplaces = product.market_place
-
                 for domain in marketplaces:
-                    result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+                    result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
                     marketplace = result.scalars().first()
 
-                    result = await db.execute(
-                        select(Product).where(
-                            Product.ean == ean,
-                            Product.product_marketplace == domain
-                        )
-                    )
+                    result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                     db_product = result.scalars().first()
-
-                    if db_product:
-                        product_id = db_product.id
-                        stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
-
-                        if marketplace.marketplaceDomain == "altex.ro":
-                            if db_product.barcode_title:
-                                post_stock_altex(marketplace, db_product.barcode_title, stock)
-                                logging.info("Posted stock successfully to Altex")
-                        else:
-                            post_stock_emag(marketplace, product_id, stock)
-                            logging.info("Posted stock successfully to eMAG")
-
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            await db.rollback()             
+                    product_id = db_product.id
+                    stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+                    
+                    if marketplace.marketplaceDomain == "altex.ro":
+                        if db_product.barcode_title == "":
+                            continue
+                        post_stock_altex(marketplace, db_product.barcode_title, stock)
+                        logging.info("post stock success in altex")
+                    else:
+                        post_stock_emag(marketplace, product_id, stock)      
+                        logging.info("post stock success in emag")              
 
 # @app.on_event("startup")
 # @repeat_every(seconds=7200)
