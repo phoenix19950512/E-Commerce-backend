@@ -199,8 +199,8 @@ async def refresh_emag_returns(marketplace: Marketplace):
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
-            logging.info("------------pages--------------", pages)
-            logging.info("------------items--------------", items)
+            logging.info(f"------------pages--------------{pages}")
+            logging.info(f"------------items--------------{items}")
         try:
             current_page  = 1
             while current_page <= int(pages):

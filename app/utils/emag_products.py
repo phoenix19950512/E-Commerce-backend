@@ -379,8 +379,8 @@ async def refresh_emag_products(marketplace: Marketplace):
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
 
-            logging.info("------------pages--------------", pages)
-            logging.info("------------items--------------", items)
+            logging.info(f"------------pages--------------{pages}")
+            logging.info(f"------------items--------------{items}")
             currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
             try:
