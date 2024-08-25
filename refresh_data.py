@@ -115,7 +115,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
 
 @app.on_event("startup")
 @repeat_every(seconds=900)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+async def send_stock(db:AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Init orders_stock")
@@ -158,7 +158,6 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     else:
                         post_stock_emag(marketplace, product_id, stock)                    
 
-
 @app.on_event("startup")
 @repeat_every(seconds=7200)
 async def refresh_stock(db: AsyncSession = Depends(get_db)):
@@ -179,11 +178,11 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                         for product in products:
                             logging.info(product)
                             product_code = product.get('productCode')
-                            product_code_list.append(product_code)
                             logging.info(f"Update stock {product_code}")
                             result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
                             db_product = result.scalars().first()
                             if db_product is None:
+                                product_code_list.append(product_code)
                                 continue
                             db_product.smartbill_stock = int(product.get('quantity'))
                             await db.commit()

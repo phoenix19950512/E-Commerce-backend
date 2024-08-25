@@ -222,9 +222,9 @@ async def insert_products(products, mp_name: str):
         
         cursor.close()
         conn.close()
-        logging.info("$$$$$$$$$$$$Products inserted into Products successfully")
+        logging.info("Internal_Products inserted into Products successfully")
     except Exception as e:
-        logging.info(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
+        logging.info(f"Failed to insert Internal_Products into database: {e}")
 
 async def insert_products_into_db(products, username, place):
     try:
@@ -379,8 +379,8 @@ async def refresh_emag_products(marketplace: Marketplace):
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
 
-            print("------------pages--------------", pages)
-            print("------------items--------------", items)
+            logging.info("------------pages--------------", pages)
+            logging.info("------------items--------------", items)
             currentPage = 1
             baseAPIURL = marketplace.baseAPIURL
             try:

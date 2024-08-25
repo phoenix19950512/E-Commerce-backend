@@ -303,9 +303,9 @@ async def insert_orders(orders, mp_name:str):
         conn.commit()
         cursor_order.close()
         conn.close()
-        print("1111111111111111111Orders inserted successfully")
+        logging.info("Orders inserted successfully")
     except Exception as e:
-        print(f"Failed to insert orders into database: {e}")
+        logging.info(f"Failed to insert orders into database: {e}")
 
 async def refresh_altex_orders(marketplace: Marketplace):
     # create_database()

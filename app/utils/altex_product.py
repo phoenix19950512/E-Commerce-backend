@@ -175,9 +175,9 @@ async def insert_products(products, offers, mp_name):
         
         cursor.close()
         conn.close()
-        print("$$$$$$$$$$$$Products inserted into Products successfully")
+        logging.info("Internal_Products inserted into table successfully")
     except Exception as e:
-        print(f"$$$$$$$$$$$$$Failed to insert products into database: {e}")
+        logging.info(f"Failed to insert Internal_Products into database: {e}")
 
 async def insert_products_into_db(products, offers,  place):
     try:
@@ -312,9 +312,9 @@ async def insert_products_into_db(products, offers,  place):
         
         cursor.close()
         conn.close()
-        print("Products inserted successfully")
+        logging.info("Products inserted successfully")
     except Exception as e:
-        print(f"Failed to insert products into database: {e}")
+        logging.info(f"Failed to insert products into database: {e}")
 
 def generate_signature(public_key, private_key, params):
     now = datetime.utcnow()

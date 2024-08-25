@@ -176,9 +176,9 @@ async def insert_rmas_into_db(rmas, place:str):
         
         cursor.close()
         conn.close()
-        print("Refunds inserted successfully")
+        logging.info("Refunds inserted successfully")
     except Exception as e:
-        print(f"Failed to insert refunds into database: {e}")
+        logging.info(f"Failed to insert refunds into database: {e}")
 
 async def refresh_emag_returns(marketplace: Marketplace):
     # create_database()
@@ -195,15 +195,12 @@ async def refresh_emag_returns(marketplace: Marketplace):
         read_endpoint = "/read"
         count_endpoint = "/count"
 
-        # result = get_attachments(API_KEY, PROXIES)
-        # print(result)
-
         result = count_all_rmas(baseAPIURL, endpoint, count_endpoint, API_KEY)
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
-            print("------------pages--------------", pages)
-            print("------------items--------------", items)
+            logging.info("------------pages--------------", pages)
+            logging.info("------------items--------------", items)
         try:
             current_page  = 1
             while current_page <= int(pages):

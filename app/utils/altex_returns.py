@@ -148,9 +148,9 @@ async def insert_rmas(rmas, place:str):
         
         cursor.close()
         conn.close()
-        print("Refunds inserted successfully")
+        logging.info("Refunds inserted successfully")
     except Exception as e:
-        print(f"Failed to insert refunds into database: {e}")
+        logging.info(f"Failed to insert refunds into database: {e}")
 
 async def refresh_altex_rmas(marketplace: Marketplace):
     # create_database()

@@ -105,8 +105,6 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
 
     bad_reviews = check_bad_reviews(reviews)
 
-    print("@@@@@@@@@", bad_reviews)
-
     admin_id = 1
 
     result = await db.execute(select(Notification))
@@ -164,9 +162,9 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
         try:
             cursor.execute(insert_notification_query, values)
             id += 1
-            print("Success to insert review into notification")
+            logging.info("Success to insert review into notification")
         except Exception as e:
-            print(f"Failed to insert review into notification: {e}")
+            logging.info(f"Failed to insert review into notification: {e}")
             
     for hijacker in hijackers:
         date_str = datetime.now()            
@@ -196,17 +194,3 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
     conn.commit()
     cursor.close()
     conn.close()
-
-
-    await db.close()
-
-    # for bad_review in bad_reviews:
-    #     date_str = datetime.now()
-    #     create_new_notification({
-    #         "title": "Warning",
-    #         "description": "Never send bad review again!",
-    #         "time": date_str.strftime('%Y-%m-%dT%H:%M:%S'),
-    #         "state": "warning",
-    #         "read": False,
-    #         "user_id": bad_review.user_id
-    #     })
