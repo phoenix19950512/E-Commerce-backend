@@ -141,7 +141,9 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     db_product = result.scalars().first()
                     if db_product is None:
                         logging.info(f"Can't find {product_id} in {marketplace}")
+                        continue
                     ean = db_product.ean
+                    logging.info(f"&*&*&*&&*&*&**&ean number is {ean}")
 
                     result = await session.execute(select(Internal_Product).where(Internal_Product.ean == ean))
                     db_internal_product = result.scalars().first()
