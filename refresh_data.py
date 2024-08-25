@@ -152,8 +152,8 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                         logging.info(f"Can't find {ean}")
                     db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
                     logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
-                    await db.commit()
-                    await db.refresh(db_internal_product)
+                    await session.commit()
+                    await session.refresh(db_internal_product)
             logging.info("Sync stock")
             result = await session.execute(select(Internal_Product))
             db_products = result.scalars().all()
@@ -208,8 +208,8 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
 #                                 })
 #                                 continue
 #                             db_product.smartbill_stock = int(product.get('quantity'))
-#                             await db.commit()
-#                             await db.refresh(db_product)
+#                             await session.commit()
+#                             await session.refresh(db_product)
 #                 logging.info(f"product_code_list: {product_code_list}")
 #                 logging.info("Finish sync stock")
 
