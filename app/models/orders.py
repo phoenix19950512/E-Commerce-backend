@@ -26,6 +26,7 @@ class Order(Base):
     cashed_cod = Column(Float, nullable=True)
     refunded_amount = Column(Float, nullable=True)
     is_complete = Column(Integer, nullable=True)
+    cancellation_request = Column(String, nullable=True)
     cancellation_reason = Column(String, nullable=True)
     refund_status = Column(String, nullable=True)
     maximum_date_for_shipment = Column(DateTime, nullable=True)

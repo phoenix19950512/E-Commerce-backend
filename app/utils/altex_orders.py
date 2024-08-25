@@ -149,6 +149,7 @@ async def insert_orders(orders, mp_name:str):
                 cashed_cod,
                 refunded_amount,
                 is_complete,
+                cancellation_request,
                 cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,
@@ -175,6 +176,8 @@ async def insert_orders(orders, mp_name:str):
                 refunded_amount = EXCLUDED.refunded_amount,
                 is_complete = EXCLUDED.is_complete,
                 refund_status = EXCLUDED.refund_status,
+                cancellation_request = EXCLUDED.cancellation_request,
+                cancellation_reason = EXCLUDED.cancellation_reason,
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
@@ -270,6 +273,7 @@ async def insert_orders(orders, mp_name:str):
             cashed_cod = 0
             refunded_amount = 0
             is_complete = 0
+            cancellation_request = ""
             cancellation_reason = ""
             refund_status = ""
             maximum_date_for_shipment = None
@@ -305,6 +309,7 @@ async def insert_orders(orders, mp_name:str):
                 cashed_cod,
                 refunded_amount,
                 is_complete,
+                cancellation_request,
                 cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,

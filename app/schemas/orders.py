@@ -26,6 +26,7 @@ class OrderBase(BaseModel):
     cashed_cod: Optional[float] = None
     refunded_amount: Optional[float] = None
     is_complete: Optional[int] = None  # Corrected to bool
+    cancellation_request: Optional[str] = None
     cancellation_reason: Optional[str] = None
     refund_status: Optional[str] = None
     maximum_date_for_shipment: Optional[datetime] = None

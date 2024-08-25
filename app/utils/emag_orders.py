@@ -232,6 +232,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 cashed_cod,
                 refunded_amount,
                 is_complete,
+                cancellation_request,
                 cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,
@@ -243,7 +244,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 payment_mode_id,
                 order_market_place
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -257,6 +258,8 @@ async def insert_orders(orders, marketplace: Marketplace):
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
                 refunded_amount = EXCLUDED.refunded_amount,
+                cancellation_request = EXCLUDED.cancellation_request,
+                cancellation_reason = EXCLUDED.cancellation_reason,
                 is_complete = EXCLUDED.is_complete,
                 refund_status = EXCLUDED.refund_status,
                 emag_club = EXCLUDED.emag_club,
@@ -369,6 +372,7 @@ async def insert_orders(orders, marketplace: Marketplace):
             cashed_cod = Decimal(order.get('cashed_cod'))
             refunded_amount = order.get('refunded_amount')
             is_complete = order.get('is_complete')
+            cancellation_request = order.get('cancellation_request')
             cancellation_reason = order.get('cancellation_reason')
             refund_status = order.get('refund_status')
             maximum_date_for_shipment = order.get('maximum_date_for_shipment')
@@ -404,6 +408,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 cashed_cod,
                 refunded_amount,
                 is_complete,
+                cancellation_request,
                 cancellation_reason,
                 refund_status,
                 maximum_date_for_shipment,
@@ -458,6 +463,8 @@ async def refresh_emag_orders(marketplace: Marketplace):
                     print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                     if orders and orders['isError'] == False:
                         # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
+                        print(orders['results'][0])
+                        break
                         await insert_orders(orders['results'], marketplace)
                     currentPage += 1
             except Exception as e:
