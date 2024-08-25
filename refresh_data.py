@@ -124,6 +124,9 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
             logging.info("Calculate orders_stock")
             result = await session.execute(select(Order).where(Order.status == any_([1,2,3])))
             db_new_orders = result.scalars().all()
+            if db_new_orders is None:
+                logging.info("Can't find new orders")
+                return
             for db_new_order in db_new_orders:
                 product_id_list = db_new_order.product_id
                 quantity_list = db_new_order.quantity
