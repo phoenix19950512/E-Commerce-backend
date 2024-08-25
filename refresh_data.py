@@ -191,7 +191,7 @@ async def refresh_stock(db: AsyncSession = Depends(get_db)):
                                 continue
                             db_product.smartbill_stock = int(product.get('quantity'))
                             await db.commit()
-                await db.refresh(db_product)
+                            await db.refresh(db_product)
                 logging.info(f"product_code_list: {product_code_list}")
                 logging.info("Finish sync stock")
 
