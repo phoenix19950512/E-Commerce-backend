@@ -131,12 +131,12 @@ async def get_awbs_order_id(
     db_awb = result.scalars().first()
     return db_awb
 
-@router.get("/awb_number")
+@router.get("/awb_barcode")
 async def get_order(
-    awb_number: str,
+    awb_barcode: str,
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(AWB).where(AWB.awb_number == awb_number))
+    result = await db.execute(select(AWB).where(AWB.awb_barcode == awb_barcode))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awb not found")
