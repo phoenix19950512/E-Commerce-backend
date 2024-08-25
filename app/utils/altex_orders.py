@@ -104,14 +104,24 @@ async def insert_orders(orders, mp_name:str):
                 modified,
                 legal_entity,
                 is_vat_payer,
-                market_place
+                market_place,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number          
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, market_place) DO UPDATE SET
                 mkt_id = EXCLUDED.mkt_id,
                 legal_entity = EXCLUDED.legal_entity,
                 is_vat_payer = EXCLUDED.is_vat_payer,
-                modified = EXCLUDED.modified
+                modified = EXCLUDED.modified,
+                code = EXCLUDED.code,
+                bank = EXCLUDED.bank,
+                iban = EXCLUDED.iban,
+                email = EXCLUDED.email,
+                registration_number = EXCLUDED.registration_number
         """).format(sql.Identifier("customers"))
 
         insert_orders_query = sql.SQL("""
@@ -173,7 +183,6 @@ async def insert_orders(orders, mp_name:str):
         
         for order in orders:
             customer_id = order.get('order_id')
-
             customer_mkt_id = 0
             customer_name = order.get('billing_customer_name')
             customer_company = order.get('billing_company_name')
@@ -198,6 +207,11 @@ async def insert_orders(orders, mp_name:str):
             customer_legal_entity = 0
             customer_is_vat_payer = 0
             market_place = mp_name
+            code = order.get('billing_company_code')
+            bank = order.get('billing_company_bank')
+            iban = order.get('billing_company_iban')
+            email = ""
+            registration_number = order.get('billing_company_registration_number')
 
             customer_value = (
                 customer_id,
@@ -224,7 +238,12 @@ async def insert_orders(orders, mp_name:str):
                 customer_modified,
                 customer_legal_entity,
                 customer_is_vat_payer,
-                market_place
+                market_place,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             )
             cursor_order.execute(insert_customers_query, customer_value)
 
