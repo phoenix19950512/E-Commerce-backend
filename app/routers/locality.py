@@ -12,7 +12,7 @@ async def create_locality(db: AsyncSession, locality: LocalityCreate):
     db_locality = Locality(**locality.dict())
     db.add(db_locality)
     await db.commit()
-    db.refresh(db_locality)
+    await db.refresh(db_locality)
     return {"msg": "success"}
 
 async def get_locality(db: AsyncSession, locality_id: int):
@@ -30,7 +30,7 @@ async def update_locality(db: AsyncSession, locality_id: int, locality: Locality
     for key, value in locality.dict().items():
         setattr(db_locality, key, value)
     await db.commit()
-    db.refresh(db_locality)
+    await db.refresh(db_locality)
     return db_locality
 
 async def delete_locality(db: AsyncSession, locality_id: int):

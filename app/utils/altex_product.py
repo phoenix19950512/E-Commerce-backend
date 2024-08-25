@@ -235,10 +235,8 @@ async def insert_products_into_db(products, offers,  place):
         for i in range(len(products)):
             product = products[i]
             offer = offers[i]
-            if product.get('id') == offer.get('product_id'):
-                logging.info("*****************")
-            else:
-                return
+            if product.get('id') != offer.get('product_id'):
+                continue
             id = str(product.get('id'))
             part_number_key = ""
             product_name = product.get('name')
@@ -365,11 +363,8 @@ async def refresh_altex_products(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
-            logging.info(page_nr)
             result = get_products(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
-            # logging.info(f"Result: {result}")
             if result['status'] == 'error':
-                logging.error("Error in result")
                 break
             data = result['data']
             products = data.get("items")
@@ -377,9 +372,6 @@ async def refresh_altex_products(marketplace: Marketplace):
             result = get_offers(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
             data = result['data']
             offers = data.get("items")
-
-            logging.info(len(products))
-            logging.info(len(offers))
 
             await insert_products(products, offers, marketplace.marketplaceDomain)
             await insert_products_into_db(products, offers, marketplace.marketplaceDomain)

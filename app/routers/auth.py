@@ -27,7 +27,7 @@ async def update_last_logged_in(db: AsyncSession, user_id: int):
     if user:
         user.last_logged_in = datetime.utcnow()
         await db.commit()
-        db.refresh(user)
+        await db.refresh(user)
     return user
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

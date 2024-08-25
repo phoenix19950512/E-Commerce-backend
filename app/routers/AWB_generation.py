@@ -86,8 +86,6 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
         }
 
         result = await save_awb(market_place, data, db)
-
-    logging.info(f">>>>>>>>>>>>>>>>>>> {result}")
     
     if result.status_code != 200:
         return result.text()
@@ -106,7 +104,7 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
 
     db.add(db_awb)
     await db.commit()
-    db.refresh(db_awb)
+    await db.refresh(db_awb)
 
     return result
 
@@ -192,7 +190,7 @@ async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(ge
     for key, value in update_data.items():
         setattr(awb, key, value)
     await db.commit()
-    db.refresh(db_awb)
+    await db.refresh(db_awb)
     return db_awb
 
 @router.delete("/{awbs__id}", response_model=AWBRead)

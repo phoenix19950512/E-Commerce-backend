@@ -12,7 +12,7 @@ async def create_marketplace(db: AsyncSession, marketplace: MarketplaceCreate):
     db_marketplace = Marketplace(**marketplace.dict())
     db.add(db_marketplace)
     await db.commit()
-    db.refresh(db_marketplace)
+    await db.refresh(db_marketplace)
     return {"msg": "success"}
 
 async def get_marketplace(db: AsyncSession, marketplace_id: int):
@@ -30,7 +30,7 @@ async def update_marketplace(db: AsyncSession, marketplace_id: int, marketplace:
     for key, value in marketplace.dict().items():
         setattr(db_marketplace, key, value)
     await db.commit()
-    db.refresh(db_marketplace)
+    await db.refresh(db_marketplace)
     return db_marketplace
 
 async def delete_marketplace(db: AsyncSession, marketplace_id: int):

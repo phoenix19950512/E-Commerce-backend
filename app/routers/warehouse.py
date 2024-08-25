@@ -14,7 +14,7 @@ async def create_warehouse(warehouse: WarehouseCreate, db: AsyncSession = Depend
     db_warehouse = Warehouse(**warehouse.dict())
     db.add(db_warehouse)
     await db.commit()
-    db.refresh(db_warehouse)
+    await db.refresh(db_warehouse)
     return db_warehouse
 
 @router.get('/count')
@@ -44,7 +44,7 @@ async def update_warehouse(warehouse_id: int, warehouse: WarehouseUpdate, db: As
     for key, value in update_data.items():
         setattr(db_warehouse, key, value)
     await db.commit()
-    db.refresh(db_warehouse)
+    await db.refresh(db_warehouse)
     return db_warehouse
 
 @router.delete("/{warehouse_id}", response_model=WarehouseRead)

@@ -50,7 +50,6 @@ def get_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, READ_ENDPOINT, 
         return None
 
 def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOINT, API_KEY, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
-    logging.info("counting start")
     url = f"{MARKETPLACE_API_URL}{Localities_ENDPOINT}/{COUNT_ENGPOINT}"
     if usePublicKey is False:
         api_key = str(API_KEY).replace("b'", '').replace("'", "")
@@ -66,7 +65,6 @@ def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOIN
 
     response = requests.get(url, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
-        logging.info("success localities count")
         return response.json()
     else:
         logging.error(f"Failed to retrieve localities: {response.status_code}")

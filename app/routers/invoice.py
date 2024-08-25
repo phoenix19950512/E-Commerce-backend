@@ -51,7 +51,7 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
 
     db.add(db_invoice)
     await db.commit()
-    db.refresh(db_invoice)
+    await db.refresh(db_invoice)
     return db_invoice
 
 @router.get('/count')
@@ -85,7 +85,7 @@ async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, db: AsyncSess
     for var, value in vars(invoice).items():
         setattr(db_invoice, var, value) if value else None
     await db.commit()
-    db.refresh(db_invoice)
+    await db.refresh(db_invoice)
     return db_invoice
 
 @router.delete("/{invoice__id}", response_model=InvoicesRead)

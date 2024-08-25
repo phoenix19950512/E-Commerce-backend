@@ -162,11 +162,8 @@ async def refresh_altex_rmas(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
-            logging.info(page_nr)
             result = get_rmas(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
-            # logging.info(f"Result: {result}")
             if result['status'] == 'error':
-                logging.error("Error in result")
                 break
             data = result['data']
             rmas = data.get('items')

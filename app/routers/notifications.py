@@ -15,7 +15,7 @@ async def create_notification(db: AsyncSession, notifications: NotificationCreat
     db_notification = Notification(**notifications.dict())
     db.add(db_notification)
     await db.commit()
-    db.refresh(db_notification)
+    await db.refresh(db_notification)
     return {"msg": "success"}
 
 async def get_notification(db: AsyncSession, notification_id: int):
@@ -36,7 +36,7 @@ async def update_notification(db: AsyncSession, notification_id: int, notificati
     for key, value in update_data.items():
         setattr(notification, key, value)
     await db.commit()
-    db.refresh(db_notification)
+    await db.refresh(db_notification)
     return db_notification
 
 async def delete_notification(db: AsyncSession, notification_id: int):
@@ -78,7 +78,7 @@ async def read_notification(notification_id: int, db:AsyncSession = Depends(get_
     db_notification.read = True
 
     await db.commit()
-    db.refresh(db_notification)
+    await db.refresh(db_notification)
     return db_notification
 
 @router.put("/{notification_id}", response_model=NotificationRead)

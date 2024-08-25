@@ -20,7 +20,7 @@ async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(g
     db_shipment = Shipment(**shipment.dict())
     db.add(db_shipment)
     await db.commit()
-    db.refresh(db_shipment)
+    await db.refresh(db_shipment)
     return db_shipment
 
 @router.get('/count')
@@ -104,7 +104,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
 
     await db.flush()
-    db.refresh(shipment_1)
+    await db.refresh(shipment_1)
 
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id2))
     shipment_2 = result.scalars().first()
@@ -128,7 +128,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_2.user = shipment_2.user + [user]
 
     await db.commit()
-    db.refresh(shipment_2)
+    await db.refresh(shipment_2)
 
     logging.info(f"@@@@@After update: {shipment_2}")
 

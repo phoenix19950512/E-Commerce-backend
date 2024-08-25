@@ -14,7 +14,7 @@ async def create_couriers_(couriers: CouriersCreate, db: AsyncSession = Depends(
     db_courier = Courier(**couriers.dict())
     db.add(db_courier)
     await db.commit()
-    db.refresh(db_courier)
+    await db.refresh(db_courier)
     return db_courier
 
 @router.get('/count')
@@ -46,7 +46,7 @@ async def update_couriers(courier_id: int, courier: CouriersUpdate, db: AsyncSes
     for var, value in vars(courier).items():
         setattr(db_courier, var, value) if value else None
     await db.commit()
-    db.refresh(db_courier)
+    await db.refresh(db_courier)
     return db_courier
 
 @router.delete("/{couriers_id}", response_model=CouriersRead)

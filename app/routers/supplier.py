@@ -14,7 +14,7 @@ async def create_supplier(supplier: SupplierCreate, db: AsyncSession = Depends(g
     db_supplier = Supplier(**supplier.dict())
     db.add(db_supplier)
     await db.commit()
-    db.refresh(db_supplier)
+    await db.refresh(db_supplier)
     return db_supplier
 
 @router.get('/count')
@@ -44,7 +44,7 @@ async def update_supplier(supplier_id: int, supplier: SupplierUpdate, db: AsyncS
         setattr(db_supplier, var, value) if value else None
     db.add(db_supplier)
     await db.commit()
-    db.refresh(db_supplier)
+    await db.refresh(db_supplier)
     return db_supplier
 
 @router.delete("/{supplier_id}", response_model=SupplierRead)

@@ -30,7 +30,7 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
     db_product = Product(**product.dict())
     db.add(db_product)
     await db.commit()
-    db.refresh(db_product)
+    await db.refresh(db_product)
     return db_product
 
 @router.get('/count')
@@ -268,7 +268,7 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
         setattr(db_product, var, value) if value else None
 
     await db.commit()
-    db.refresh(db_product)
+    await db.refresh(db_product)
     return db_product
 
 @router.delete("/{product_id}", response_model=ProductRead)

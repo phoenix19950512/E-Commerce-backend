@@ -14,7 +14,7 @@ async def create_review(review: ReviewCreate, db: AsyncSession = Depends(get_db)
     db_review = Review(**review.dict())
     db.add(db_review)
     await db.commit()
-    db.refresh(db_review)
+    await db.refresh(db_review)
     return db_review
 
 @router.get('/count')
@@ -44,7 +44,7 @@ async def update_review(review_id: int, review: ReviewUpdate, db: AsyncSession =
         setattr(db_review, var, value) if value else None
     db.add(db_review)
     await db.commit()
-    db.refresh(db_review)
+    await db.refresh(db_review)
     return db_review
 
 @router.delete("/{review_id}", response_model=ReviewRead)

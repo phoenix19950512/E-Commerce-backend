@@ -146,9 +146,7 @@ async def insert_products(products, mp_name: str):
             price = 0
             sale_price = Decimal(product.get('sale_price', '0.0'))
             ean = str(product.get('ean')[0]) if product.get('ean') else None
-            logging.info(ean)
             ean = change_string(ean)
-            logging.info(ean)
             image_link = product.get('images')[0]['url'] if product.get('images') else None
             barcode_title = ""
             masterbox_title = ""

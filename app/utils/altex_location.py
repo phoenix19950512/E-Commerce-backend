@@ -92,7 +92,6 @@ async def insert_locations(locations, place):
                 localtity_marketplace
             )
 
-            logging.info(value)
             cursor.execute(insert_query, value)
             conn.commit()
         
@@ -138,16 +137,11 @@ async def refresh_altex_locations(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
-            logging.info(page_nr)
             result = get_locations(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
-            logging.info(f"Result: {result}")
             if result['status'] == 'error':
-                logging.error("Error in result")
                 break
             data = result['data']
             locations = data.get("items")
-
-            # logging.info(locations)
 
             await insert_locations(locations, marketplace.marketplaceDomain)
             page_nr += 1

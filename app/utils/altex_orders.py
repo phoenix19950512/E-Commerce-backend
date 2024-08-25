@@ -317,11 +317,8 @@ async def refresh_altex_orders(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
-            logging.info(page_nr)
             result = get_orders(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
-            # logging.info(f"Result: {result}")
             if result['status'] == 'error':
-                logging.error("Error in result")
                 break
             data = result['data']
             orders = data.get('items')
@@ -329,7 +326,6 @@ async def refresh_altex_orders(marketplace: Marketplace):
             for order in orders:
                 if order.get('order_id') is not None:
                     order_id = order.get('order_id')
-                    logging.info(order_id)
                     detail_order_result = get_detail_order(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, order_id)
                     if detail_order_result.get('status') == 'success':
                         detail_orders.append(detail_order_result.get('data'))

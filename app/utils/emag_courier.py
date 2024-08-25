@@ -106,7 +106,6 @@ async def insert_couriers_into_db(couriers, place:str):
 async def refresh_emag_couriers(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-
     if marketplace.credentials["type"] == "user_pass":
         
         USERNAME = marketplace.credentials["firstKey"]

@@ -135,7 +135,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     db_product = result.scalars().first()
                     db_product.orders_stock = db_product.orders_stock + quantity
                     await db.commit()
-                    db.refresh()
+                    db.refresh(db_product)
             logging.info("Sync stock")
             result = await session.execute(select(Internal_Product))
             db_products = result.scalars().all()
