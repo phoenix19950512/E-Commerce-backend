@@ -36,6 +36,7 @@ class Internal_Product(Base):
     discontinued = Column(Boolean, nullable=True)
     stock = Column(Integer, nullable=True)
     smartbill_stock = Column(Integer, nullable=True)
+    orders_stock = Column(Integer, nullable=True)
     damaged_goods = Column(Integer, nullable=True)
     warehouse_id = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)

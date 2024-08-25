@@ -216,6 +216,7 @@ async def insert_products_into_db(products, offers,  place):
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean, product_marketplace) DO UPDATE SET
                 sale_price = EXCLUDED.sale_price,
+                barcode_title = EXCLUDED.barcode_title,
                 stock = EXCLUDED.stock
         """).format(sql.Identifier("products"))
 
@@ -237,7 +238,7 @@ async def insert_products_into_db(products, offers,  place):
             ean = str(product.get('ean')[0]) if product.get('ean') else None
             ean = change_string(ean)
             image_link = product.get('images')[0]['url'] if product.get('images') else None
-            barcode_title = ""
+            barcode_title =  str(offer.get('id'))
             masterbox_title = ""
             link_address_1688 = ""
             price_1688 = Decimal('0')
@@ -306,7 +307,6 @@ async def insert_products_into_db(products, offers,  place):
         print(f"Failed to insert products into database: {e}")
 
 def generate_signature(public_key, private_key, params):
-
     now = datetime.utcnow()
     day = now.strftime('%d')
     month = now.strftime('%m')
@@ -408,3 +408,24 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
         result = save(marketplace.baseAPIURL, endpoint, savepoint, API_KEY, data)
 
     return result
+
+def post_stock_altex(marketplace:Marketplace, offer_id, stock):
+    PUBLIC_KEY = marketplace.credentials["firstKey"]
+    PRIVATE_KEY = marketplace.credentials["secondKey"]
+    url = marketplace.baseAPIURL
+    params  = ""
+    url = f"{url}catalog/stock/"
+    signature = generate_signature(PUBLIC_KEY, PRIVATE_KEY, params)
+    headers = {
+        'X-Request-Public-Key': PUBLIC_KEY,
+        'X-Request-Signature': signature
+    }
+
+    data = {
+        "0": {
+            "stock": stock,
+            "offer_id": offer_id
+        }
+    }
+    response = requests.post(url, headers=headers, data = json.dumps(data), verify=False, proxies=PROXIES)
+    return response.json()

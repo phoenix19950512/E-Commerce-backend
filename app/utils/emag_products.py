@@ -12,6 +12,7 @@ import os
 import time
 import logging
 from app.models.marketplace import Marketplace
+from app.models.internal_product import Internal_Product
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -440,3 +441,23 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
         result = save(marketplace.baseAPIURL, endpoint, savepoint, API_KEY, data)
 
     return result
+
+def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
+    USERNAME = marketplace.credentials["firstKey"]
+    PASSWORD = marketplace.credentials["secondKey"]
+    API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+    url = f"{marketplace.baseAPIURL}/offer_stock"
+    api_key = str(API_KEY).replace("b'", '').replace("'", "")
+    headers = {
+        "Authorization": f"Basic {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = json.dumps({
+        "resourceId": product_id,
+        "value": stock
+    })
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return f"Failed to retrieve products: {response.status_code}"
