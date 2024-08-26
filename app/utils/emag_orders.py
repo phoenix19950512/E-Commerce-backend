@@ -372,8 +372,8 @@ async def insert_orders(orders, marketplace: Marketplace):
             cashed_cod = Decimal(order.get('cashed_cod'))
             refunded_amount = order.get('refunded_amount')
             is_complete = order.get('is_complete')
-            cancellation_request = order.get('cancellation_request')
-            cancellation_reason = order.get('reason_cancellation')
+            cancellation_request = order.get('cancellation_request') if order.get('cancellation_request') else ''
+            cancellation_reason = str(order.get('reason_cancellation'))
             refund_status = order.get('refund_status')
             maximum_date_for_shipment = order.get('maximum_date_for_shipment')
             late_shipment = order.get('late_shipment')
