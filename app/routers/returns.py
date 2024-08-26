@@ -38,7 +38,10 @@ async def get_returns(
 
 @router.get("/awb")
 async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).where(or_(Returns.awb == awb, Returns.awb == awb[:-3])))
+    if awb[:2] == "01":
+        result = await db.execute(select(Returns).where(or_(Returns.awb == awb[2:], Returns.awb == awb[2:-3])))
+    else:
+        result = await db.execute(select(Returns).where(or_(Returns.awb == awb, Returns.awb == awb[:-3])))
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="awb not found")

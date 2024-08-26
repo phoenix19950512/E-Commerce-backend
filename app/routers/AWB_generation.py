@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
@@ -131,10 +131,13 @@ async def get_awbs_order_id(
 
 @router.get("/awb_barcode")
 async def get_order(
-    awb_barcode: str,
+    awb_number: str,
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(AWB).where(AWB.awb_barcode == awb_barcode))
+    if awb_number[:2] == "01":
+        result = await db.execute(select(AWB).where(or_(AWB.awb_number == awb_number[2:], AWB.awb_number == awb_number[2:-3])))
+    else:
+        result = await db.execute(select(AWB).where(or_(AWB.awb_number == awb_number, AWB.awb_number == awb_number[:-3])))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awb not found")
