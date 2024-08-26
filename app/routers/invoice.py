@@ -8,6 +8,7 @@ from app.models.invoice import Invoice
 from app.schemas.invoice import InvoicesCreate, InvoicesRead, InvoicesUpdate
 from app.utils.smart_api import generate_invoice
 import json
+import logging
 
 router = APIRouter()
 
@@ -42,6 +43,7 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
     print(data)
 
     result = generate_invoice(data=data)
+    logging.info(result)
     if result.get['successfully'] == False:
         return result.get['errorText']
     
