@@ -18,11 +18,16 @@ async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession
     if damaged_good:
         return damaged_good
     product_ean_list = db_damaged_good.product_ean
-    for i in range(product_ean_list):
+    for i in range(len(product_ean_list)):
         ean = product_ean_list[i]
         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
         product = result.scalars().first()
-        product.damaged_goods = product.damaged_goods + db_damaged_good.quantity[i]
+        if product is None:
+            continue
+        if product.damaged_goods:
+            product.damaged_goods = product.damaged_goods + db_damaged_good.quantity[i]
+        else:
+            product.damaged_goods = db_damaged_good.quantity[i]
         await db.commit()
         await db.refresh(product)
     db.add(db_damaged_good)
