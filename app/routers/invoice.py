@@ -12,7 +12,7 @@ import logging
 
 router = APIRouter()
 
-@router.post("/", response_model=InvoicesRead)
+@router.post("/")
 async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get_db)):
     db_invoice = Invoice(**invoice.dict())
     order_id = db_invoice.order_id
@@ -36,20 +36,20 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
         "useEstimateDetails": db_invoice.useEstimateDetails,
         "estimate": json.loads(db_invoice.estimate),
         "currency": db_invoice.currency,
-        "issueDate": db_invoice.issueDate,
+        "issueDate": db_invoice.issueDate.strftime('%Y-%m-%d'),
         "products": json.loads(db_invoice.products)
     }
 
-    print(data)
+    logging.info(data)
 
     result = generate_invoice(data=data)
     logging.info(result)
-    if result.get['successfully'] == False:
-        return result.get['errorText']
+    if result.get('sucessfully') is None or result.get('successfully') == False:
+        return result
     
-    db_invoice.number = result.get['number']
-    db_invoice.series = result.get['series']
-    db_invoice.url = result.get['url']
+    db_invoice.number = result.get('number')
+    db_invoice.series = result.get('series')
+    db_invoice.url = result.get('url')
 
     db.add(db_invoice)
     await db.commit()

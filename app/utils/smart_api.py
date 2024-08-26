@@ -28,9 +28,9 @@ def get_stock(smartbill: Billing_software):
     PASSWORD = smartbill.password
     url = "https://ws.smartbill.ro/SBORO/api/stocks"
     params = {
-    "cif": smartbill.registration_number,
-    "date": today,
-    "warehouseName": smartbill.warehouse_name
+        "cif": smartbill.registration_number,
+        "date": today,
+        "warehouseName": smartbill.warehouse_name
     }
     credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
@@ -59,16 +59,17 @@ async def update_stock(db: AsyncSession):
             db_product.stock = product.get('quantity')
 
 def generate_invoice(data):
-    USERNAME = "003|5c070dde3f5ed393cf1ff6a610748779"
-    PASSWORD = "RO41996145"
+    USERNAME = "theinnovatorssrl@gmail.com"
+    PASSWORD = "003|5c070dde3f5ed393cf1ff6a610748779"
     url = "https://ws.smartbill.ro/SBORO/api/invoice"
+    credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
         "accept": "application/json",
-        "content-type": "application/json",
+        "authorization": f"Basic {credentials}",
+        "content-type": "application/json"
     }
-    auth = HTTPBasicAuth(USERNAME, PASSWORD)
-    response = requests.post(url, headers=headers, json=json.loads(data), auth=auth)
-    if response.status_code == 200:
-        return response
-    else:
-        return f"{response.status_code} error, {response.json().get('errorText')}"
+    data = json.dumps(data)
+    logging.info(data)
+    response = requests.post(url, headers=headers, data=data, proxies=PROXIES)
+    logging.info(response.json())
+    return response.json()
