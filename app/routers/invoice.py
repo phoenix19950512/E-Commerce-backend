@@ -85,7 +85,7 @@ async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, db: AsyncSess
     if db_invoice is None:
         raise HTTPException(status_code=404, detail="invoice not found")
     for var, value in vars(invoice).items():
-        setattr(db_invoice, var, value) if value else None
+        setattr(db_invoice, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_invoice)
     return db_invoice

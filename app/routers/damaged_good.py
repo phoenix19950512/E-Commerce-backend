@@ -67,7 +67,7 @@ async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUp
     if db_damaged_good is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
     for var, value in vars(damaged_good).items():
-        setattr(db_damaged_good, var, value) if value else None
+        setattr(db_damaged_good, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_damaged_good)
     return db_damaged_good

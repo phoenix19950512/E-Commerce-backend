@@ -44,7 +44,7 @@ async def update_customers(customer_id: int, customer: CustomersUpdate, db: Asyn
     if db_customers is None:
         raise HTTPException(status_code=404, detail="customers not found")
     for var, value in vars(customer).items():
-        setattr(db_customers, var, value) if value else None
+        setattr(db_customers, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_customers)
     return db_customers

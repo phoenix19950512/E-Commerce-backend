@@ -42,7 +42,7 @@ async def update_warehouse(warehouse_id: int, warehouse: WarehouseUpdate, db: As
         raise HTTPException(status_code=404, detail="Warehouse not found")
     update_data = warehouse.dict(exclude_unset=True)  # Only update fields that are set
     for key, value in update_data.items():
-        setattr(db_warehouse, key, value)
+        setattr(db_warehouse, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_warehouse)
     return db_warehouse

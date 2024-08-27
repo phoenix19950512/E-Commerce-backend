@@ -24,7 +24,7 @@ async def update_profile(db: AsyncSession, profile: ProfileUpdate, user_id: int)
     db_profile = await get_profile(db, user_id)
     if db_profile:
         for key, value in profile.dict(exclude_unset=True).items():
-            setattr(db_profile, key, value)
+            setattr(db_profile, key, value) if value is not None else None
         await db.commit()
         await db.refresh(db_profile)
     return db_profile

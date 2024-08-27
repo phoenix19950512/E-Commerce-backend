@@ -190,7 +190,7 @@ async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     for var, value in vars(user).items():
-        setattr(db_user, var, value) if value else None
+        setattr(db_user, var, value) if value is not None else None
     if user.password:
         db_user.hashed_password = get_password_hash(user.password)
     db_user.updated_at = datetime.utcnow()

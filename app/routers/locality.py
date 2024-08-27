@@ -28,7 +28,7 @@ async def update_locality(db: AsyncSession, locality_id: int, locality: Locality
     if db_locality is None:
         return None
     for key, value in locality.dict().items():
-        setattr(db_locality, key, value)
+        setattr(db_locality, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_locality)
     return db_locality

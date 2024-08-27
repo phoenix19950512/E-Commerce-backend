@@ -41,7 +41,7 @@ async def update_supplier(supplier_id: int, supplier: SupplierUpdate, db: AsyncS
     if db_supplier is None:
         raise HTTPException(status_code=404, detail="Supplier not found")
     for var, value in vars(supplier).items():
-        setattr(db_supplier, var, value) if value else None
+        setattr(db_supplier, var, value) if value is not None else None
     db.add(db_supplier)
     await db.commit()
     await db.refresh(db_supplier)

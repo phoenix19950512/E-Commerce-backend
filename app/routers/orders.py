@@ -29,7 +29,7 @@ async def update_order(db: Session, order_id: int, order: OrderUpdate):
     db_order = result.scalars().first()
     if db_order:
         for key, value in order.dict().items():
-            setattr(db_order, key, value)
+            setattr(db_order, key, value) if value is not None else None
         db.commit()
         db.refresh(db_order)
     return db_order

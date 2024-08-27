@@ -194,7 +194,7 @@ async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncS
         raise HTTPException(status_code=404, detail="shipment not found")
     update_data = shipment.dict(exclude_unset=True)  # Only update fields that are set
     for key, value in update_data.items():
-        setattr(db_shipment, key, value)
+        setattr(db_shipment, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment

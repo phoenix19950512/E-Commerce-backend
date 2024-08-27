@@ -61,7 +61,7 @@ async def update_replacement(replacement_id: int, replacement: ReplacementsUpdat
     if db_replacement is None:
         raise HTTPException(status_code=404, detail="replacement not found")
     for var, value in vars(replacement).items():
-        setattr(db_replacement, var, value) if value else None
+        setattr(db_replacement, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_replacement)
     return db_replacement

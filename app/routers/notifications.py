@@ -34,7 +34,7 @@ async def update_notification(db: AsyncSession, notification_id: int, notificati
         return None
     update_data = notification.dict(exclude_unset=True)  # Only update fields that are set
     for key, value in update_data.items():
-        setattr(notification, key, value)
+        setattr(notification, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_notification)
     return db_notification

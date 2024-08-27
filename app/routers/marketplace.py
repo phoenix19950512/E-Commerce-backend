@@ -28,7 +28,7 @@ async def update_marketplace(db: AsyncSession, marketplace_id: int, marketplace:
     if db_marketplace is None:
         return None
     for key, value in marketplace.dict().items():
-        setattr(db_marketplace, key, value)
+        setattr(db_marketplace, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_marketplace)
     return db_marketplace

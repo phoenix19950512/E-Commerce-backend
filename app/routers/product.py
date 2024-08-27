@@ -265,7 +265,7 @@ async def update_product(product_id: int, product: ProductUpdate, db: AsyncSessi
         raise HTTPException(status_code=404, detail="Product not found")
     
     for var, value in vars(product).items():
-        setattr(db_product, var, value) if value else None
+        setattr(db_product, var, value) if value is not None else None
 
     await db.commit()
     await db.refresh(db_product)

@@ -191,7 +191,7 @@ async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=404, detail="awbs not found")
     update_data = awb.dict(exclude_unset=True)  # Only update fields that are set
     for key, value in update_data.items():
-        setattr(awb, key, value)
+        setattr(awb, key, value) if value is not None else None
     await db.commit()
     await db.refresh(db_awb)
     return db_awb

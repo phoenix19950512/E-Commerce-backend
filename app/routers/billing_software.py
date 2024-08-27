@@ -48,7 +48,7 @@ async def update_billing_software(billing_software_id: int, billing_software: Bi
     if db_billing_software is None:
         raise HTTPException(status_code=404, detail="billing_software not found")
     for var, value in vars(billing_software).items():
-        setattr(db_billing_software, var, value) if value else None
+        setattr(db_billing_software, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_billing_software)
     return db_billing_software

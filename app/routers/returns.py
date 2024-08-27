@@ -54,7 +54,7 @@ async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession
     if db_return is None:
         raise HTTPException(status_code=404, detail="return not found")
     for var, value in vars(returns).items():
-        setattr(db_return, var, value) if value else None
+        setattr(db_return, var, value) if value is not None else None
     await db.commit()
     await db.refresh(db_return)
     return db_return
