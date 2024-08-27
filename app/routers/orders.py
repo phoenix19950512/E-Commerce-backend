@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import aliased
 from sqlalchemy.future import select
 from sqlalchemy.sql import text
 from sqlalchemy import func
@@ -8,6 +9,7 @@ from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
 from app.models.product import Product
 from app.models.internal_product import Internal_Product
+from app.models.awb import AWB
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
@@ -58,13 +60,18 @@ async def read_new_orders(
     warehouse_id: int = Query('', description='warehouse_id'),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Order).filter(
+    AWBAlias = aliased(AWB)
+
+    query = select(Order, AWBAlias).filter(
         (cast(Order.id, String).ilike(f"%{search_text}%")) |
         (Order.payment_mode.ilike(f"%{search_text}%")) |
         (Order.details.ilike(f"%{search_text}%")) |
         (Order.order_market_place.ilike(f"%{search_text}%")) |
         (Order.delivery_mode.ilike(f"%{search_text}%")) |
         (Order.proforms.ilike(f"%{search_text}%"))
+    ).outerjoin(
+        AWBAlias,
+        AWBAlias.order_id == Order.id
     )
     query = query.filter(Order.status == any_([1, 2, 3]))
 
@@ -74,9 +81,9 @@ async def read_new_orders(
         query = query.order_by(Order.date.asc())
 
     result = await db.execute(query)
-    db_new_orders = result.scalars().all()
+    db_new_orders = result.all()
     new_order_data = []
-    for db_order in db_new_orders:
+    for db_order, awb in db_new_orders:
         image_link = []
         stock = []
         marketplace = db_order.order_market_place
@@ -138,13 +145,13 @@ async def read_new_orders(
             for db_product in db_products:
                 stock.append(db_product.stock)
                 break
-        
-        
+              
         new_order_data.append({
             "order": db_order,
             "total_price": total,
             "image_link": image_link,
-            "stock": stock
+            "stock": stock,
+            "awb": awb
         })
 
     return new_order_data
@@ -203,40 +210,41 @@ async def read_orders(
     warehouse_id: int = Query('', description="warehouse_id"),
     db: AsyncSession = Depends(get_db)
 ):
+    AWBAlias = aliased(AWB)
     offset = (page - 1) * items_per_page
-    if status == -1:
-        query = select(Order).filter(
-            (cast(Order.id, String).ilike(f"%{search_text}%")) |
-            (Order.payment_mode.ilike(f"%{search_text}%")) |
-            (Order.details.ilike(f"%{search_text}%")) |
-            (Order.order_market_place.ilike(f"%{search_text}%")) |
-            (Order.delivery_mode.ilike(f"%{search_text}%")) |
-            (Order.proforms.ilike(f"%{search_text}%"))
-        ).offset(offset).limit(items_per_page)
-    else :
-        query = select(Order).where(Order.status == status).filter(
-            (cast(Order.id, String).ilike(f"%{search_text}%")) |
-            (Order.payment_mode.ilike(f"%{search_text}%")) |
-            (Order.details.ilike(f"%{search_text}%")) |
-            (Order.order_market_place.ilike(f"%{search_text}%")) |
-            (Order.delivery_mode.ilike(f"%{search_text}%")) |
-            (Order.proforms.ilike(f"%{search_text}%"))
-        ).offset(offset).limit(items_per_page)
 
-    if flag == True:
+    query = select(Order, AWBAlias).outerjoin(
+        AWBAlias,
+        AWBAlias.order_id == Order.id
+    ).filter(
+        (cast(Order.id, String).ilike(f"%{search_text}%")) |
+        (Order.payment_mode.ilike(f"%{search_text}%")) |
+        (Order.details.ilike(f"%{search_text}%")) |
+        (Order.order_market_place.ilike(f"%{search_text}%")) |
+        (Order.delivery_mode.ilike(f"%{search_text}%")) |
+        (Order.proforms.ilike(f"%{search_text}%"))
+    ).offset(offset).limit(items_per_page)
+    
+    # Apply status filter if needed
+    if status != -1:
+        query = query.where(Order.status == status)
+
+    # Sorting
+    if flag:
         query = query.order_by(Order.date.desc())
     else:
         query = query.order_by(Order.date.asc())
-    
+
+    # Execute query
     result = await db.execute(query)
-    db_orders = result.scalars().all()
+    db_orders = result.all()
     
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
     
     orders_data = []
 
-    for db_order in db_orders:
+    for db_order, awb in db_orders:
         image_link = []
         stock = []
         marketplace = db_order.order_market_place
@@ -303,7 +311,8 @@ async def read_orders(
             "order": db_order,
             "total_price": total,
             "image_link": image_link,
-            "stock": stock
+            "stock": stock,
+            "awb": awb
         })
     return orders_data
 
