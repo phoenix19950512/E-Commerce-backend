@@ -202,9 +202,32 @@ async def insert_orders(orders, marketplace: Marketplace):
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, market_place) DO UPDATE SET
                 mkt_id = EXCLUDED.mkt_id,
+                name = EXCLUDED.name,
+                company = EXCLUDED.company,
+                gender = EXCLUDED.gender,
+                phone_1 = EXLUCDE.phone_1,
+                billing_name = EXCLUDED.billing_name,
+                billing_phone = EXCLUDED.billing_phone,
+                billing_country = EXCLUDED.billing_country,
+                billing_suburb = EXCLUDED.billing_suburb,
+                billing_city = EXCLUDED.billing_city,
+                billing_locality_id = EXCLUDED.billing_locality_id,
+                billing_street = EXCLUDED.billing_street,
+                shipping_country = EXCLUDED.shipping_country,
+                shipping_suburb = EXCLUDED.shipping_suburb,
+                shipping_city = EXCLUDED.shipping_city,
+                shipping_locality_id = EXCLUDED.shipping_locality_id,
+                shipping_contact = EXCLUDED.shipping_contact,
+                shipping_phone = EXCLUDED.shipping_phone,
+                shipping_street = EXCLUDED.shipping_street,
+                created = EXCLUDED.created,
+                modified = EXCLUDED.modified,
+                code = EXCLUDED.code,
+                bank = EXCLUDED.bank,
+                iban = EXCLUDED.iban,
+                email  = EXCLUDED.email,                                                                                                                                                                                                                                                                                                                                                                                                                                     
                 legal_entity = EXCLUDED.legal_entity,
-                is_vat_payer = EXCLUDED.is_vat_payer,
-                modified = EXCLUDED.modified
+                is_vat_payer = EXCLUDED.is_vat_payer
         """).format(sql.Identifier("customers"))
 
         insert_orders_query = sql.SQL("""
