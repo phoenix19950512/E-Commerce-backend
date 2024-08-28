@@ -377,8 +377,6 @@ async def read_order(order_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
 
-
-
 @router.put("/{order_id}", response_model=OrderRead)
 async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
     db_order = await update_order(db=db, order_id=order_id, order=order)
