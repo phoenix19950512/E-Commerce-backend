@@ -111,7 +111,7 @@ async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depe
 @router.get("/count")
 async def count_awb(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AWB))
-    db_awb = result.scalars().first()
+    db_awb = result.scalars().all()
     return len(db_awb)
 
 @router.get("/customer")
