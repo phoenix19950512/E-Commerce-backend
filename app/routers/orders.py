@@ -467,6 +467,7 @@ async def read_orders(
                 for db_product in db_products:
                     stock.append(db_product.stock)
                     break
+
             orders_data.append({
                 "order": db_order,
                 "total_price": total,
@@ -474,7 +475,7 @@ async def read_orders(
                 "stock": stock,
                 "awb": awb
             })
-            
+
     return orders_data
 
 @router.get('/count')
