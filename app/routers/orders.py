@@ -344,14 +344,15 @@ async def get_orders_count(
     
     result = await db.execute(query)
     db_orders = result.scalars().all()
-    if warehouse_id:
+    if warehouse_id and warehouse_id > 0:
         cnt = 0
         for db_order in db_orders:
             product_list = db_order.product_id
+            marketplace = db_order.order_market_place
             flag = 1
             for i in range(len(product_list)):
                 product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id))
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
                 db_product = result.scalars().first()
 
                 ean = db_product.ean
@@ -367,6 +368,58 @@ async def get_orders_count(
                 continue
             cnt += 1
         return cnt
+    elif warehouse_id and warehouse_id == -1:
+        cnt = 0
+        for db_order in db_orders:
+            product_list = db_order.product_id
+            marketplace = db_order.order_market_place
+            flag = 1
+            temp = 0
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+                db_product = result.scalars().first()
+
+                ean = db_product.ean
+                    
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
+
+                if temp == 0:
+                    temp = db_internal_product.warehouse_id
+                    continue
+                else:
+                    if db_internal_product.warehouse_id == temp:
+                        continue
+                    else:
+                        flag = 0
+                        break
+            if flag == 0:
+                continue
+            cnt += 1
+    elif warehouse_id and warehouse_id == -2:
+        cnt = 0
+        for db_order in db_orders:
+            product_list = db_order.product_id
+            marketplace = db_order.order_market_place
+            flag = 1
+            for i in range(len(product_list)):
+                product_id = product_list[i]
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+                db_product = result.scalars().first()
+
+                ean = db_product.ean
+                    
+                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+                db_internal_product = result.scalars().first()
+
+                if db_internal_product.warehouse_id:
+                    continue
+                else:
+                    flag = 0
+                    break
+            if flag == 0:
+                cnt += 1
     else:
         return len(db_orders)
 
