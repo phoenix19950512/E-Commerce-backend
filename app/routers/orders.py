@@ -312,9 +312,7 @@ async def read_orders(
                 result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
                 db_internal_product = result.scalars().first()
 
-                if db_internal_product.warehouse_id:
-                    continue
-                else:
+                if db_internal_product.warehouse_id == 0:
                     flag = 0
                     break
             if flag == 1:
