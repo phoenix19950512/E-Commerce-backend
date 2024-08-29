@@ -205,7 +205,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 name = EXCLUDED.name,
                 company = EXCLUDED.company,
                 gender = EXCLUDED.gender,
-                phone_1 = EXLUCDE.phone_1,
+                phone_1 = EXCLUDED.phone_1,
                 billing_name = EXCLUDED.billing_name,
                 billing_phone = EXCLUDED.billing_phone,
                 billing_country = EXCLUDED.billing_country,
