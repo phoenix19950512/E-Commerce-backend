@@ -279,9 +279,6 @@ async def read_orders(
             temp = 0
             for i in range(len(product_list)):
                 product_id = product_list[i]
-                temp = 0
-            for i in range(len(product_list)):
-                product_id = product_list[i]
                 result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
                 db_product = result.scalars().first()
 
@@ -289,7 +286,9 @@ async def read_orders(
                     
                 result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
                 db_internal_product = result.scalars().first()
-
+                if db_internal_product.warehouse_id is None:
+                    flag = 1
+                    break
                 if temp == 0:
                     temp = db_internal_product.warehouse_id
                     continue
@@ -299,7 +298,7 @@ async def read_orders(
                     else:
                         flag = 0
                         break
-            if flag == 0:
+            if flag == 1:
                 continue
         elif warehouse_id and warehouse_id == -2:
             flag = 1
@@ -421,9 +420,6 @@ async def get_orders_count(
             marketplace = db_order.order_market_place
             flag = 1
             temp = 0
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                temp = 0
             for i in range(len(product_list)):
                 product_id = product_list[i]
                 result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
