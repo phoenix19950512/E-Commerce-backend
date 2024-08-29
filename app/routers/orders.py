@@ -275,207 +275,45 @@ async def read_orders(
             if flag == 0:
                 continue
 
-            for i in range(len(product_list)):
-                quantity = quantity_list[i]
-                price = sale_price[i]
-                if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-                elif marketplace.lower() == 'emag.hu':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 0)
-                else:
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 4)
-                total += real_price * quantity
+        for i in range(len(product_list)):
+            quantity = quantity_list[i]
+            price = sale_price[i]
+            if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+            elif marketplace.lower() == 'emag.hu':
+                real_price = round(Decimal(price) * (100 + vat) / 100, 0)
+            else:
+                real_price = round(Decimal(price) * (100 + vat) / 100, 4)
+            total += real_price * quantity
 
-            if db_order.shipping_tax:
-                total += Decimal(db_order.shipping_tax)
-            if db_order.vouchers:
-                vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
-                for voucher in vouchers:
-                    total += Decimal(voucher.get("sale_price", "0"))
-                    total += Decimal(voucher.get("sale_price_vat", "0"))
+        if db_order.shipping_tax:
+            total += Decimal(db_order.shipping_tax)
+        if db_order.vouchers:
+            vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
+            for voucher in vouchers:
+                total += Decimal(voucher.get("sale_price", "0"))
+                total += Decimal(voucher.get("sale_price_vat", "0"))
 
-            for i in range(len(product_list)):
-                image_link.append("")
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id))
-                db_products = result.scalars().all()
-                for db_product in db_products:
-                    if db_product.product_marketplace.lower() == 'emag.ro':
-                        image_link[i] = db_product.image_link
-                        break
-                for db_product in db_products:
-                    stock.append(db_product.stock)
+        for i in range(len(product_list)):
+            image_link.append("")
+            product_id = product_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            db_products = result.scalars().all()
+            for db_product in db_products:
+                if db_product.product_marketplace.lower() == 'emag.ro':
+                    image_link[i] = db_product.image_link
                     break
+            for db_product in db_products:
+                stock.append(db_product.stock)
+                break
 
-            orders_data.append({
-                "order": db_order,
-                "total_price": total,
-                "image_link": image_link,
-                "stock": stock,
-                "awb": awb
-            })
-        
-        elif warehouse_id and warehouse_id == -1:
-            flag = 1
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
-
-                ean = db_product.ean
-                    
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-
-                if temp == 0:
-                    temp = db_internal_product.warehouse_id
-                    continue
-                else:
-                    if db_internal_product.warehouse_id == temp:
-                        continue
-                    else:
-                        flag = 0
-                        break
-            if flag == 0:
-                continue
-
-            for i in range(len(product_list)):
-                quantity = quantity_list[i]
-                price = sale_price[i]
-                if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-                elif marketplace.lower() == 'emag.hu':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 0)
-                else:
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 4)
-                total += real_price * quantity
-
-            if db_order.shipping_tax:
-                total += Decimal(db_order.shipping_tax)
-            if db_order.vouchers:
-                vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
-                for voucher in vouchers:
-                    total += Decimal(voucher.get("sale_price", "0"))
-                    total += Decimal(voucher.get("sale_price_vat", "0"))
-
-            for i in range(len(product_list)):
-                image_link.append("")
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id))
-                db_products = result.scalars().all()
-                for db_product in db_products:
-                    if db_product.product_marketplace.lower() == 'emag.ro':
-                        image_link[i] = db_product.image_link
-                        break
-                for db_product in db_products:
-                    stock.append(db_product.stock)
-                    break
-                
-            orders_data.append({
-                "order": db_order,
-                "total_price": total,
-                "image_link": image_link,
-                "stock": stock,
-                "awb": awb
-            })
-
-        elif warehouse_id and warehouse_id == -2:
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
-
-                ean = db_product.ean
-                    
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-
-                if db_internal_product.warehouse_id:
-                    continue
-                else:
-                    flag = 0
-                    break
-            if flag == 0:
-                for i in range(len(product_list)):
-                    quantity = quantity_list[i]
-                    price = sale_price[i]
-                    if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
-                        real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-                    elif marketplace.lower() == 'emag.hu':
-                        real_price = round(Decimal(price) * (100 + vat) / 100, 0)
-                    else:
-                        real_price = round(Decimal(price) * (100 + vat) / 100, 4)
-                    total += real_price * quantity
-
-                if db_order.shipping_tax:
-                    total += Decimal(db_order.shipping_tax)
-                if db_order.vouchers:
-                    vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
-                    for voucher in vouchers:
-                        total += Decimal(voucher.get("sale_price", "0"))
-                        total += Decimal(voucher.get("sale_price_vat", "0"))
-
-                for i in range(len(product_list)):
-                    image_link.append("")
-                    product_id = product_list[i]
-                    result = await db.execute(select(Product).where(Product.id == product_id))
-                    db_products = result.scalars().all()
-                    for db_product in db_products:
-                        if db_product.product_marketplace.lower() == 'emag.ro':
-                            image_link[i] = db_product.image_link
-                            break
-                    for db_product in db_products:
-                        stock.append(db_product.stock)
-                        break
-            orders_data.append({
-                "order": db_order,
-                "total_price": total,
-                "image_link": image_link,
-                "stock": stock,
-                "awb": awb
-            })
-
-        else:
-            for i in range(len(product_list)):
-                quantity = quantity_list[i]
-                price = sale_price[i]
-                if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 2)
-                elif marketplace.lower() == 'emag.hu':
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 0)
-                else:
-                    real_price = round(Decimal(price) * (100 + vat) / 100, 4)
-                total += real_price * quantity
-
-            if db_order.shipping_tax:
-                total += Decimal(db_order.shipping_tax)
-            if db_order.vouchers:
-                vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
-                for voucher in vouchers:
-                    total += Decimal(voucher.get("sale_price", "0"))
-                    total += Decimal(voucher.get("sale_price_vat", "0"))
-
-            for i in range(len(product_list)):
-                image_link.append("")
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id))
-                db_products = result.scalars().all()
-                for db_product in db_products:
-                    if db_product.product_marketplace.lower() == 'emag.ro':
-                        image_link[i] = db_product.image_link
-                        break
-                for db_product in db_products:
-                    stock.append(db_product.stock)
-                    break
-
-            orders_data.append({
-                "order": db_order,
-                "total_price": total,
-                "image_link": image_link,
-                "stock": stock,
-                "awb": awb
-            })
-
+        orders_data.append({
+            "order": db_order,
+            "total_price": total,
+            "image_link": image_link,
+            "stock": stock,
+            "awb": awb
+        })
     return orders_data
 
 @router.get('/count')
