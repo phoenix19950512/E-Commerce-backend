@@ -140,8 +140,9 @@ async def get_order(
     awb_number: str,
     db: AsyncSession = Depends(get_db)
 ):
+
     if awb_number[:2] == "01":
-        result = await db.execute(select(AWB).where(or_(AWB.awb_number == awb_number[2:], AWB.awb_number == awb_number[2:-3])))
+        result = await db.execute(select(AWB).where(or_(AWB.awb_number == awb_number[2:], AWB.awb_number == awb_number[2:-3], AWB.awb_number == awb_number, AWB.awb_number == awb_number[:-3])))
     else:
         result = await db.execute(select(AWB).where(or_(AWB.awb_number == awb_number, AWB.awb_number == awb_number[:-3])))
     db_awb = result.scalars().first()
