@@ -429,12 +429,60 @@ async def get_orders_count(
     else:
         return len(db_orders)
 
-@router.get("/{order_id}", response_model=OrderRead)
-async def read_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = await get_order(db=db, order_id=order_id)
+@router.get("/{order_id}")
+async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    db_order = result.scalars().first()
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
-    return db_order
+    
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
+    awb = result.scalars().first()
+
+    product_id_list = db_order.product_id
+    ean = []
+    stock = []
+    marketplace = db_order.order_market_place
+    product_list = db_order.product_id
+    quantity_list = db_order.quantity
+    sale_price = db_order.sale_price
+    total = Decimal(0)
+    result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
+    db_marketplace = result.scalars().first()
+    vat = db_marketplace.vat
+
+    for i in range(len(product_list)):
+        quantity = quantity_list[i]
+        price = sale_price[i]
+        if marketplace.lower() == 'emag.ro' or marketplace.lower() == 'emag.bg':
+            real_price = round(Decimal(price) * (100 + vat) / 100, 2)
+        elif marketplace.lower() == 'emag.hu':
+            real_price = round(Decimal(price) * (100 + vat) / 100, 0)
+        else:
+            real_price = round(Decimal(price) * (100 + vat) / 100, 4)
+        total += real_price * quantity
+
+    if db_order.shipping_tax:
+        total += Decimal(db_order.shipping_tax)
+    if db_order.vouchers:
+        vouchers = json.loads(db_order.vouchers) if isinstance(db_order.vouchers, str) else db_order.vouchers
+        for voucher in vouchers:
+            total += Decimal(voucher.get("sale_price", "0"))
+            total += Decimal(voucher.get("sale_price_vat", "0"))
+
+    for i in range(len(product_id_list)):
+        product_id = product_id_list[i]
+        result = await db.execute(select(Product).where(Product.id == product_id))
+        db_product = result.scalars().first()
+        ean.append(db_product.ean)
+
+    return {
+        **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
+        "total_price": total,
+        "ean": ean,
+        "stock": stock,
+        "awb": awb
+    }
 
 @router.put("/{order_id}", response_model=OrderRead)
 async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
