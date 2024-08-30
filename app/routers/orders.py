@@ -147,9 +147,9 @@ async def read_new_orders(
                 break
               
         new_order_data.append({
-            "order": db_order,
-            "total_price": total,
-            "image_link": image_link,
+            **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
+            "total_prcie": total,
+            "ean": ean,
             "stock": stock,
             "awb": awb
         })
