@@ -3,13 +3,13 @@ from app.database import Base
 
 class Product(Base):
     __tablename__ = "products"
-    id = Column(String, nullable=True)
+    id = Column(String, nullable=True, index=True)
     part_number_key = Column(String, nullable=True)
     product_name = Column(Text, nullable=True)
     model_name = Column(Text, nullable=True)
     buy_button_rank = Column(Integer, nullable=True)
     sku = Column(Text, nullable=True)
-    ean = Column(Text, primary_key=True)
+    ean = Column(Text, nullable=True)
     price = Column(Numeric(12, 4), nullable=True)
     sale_price = Column(Numeric(12, 4), nullable=True)
     image_link = Column(Text, nullable=True)

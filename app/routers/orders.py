@@ -283,7 +283,7 @@ async def read_orders(
     orders_data = []
 
     for db_order, awb in db_orders:
-        image_link = []
+        ean = []
         stock = []
         marketplace = db_order.order_market_place
         product_list = db_order.product_id
@@ -293,68 +293,6 @@ async def read_orders(
         result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
-
-        # if warehouse_id and warehouse_id > 0:
-        #     flag = 1
-        #     for i in range(len(product_list)):
-        #         product_id = product_list[i]
-        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-        #         db_product = result.scalars().first()
-
-        #         ean = db_product.ean
-                
-        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-        #         db_internal_product = result.scalars().first()
-
-        #         if db_internal_product.warehouse_id != warehouse_id:
-        #             flag = 0
-        #             break
-
-        #     if flag == 0:
-        #         continue
-        # elif warehouse_id and warehouse_id == -1:
-        #     flag = 1
-        #     temp = 0
-        #     for i in range(len(product_list)):
-        #         product_id = product_list[i]
-        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-        #         db_product = result.scalars().first()
-
-        #         ean = db_product.ean
-                    
-        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-        #         db_internal_product = result.scalars().first()
-        #         if db_internal_product.warehouse_id is None:
-        #             flag = 1
-        #             break
-        #         if temp == 0:
-        #             temp = db_internal_product.warehouse_id
-        #             continue
-        #         else:
-        #             if db_internal_product.warehouse_id == temp:
-        #                 continue
-        #             else:
-        #                 flag = 0
-        #                 break
-        #     if flag == 1:
-        #         continue
-        # elif warehouse_id and warehouse_id == -2:
-        #     flag = 1
-        #     for i in range(len(product_list)):
-        #         product_id = product_list[i]
-        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-        #         db_product = result.scalars().first()
-
-        #         ean = db_product.ean
-                    
-        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-        #         db_internal_product = result.scalars().first()
-
-        #         if db_internal_product.warehouse_id == 0:
-        #             flag = 0
-        #             break
-        #     if flag == 1:
-        #         continue
 
         for i in range(len(product_list)):
             quantity = quantity_list[i]
@@ -376,25 +314,19 @@ async def read_orders(
                 total += Decimal(voucher.get("sale_price_vat", "0"))
 
         for i in range(len(product_list)):
-            image_link.append("")
             product_id = product_list[i]
             result = await db.execute(select(Product).where(Product.id == product_id))
-            db_products = result.scalars().all()
-            for db_product in db_products:
-                if db_product.product_marketplace.lower() == 'emag.ro':
-                    image_link[i] = db_product.image_link
-                    break
-            for db_product in db_products:
-                stock.append(db_product.stock)
-                break
+            db_product = result.scalars().first()
+            ean.append(db_product.ean)
 
         orders_data.append({
-            "order": db_order,
-            "total_price": total,
-            "image_link": image_link,
+            **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
+            "total_prcie": total,
+            "ean": ean,
             "stock": stock,
             "awb": awb
         })
+
     return orders_data
 
 @router.get('/count')
