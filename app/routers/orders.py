@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased
 from sqlalchemy.future import select
 from sqlalchemy.sql import text
-from sqlalchemy import func
+from sqlalchemy import func, distinct, exists
 from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
@@ -211,6 +211,8 @@ async def read_orders(
     db: AsyncSession = Depends(get_db)
 ):
     AWBAlias = aliased(AWB)
+    Internal_productAlias = aliased(Internal_Product)
+    ProductAlias = aliased(Product)
     offset = (page - 1) * items_per_page
 
     query = select(Order, AWBAlias).outerjoin(
@@ -223,9 +225,9 @@ async def read_orders(
         (Order.order_market_place.ilike(f"%{search_text}%")) |
         (Order.delivery_mode.ilike(f"%{search_text}%")) |
         (Order.proforms.ilike(f"%{search_text}%"))
-    ).offset(offset).limit(items_per_page)
+    )
     
-    # Apply status filter if needed
+    # Apply status filter if needed 
     if status != -1:
         query = query.where(Order.status == status)
 
@@ -236,6 +238,40 @@ async def read_orders(
         query = query.order_by(Order.date.asc())
 
     # Execute query
+
+    if warehouse_id == -1:
+    # Find orders where products have different warehouse_id values
+        subquery = (
+            select(Internal_productAlias.warehouse_id)
+            .select_from(Internal_productAlias)
+            .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
+            .where(ProductAlias.id == any_(Order.product_id))
+            .group_by(Internal_productAlias.warehouse_id)
+            .having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
+        )
+        query = query.where(subquery.exists())
+
+    elif warehouse_id == -2:
+        # Find orders where at least one product has warehouse_id == 0
+        subquery = (
+            select(Internal_productAlias.warehouse_id)
+            .select_from(Internal_productAlias)
+            .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
+            .where(ProductAlias.id == any_(Order.product_id), Internal_productAlias.warehouse_id == 0)
+        )
+        query = query.where(exists(subquery))
+
+    elif warehouse_id and warehouse_id > 0:
+        # Find orders where all products have the specific warehouse_id
+        subquery = (
+            select(Internal_productAlias.warehouse_id)
+            .select_from(Order)  # Explicitly set the left side of the join
+            .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
+            .where(ProductAlias.id == any_(Order.product_id))
+            .having(func.bool_and(Internal_productAlias.warehouse_id) == warehouse_id)
+        )
+        query = query.where(subquery.exists())
+    query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_orders = result.all()
     
@@ -256,67 +292,67 @@ async def read_orders(
         db_marketplace = result.scalars().first()
         vat = db_marketplace.vat
 
-        if warehouse_id and warehouse_id > 0:
-            flag = 1
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
+        # if warehouse_id and warehouse_id > 0:
+        #     flag = 1
+        #     for i in range(len(product_list)):
+        #         product_id = product_list[i]
+        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        #         db_product = result.scalars().first()
 
-                ean = db_product.ean
+        #         ean = db_product.ean
                 
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
+        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+        #         db_internal_product = result.scalars().first()
 
-                if db_internal_product.warehouse_id != warehouse_id:
-                    flag = 0
-                    break
+        #         if db_internal_product.warehouse_id != warehouse_id:
+        #             flag = 0
+        #             break
 
-            if flag == 0:
-                continue
-        elif warehouse_id and warehouse_id == -1:
-            flag = 1
-            temp = 0
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
+        #     if flag == 0:
+        #         continue
+        # elif warehouse_id and warehouse_id == -1:
+        #     flag = 1
+        #     temp = 0
+        #     for i in range(len(product_list)):
+        #         product_id = product_list[i]
+        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        #         db_product = result.scalars().first()
 
-                ean = db_product.ean
+        #         ean = db_product.ean
                     
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-                if db_internal_product.warehouse_id is None:
-                    flag = 1
-                    break
-                if temp == 0:
-                    temp = db_internal_product.warehouse_id
-                    continue
-                else:
-                    if db_internal_product.warehouse_id == temp:
-                        continue
-                    else:
-                        flag = 0
-                        break
-            if flag == 1:
-                continue
-        elif warehouse_id and warehouse_id == -2:
-            flag = 1
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
+        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+        #         db_internal_product = result.scalars().first()
+        #         if db_internal_product.warehouse_id is None:
+        #             flag = 1
+        #             break
+        #         if temp == 0:
+        #             temp = db_internal_product.warehouse_id
+        #             continue
+        #         else:
+        #             if db_internal_product.warehouse_id == temp:
+        #                 continue
+        #             else:
+        #                 flag = 0
+        #                 break
+        #     if flag == 1:
+        #         continue
+        # elif warehouse_id and warehouse_id == -2:
+        #     flag = 1
+        #     for i in range(len(product_list)):
+        #         product_id = product_list[i]
+        #         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        #         db_product = result.scalars().first()
 
-                ean = db_product.ean
+        #         ean = db_product.ean
                     
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
+        #         result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+        #         db_internal_product = result.scalars().first()
 
-                if db_internal_product.warehouse_id == 0:
-                    flag = 0
-                    break
-            if flag == 1:
-                continue
+        #         if db_internal_product.warehouse_id == 0:
+        #             flag = 0
+        #             break
+        #     if flag == 1:
+        #         continue
 
         for i in range(len(product_list)):
             quantity = quantity_list[i]
