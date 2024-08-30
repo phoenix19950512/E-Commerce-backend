@@ -84,7 +84,7 @@ async def read_new_orders(
     db_new_orders = result.all()
     new_order_data = []
     for db_order, awb in db_new_orders:
-        image_link = []
+        ean = []
         stock = []
         marketplace = db_order.order_market_place
         product_list = db_order.product_id
@@ -134,17 +134,10 @@ async def read_new_orders(
                 total += Decimal(voucher.get("sale_price_vat", "0"))
 
         for i in range(len(product_list)):
-            image_link.append("")
             product_id = product_list[i]
             result = await db.execute(select(Product).where(Product.id == product_id))
-            db_products = result.scalars().all()
-            for db_product in db_products:
-                if db_product.product_marketplace.lower() == 'emag.ro':
-                    image_link[i] = db_product.image_link
-                    break
-            for db_product in db_products:
-                stock.append(db_product.stock)
-                break
+            db_product = result.scalars().first()
+            ean.append(db_product.ean)
               
         new_order_data.append({
             **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
