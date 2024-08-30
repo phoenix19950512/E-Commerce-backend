@@ -246,8 +246,7 @@ async def read_orders(
             .select_from(Internal_productAlias)
             .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
             .where(ProductAlias.id == any_(Order.product_id))
-            .group_by(Internal_productAlias.warehouse_id)
-            .having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
+            .where(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
         )
         query = query.where(subquery.exists())
 
@@ -262,15 +261,18 @@ async def read_orders(
         query = query.where(exists(subquery))
 
     elif warehouse_id and warehouse_id > 0:
+        print(warehouse_id)
         # Find orders where all products have the specific warehouse_id
         subquery = (
             select(Internal_productAlias.warehouse_id)
-            .select_from(Order)  # Explicitly set the left side of the join
+            .select_from(Internal_productAlias)
+            .where(Internal_productAlias.warehouse_id == warehouse_id)
             .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
             .where(ProductAlias.id == any_(Order.product_id))
-            .having(func.bool_and(Internal_productAlias.warehouse_id) == warehouse_id)
+            .group_by(Internal_productAlias.warehouse_id)
+            .having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         )
-        query = query.where(subquery.exists())
+        query = query.where(exists(subquery))
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_orders = result.all()
