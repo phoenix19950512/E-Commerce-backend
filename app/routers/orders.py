@@ -258,7 +258,7 @@ async def read_orders(
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.group_by(Order.id, AWBAlias.order_id)
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
-        query = query.filter(Internal_productAlias.warehouse_id == warehouse_id)
+        # query = query.filter(Internal_productAlias.warehouse_id == warehouse_id)
         # Find orders where all products have the specific warehouse_id
         # subquery = (
         #     select(Internal_productAlias.warehouse_id)
