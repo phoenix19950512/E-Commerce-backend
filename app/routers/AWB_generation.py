@@ -17,8 +17,16 @@ from sqlalchemy import any_
 
 router = APIRouter()
 
+@router.post("/manually")
+async def create_awb_manually(awb: AWBCreate, db: AsyncSession = Depends(get_db)):
+    db_awb = AWB(**awb.dict())
+    db.add(db_awb)
+    await db.commit()
+    await db.refresh(db_awb)
+    return db_awb
+
 @router.post("/")
-async def create_awbs_(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
+async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
     result = await db.execute(select(AWB).where(AWB.order_id == order_id))
