@@ -317,20 +317,16 @@ async def get_orders_count(
     warehouse_id: int = Query('', description="warehoues_id"),
     db: AsyncSession = Depends(get_db)
 ):
-    AWBAlias = aliased(AWB)
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
 
-    query = select(func.count(Order.id)).filter(
+    query = select(Order).filter(
         (cast(Order.id, String).ilike(f"%{search_text}%")) |
         (Order.payment_mode.ilike(f"%{search_text}%")) |
         (Order.details.ilike(f"%{search_text}%")) |
         (Order.order_market_place.ilike(f"%{search_text}%")) |
         (Order.delivery_mode.ilike(f"%{search_text}%")) |
         (Order.proforms.ilike(f"%{search_text}%"))
-    ).outerjoin(
-        AWBAlias,
-        AWBAlias.order_id == Order.id
     )
     
     # Apply status filter if needed 
@@ -342,7 +338,7 @@ async def get_orders_count(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id, AWBAlias.order_id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
@@ -352,7 +348,7 @@ async def get_orders_count(
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
-        query = query.group_by(Order.id, AWBAlias.order_id)
+        query = query.group_by(Order.id)
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         query = query.having(
             and_(
@@ -362,8 +358,8 @@ async def get_orders_count(
         )
 
     result = await db.execute(query)
-    order_count = result.scalar()   
-    return order_count
+    orders = result.scalars().all()   
+    return len(orders)
 
 @router.get("/{order_id}")
 async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
