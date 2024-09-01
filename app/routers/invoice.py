@@ -39,11 +39,7 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
         "issueDate": db_invoice.issueDate.strftime('%Y-%m-%d'),
         "products": json.loads(db_invoice.products)
     }
-
-    logging.info(data)
-
     result = generate_invoice(data=data)
-    logging.info(result)
     if result.get('sucessfully') is None or result.get('successfully') == False:
         return result
     
