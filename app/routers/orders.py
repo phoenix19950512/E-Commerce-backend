@@ -321,7 +321,7 @@ async def get_orders_count(
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
 
-    query = select(Order, AWBAlias).filter(
+    query = select(func.count(Order.id)).filter(
         (cast(Order.id, String).ilike(f"%{search_text}%")) |
         (Order.payment_mode.ilike(f"%{search_text}%")) |
         (Order.details.ilike(f"%{search_text}%")) |
