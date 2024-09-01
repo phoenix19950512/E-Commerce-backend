@@ -243,16 +243,6 @@ async def read_orders(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id == 0)
-        
-        # Find orders where at least one product has warehouse_id == 0
-        # subquery = (
-        #     select(Internal_productAlias.warehouse_id)
-        #     .select_from(Internal_productAlias)
-        #     .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
-        #     .where(ProductAlias.id == any_(Order.product_id), Internal_productAlias.warehouse_id == 0)
-        # )
-        # query = query.where(exists(subquery))
-
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
@@ -264,17 +254,6 @@ async def read_orders(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
-        # Find orders where all products have the specific warehouse_id
-        # subquery = (
-        #     select(Internal_productAlias.warehouse_id)
-        #     .select_from(Internal_productAlias)
-        #     .where(Internal_productAlias.warehouse_id == warehouse_id)
-        #     .join(ProductAlias, ProductAlias.ean == Internal_productAlias.ean)
-        #     .where(ProductAlias.id == any_(Order.product_id))
-        #     .group_by(Internal_productAlias.warehouse_id)
-        #     .having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
-        # )
-        # query = query.where(exists(subquery))
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_orders = result.all()
@@ -338,105 +317,53 @@ async def get_orders_count(
     warehouse_id: int = Query('', description="warehoues_id"),
     db: AsyncSession = Depends(get_db)
 ):
-    if status == -1:
-        query = select(Order).filter(
-            (cast(Order.id, String).ilike(f"%{search_text}%")) |
-            (Order.payment_mode.ilike(f"%{search_text}%")) |
-            (Order.details.ilike(f"%{search_text}%")) |
-            (Order.order_market_place.ilike(f"%{search_text}%")) |
-            (Order.delivery_mode.ilike(f"%{search_text}%")) |
-            (Order.proforms.ilike(f"%{search_text}%"))
-        )
-    else:
-        query = select(Order).where(Order.status == status).filter(
-            (cast(Order.id, String).ilike(f"%{search_text}%")) |
-            (Order.payment_mode.ilike(f"%{search_text}%")) |
-            (Order.details.ilike(f"%{search_text}%")) |
-            (Order.order_market_place.ilike(f"%{search_text}%")) |
-            (Order.delivery_mode.ilike(f"%{search_text}%")) |
-            (Order.proforms.ilike(f"%{search_text}%"))
-        )
+    AWBAlias = aliased(AWB)
+    Internal_productAlias = aliased(Internal_Product)
+    ProductAlias = aliased(Product)
+
+    query = select(Order, AWBAlias).filter(
+        (cast(Order.id, String).ilike(f"%{search_text}%")) |
+        (Order.payment_mode.ilike(f"%{search_text}%")) |
+        (Order.details.ilike(f"%{search_text}%")) |
+        (Order.order_market_place.ilike(f"%{search_text}%")) |
+        (Order.delivery_mode.ilike(f"%{search_text}%")) |
+        (Order.proforms.ilike(f"%{search_text}%"))
+    ).outerjoin(
+        AWBAlias,
+        AWBAlias.order_id == Order.id
+    )
     
+    # Apply status filter if needed 
+    if status != -1:
+        query = query.where(Order.status == status)
+
+    # Execute query
+    if warehouse_id == -1:
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
+        query = query.filter(Internal_productAlias.warehouse_id != 0)
+        query = query.group_by(Order.id, AWBAlias.order_id)  # Group by Order.id or other relevant columns
+        query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
+
+    elif warehouse_id == -2:
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
+        query = query.filter(Internal_productAlias.warehouse_id == 0)
+    elif warehouse_id and warehouse_id > 0:
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
+        query = query.group_by(Order.id, AWBAlias.order_id)
+        query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
+        query = query.having(
+            and_(
+                func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
+                func.max(Internal_productAlias.warehouse_id) == warehouse_id
+            )
+        )
+
     result = await db.execute(query)
-    db_orders = result.scalars().all()
-    if warehouse_id and warehouse_id > 0:
-        cnt = 0
-        for db_order in db_orders:
-            product_list = db_order.product_id
-            marketplace = db_order.order_market_place
-            flag = 1
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
-
-                ean = db_product.ean
-                
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-
-                if db_internal_product.warehouse_id != warehouse_id:
-                    flag = 0
-                    break
-
-            if flag == 0:
-                continue
-            cnt += 1
-        return cnt
-    elif warehouse_id and warehouse_id == -1:
-        cnt = 0
-        for db_order in db_orders:
-            product_list = db_order.product_id
-            marketplace = db_order.order_market_place
-            flag = 1
-            temp = 0
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
-
-                ean = db_product.ean
-                    
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-
-                if temp == 0:
-                    temp = db_internal_product.warehouse_id
-                    continue
-                else:
-                    if db_internal_product.warehouse_id == temp:
-                        continue
-                    else:
-                        flag = 0
-                        break
-            if flag == 0:
-                continue
-            cnt += 1
-    elif warehouse_id and warehouse_id == -2:
-        cnt = 0
-        for db_order in db_orders:
-            product_list = db_order.product_id
-            marketplace = db_order.order_market_place
-            flag = 1
-            for i in range(len(product_list)):
-                product_id = product_list[i]
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
-                db_product = result.scalars().first()
-
-                ean = db_product.ean
-                    
-                result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-                db_internal_product = result.scalars().first()
-
-                if db_internal_product.warehouse_id:
-                    continue
-                else:
-                    flag = 0
-                    break
-            if flag == 0:
-                cnt += 1
-    else:
-        return len(db_orders)
+    order_count = result.scalar()   
+    return order_count
 
 @router.get("/{order_id}")
 async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
