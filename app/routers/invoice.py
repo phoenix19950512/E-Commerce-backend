@@ -40,7 +40,7 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
         "products": json.loads(db_invoice.products)
     }
     result = generate_invoice(data=data)
-    if result.get('sucessfully') is None or result.get('successfully') == False:
+    if result.get('errorText') != '':
         return result
     
     db_invoice.number = result.get('number') if result.get('number') else ''
