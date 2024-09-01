@@ -47,9 +47,9 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
     if result.get('sucessfully') is None or result.get('successfully') == False:
         return result
     
-    db_invoice.number = result.get('number')
-    db_invoice.series = result.get('series')
-    db_invoice.url = result.get('url')
+    db_invoice.number = result.get('number') if result.get('number') else ''
+    db_invoice.series = result.get('series') if result.get('series') else ''
+    db_invoice.url = result.get('url') if result.get('url') else ''
 
     db.add(db_invoice)
     await db.commit()
