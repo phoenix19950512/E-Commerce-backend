@@ -58,6 +58,7 @@ async def read_new_orders(
     flag: bool = Query(1),
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description='warehouse_id'),
+    status: int = Query(-1, description="Status of the new order"),
     db: AsyncSession = Depends(get_db)
 ):
     AWBAlias = aliased(AWB)
@@ -74,8 +75,10 @@ async def read_new_orders(
         AWBAlias,
         AWBAlias.order_id == Order.id
     )
-    query = query.filter(Order.status == any_([1, 2, 3]))
-
+    if status == -1:
+        query = query.filter(Order.status == any_([1, 2, 3]))
+    else:
+        query = query.filter(Order.status == status)
     if flag == True:
         query = query.order_by(Order.date.desc())
     else:
@@ -162,6 +165,7 @@ async def read_new_orders(
 async def count_new_orders(
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description="warehouse_id"),
+    status: int = Query(-1, description="Status of the order"),
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -174,7 +178,10 @@ async def count_new_orders(
         (Order.delivery_mode.ilike(f"%{search_text}%")) |
         (Order.proforms.ilike(f"%{search_text}%"))
     )
-    query = query.filter(Order.status == any_([1, 2, 3]))
+    if status == -1:
+        query = query.filter(Order.status == any_([1, 2, 3]))
+    else:
+        query = query.filter(Order.status == status)
 
     if warehouse_id == -1:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
