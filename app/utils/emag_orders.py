@@ -265,9 +265,37 @@ async def insert_orders(orders, marketplace: Marketplace):
                 finalization_date,
                 details,
                 payment_mode_id,
-                order_market_place
+                order_market_place,
+                mkt_id,
+                name,
+                company,
+                gender,
+                phone_1,
+                billing_name,
+                billing_phone,
+                billing_country,
+                billing_suburb,
+                billing_city,
+                billing_locality_id,
+                billing_street,
+                shipping_country,
+                shipping_suburb,
+                shipping_city,
+                shipping_locality_id,
+                shipping_contact,
+                shipping_phone,
+                shipping_street,
+                created,
+                modified,
+                legal_entity,
+                is_vat_payer,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -294,9 +322,6 @@ async def insert_orders(orders, marketplace: Marketplace):
         for order in orders:
             customer = order.get('customer', {})
             customer_id = customer.get('id')
-            if customer_id is None:
-                logging.error(f"Missing customer ID for order: {order.get('id')}")
-                continue
             customer_mkt_id = customer.get('mkt_id')
             customer_name = customer.get('name')
             customer_company = customer.get('company')
@@ -320,47 +345,11 @@ async def insert_orders(orders, marketplace: Marketplace):
             customer_modified = customer.get('modified')
             customer_legal_entity = customer.get('legal_entity')
             customer_is_vat_payer = customer.get('is_vat_payer')
-            market_place = marketplace.marketplaceDomain
             code = customer.get('code')
             bank = customer.get('bank')
             iban = customer.get('iban')
             email = customer.get('email')
             registration_number = customer.get('registration_number')
-
-            customer_value = (
-                customer_id,
-                customer_mkt_id,
-                customer_name,
-                customer_company,
-                customer_gender,
-                customer_phone_1,
-                customer_billing_name,
-                customer_billing_phone,
-                customer_billing_country,
-                customer_billing_suburb,
-                customer_billing_city,
-                customer_billing_locality_id,
-                customer_billing_street,
-                customer_shipping_country,
-                customer_shipping_suburb,
-                customer_shipping_city,
-                customer_shipping_locality_id,
-                customer_shipping_contact,
-                customer_shipping_phone,
-                customer_shipping_street,
-                customer_created,
-                customer_modified,
-                customer_legal_entity,
-                customer_is_vat_payer,
-                market_place,
-                code,
-                bank,
-                iban,
-                email,
-                registration_number
-            )
-
-            cursor_order.execute(insert_customers_query, customer_value)
 
             id = order.get('id')
             vendor_name = order.get('vendor_name')
@@ -378,7 +367,6 @@ async def insert_orders(orders, marketplace: Marketplace):
                 result = acknowledge(marketplace.baseAPIURL, marketplace.orders_crud["endpoint"], API_KEY, id)
                 logging.info(result)
             payment_status = order.get('payment_status')
-            customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
             sale_price = [Decimal(product.get('sale_price', '0')) for product in order.get('products')]
@@ -441,7 +429,35 @@ async def insert_orders(orders, marketplace: Marketplace):
                 finalization_date,
                 details,
                 payment_mode_id,
-                order_martet_place
+                order_martet_place,
+                customer_mkt_id,
+                customer_name,
+                customer_company,
+                customer_gender,
+                customer_phone_1,
+                customer_billing_name,
+                customer_billing_phone,
+                customer_billing_country,
+                customer_billing_suburb,
+                customer_billing_city,
+                customer_billing_locality_id,
+                customer_billing_street,
+                customer_shipping_country,
+                customer_shipping_suburb,
+                customer_shipping_city,
+                customer_shipping_locality_id,
+                customer_shipping_contact,
+                customer_shipping_phone,
+                customer_shipping_street,
+                customer_created,
+                customer_modified,
+                customer_legal_entity,
+                customer_is_vat_payer,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             )
 
             cursor_order.execute(insert_orders_query, values)
