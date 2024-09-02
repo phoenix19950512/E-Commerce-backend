@@ -10,6 +10,7 @@ from app.models.orders import Order
 from app.models.product import Product
 from app.models.internal_product import Internal_Product
 from app.models.awb import AWB
+from app.models.customer import Customers
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
@@ -64,7 +65,8 @@ async def read_new_orders(
     AWBAlias = aliased(AWB)
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
-    query = select(Order, AWBAlias).filter(
+    CustomerAlias = aliased(Customers)
+    query = select(Order, AWBAlias, CustomerAlias).filter(
         (cast(Order.id, String).ilike(f"%{search_text}%")) |
         (Order.payment_mode.ilike(f"%{search_text}%")) |
         (Order.details.ilike(f"%{search_text}%")) |
@@ -74,6 +76,9 @@ async def read_new_orders(
     ).outerjoin(
         AWBAlias,
         AWBAlias.order_id == Order.id
+    ).outerjoin(
+        CustomerAlias,
+        CustomerAlias.id == Order.customer_id
     )
     if status == -1:
         query = query.filter(Order.status == any_([1, 2, 3]))
@@ -88,7 +93,7 @@ async def read_new_orders(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id, AWBAlias.order_id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id, AWBAlias.order_id, CustomerAlias.id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
@@ -98,7 +103,7 @@ async def read_new_orders(
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
-        query = query.group_by(Order.id, AWBAlias.order_id)
+        query = query.group_by(Order.id, AWBAlias.order_id, CustomerAlias.id)
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         query = query.having(
             and_(
@@ -114,7 +119,7 @@ async def read_new_orders(
     
     orders_data = []
 
-    for db_order, awb in db_orders:
+    for db_order, awb, customer in db_orders:
         ean = []
         stock = []
         marketplace = db_order.order_market_place
@@ -156,7 +161,8 @@ async def read_new_orders(
             "total_price": total,
             "ean": ean,
             "stock": stock,
-            "awb": awb
+            "awb": awb,
+            "customer": customer
         })
 
     return orders_data
