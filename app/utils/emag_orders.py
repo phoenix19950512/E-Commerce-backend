@@ -166,70 +166,6 @@ async def insert_orders(orders, marketplace: Marketplace):
         conn.set_client_encoding('UTF8')
         cursor_order = conn.cursor()
 
-        insert_customers_query = sql.SQL("""
-            INSERT INTO {} (
-                id,
-                mkt_id,
-                name,
-                company,
-                gender,
-                phone_1,
-                billing_name,
-                billing_phone,
-                billing_country,
-                billing_suburb,
-                billing_city,
-                billing_locality_id,
-                billing_street,
-                shipping_country,
-                shipping_suburb,
-                shipping_city,
-                shipping_locality_id,
-                shipping_contact,
-                shipping_phone,
-                shipping_street,
-                created,
-                modified,
-                legal_entity,
-                is_vat_payer,
-                market_place,
-                code,
-                bank,
-                iban,
-                email,
-                registration_number
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id, market_place) DO UPDATE SET
-                mkt_id = EXCLUDED.mkt_id,
-                name = EXCLUDED.name,
-                company = EXCLUDED.company,
-                gender = EXCLUDED.gender,
-                phone_1 = EXCLUDED.phone_1,
-                billing_name = EXCLUDED.billing_name,
-                billing_phone = EXCLUDED.billing_phone,
-                billing_country = EXCLUDED.billing_country,
-                billing_suburb = EXCLUDED.billing_suburb,
-                billing_city = EXCLUDED.billing_city,
-                billing_locality_id = EXCLUDED.billing_locality_id,
-                billing_street = EXCLUDED.billing_street,
-                shipping_country = EXCLUDED.shipping_country,
-                shipping_suburb = EXCLUDED.shipping_suburb,
-                shipping_city = EXCLUDED.shipping_city,
-                shipping_locality_id = EXCLUDED.shipping_locality_id,
-                shipping_contact = EXCLUDED.shipping_contact,
-                shipping_phone = EXCLUDED.shipping_phone,
-                shipping_street = EXCLUDED.shipping_street,
-                created = EXCLUDED.created,
-                modified = EXCLUDED.modified,
-                code = EXCLUDED.code,
-                bank = EXCLUDED.bank,
-                iban = EXCLUDED.iban,
-                email  = EXCLUDED.email,                                                                                                                                                                                                                                                                                                                                                                                                                                     
-                legal_entity = EXCLUDED.legal_entity,
-                is_vat_payer = EXCLUDED.is_vat_payer
-        """).format(sql.Identifier("customers"))
-
         insert_orders_query = sql.SQL("""
             INSERT INTO {} (
                 id,
@@ -473,10 +409,8 @@ async def refresh_emag_orders(marketplace: Marketplace):
     # create_database()
 
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-    customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers".lower()
     orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
     
-    settings.customers_table_name.append(customer_table)
     settings.orders_table_name.append(orders_table)
 
     if marketplace.credentials["type"] == "user_pass":
@@ -512,10 +446,8 @@ async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
     # create_database()
 
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-    customer_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_customers".lower()
     orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
     
-    settings.customers_table_name.append(customer_table)
     settings.orders_table_name.append(orders_table)
 
     endpoint = "/order"

@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, billing_software, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, customer, warehouse, team_member, locality, courier, review, product, replacement, invoice, damaged_good, sync_stock
+from app.routers import auth, billing_software, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, warehouse, team_member, locality, courier, review, product, replacement, invoice, damaged_good, sync_stock
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +67,6 @@ app.include_router(returns.router, prefix="/api/returns", tags=["returns"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"])
 app.include_router(AWB_generation.router, prefix="/awb", tags=["awb"])
 app.include_router(notifications.router, prefix='/api/notifications', tags=["notifications"])
-app.include_router(customer.router, prefix='/api/customers', tags=["customers"])
 app.include_router(warehouse.router, prefix="/api/warehouse", tags=["warehouses"])
 app.include_router(team_member.router, prefix="/api/team_member", tags=["team_member"])
 app.include_router(locality.router, prefix="/api/locality", tags=['locality'])

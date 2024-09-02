@@ -9,7 +9,6 @@ from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from app.models.internal_product import Internal_Product
-from app.models.customer import Customers
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
 from app.utils.altex_awb import save_altex_awb
@@ -121,18 +120,6 @@ async def count_awb(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AWB))
     db_awb = result.scalars().all()
     return len(db_awb)
-
-@router.get("/customer")
-async def get_customer(
-    order_id: int,
-    db:AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    db_order = result.scalars().first()
-    customer_id = db_order.customer_id
-    result = await db.execute(select(Customers).where(Customers.id == customer_id))
-    db_customer = result.scalars().first()
-    return db_customer
 
 @router.get("/order_id")
 async def get_awbs_order_id(

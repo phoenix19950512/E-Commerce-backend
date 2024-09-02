@@ -10,7 +10,6 @@ from app.models.orders import Order
 from app.models.product import Product
 from app.models.internal_product import Internal_Product
 from app.models.awb import AWB
-from app.models.customer import Customers
 from app.models.marketplace import Marketplace
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
@@ -122,9 +121,6 @@ async def read_new_orders(
         product_list = db_order.product_id
         quantity_list = db_order.quantity
         sale_price = db_order.sale_price
-        customer_id = db_order.customer_id
-        result = await db.execute(select(Customers).where(Customers.id == customer_id))
-        customer = result.scalars().first()
         total = Decimal(0)
         result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
         db_marketplace = result.scalars().first()
@@ -160,8 +156,7 @@ async def read_new_orders(
             "total_price": total,
             "ean": ean,
             "stock": stock,
-            "awb": awb,
-            "customer": customer
+            "awb": awb
         })
 
     return orders_data

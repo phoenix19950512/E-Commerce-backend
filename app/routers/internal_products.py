@@ -8,7 +8,6 @@ from app.database import get_db
 from app.models.orders import Order
 from app.models.product import Product
 from app.models.returns import Returns
-from app.models.customer import Customers
 from app.models.internal_product import Internal_Product
 from app.schemas.internal_product import Internal_ProductCreate, Internal_ProductRead, Internal_ProductUpdate
 from app.models.shipment import Shipment
@@ -177,9 +176,7 @@ async def get_orders_info(ean: str, db: AsyncSession):
             order_date = order.date
             marketplace = order.order_market_place
             customer_id = order.customer_id
-            customer_result = await db.execute(select(Customers).where(Customers.id == customer_id))
-            customer = customer_result.scalars().first()
-            customer_name = customer.name
+            customer_name = order.name
             order_data.append(
                 {
                     "order_id": order_id,
