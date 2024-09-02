@@ -78,52 +78,6 @@ async def insert_orders(orders, mp_name:str):
         conn.set_client_encoding('UTF8')
         cursor_order = conn.cursor()
 
-        insert_customers_query = sql.SQL("""
-            INSERT INTO {} (
-                id,
-                mkt_id,
-                name,
-                company,
-                gender,
-                phone_1,
-                billing_name,
-                billing_phone,
-                billing_country,
-                billing_suburb,
-                billing_city,
-                billing_locality_id,
-                billing_street,
-                shipping_country,
-                shipping_suburb,
-                shipping_city,
-                shipping_locality_id,
-                shipping_contact,
-                shipping_phone,
-                shipping_street,
-                created,
-                modified,
-                legal_entity,
-                is_vat_payer,
-                market_place,
-                code,
-                bank,
-                iban,
-                email,
-                registration_number          
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id, market_place) DO UPDATE SET
-                mkt_id = EXCLUDED.mkt_id,
-                legal_entity = EXCLUDED.legal_entity,
-                is_vat_payer = EXCLUDED.is_vat_payer,
-                modified = EXCLUDED.modified,
-                code = EXCLUDED.code,
-                bank = EXCLUDED.bank,
-                iban = EXCLUDED.iban,
-                email = EXCLUDED.email,
-                registration_number = EXCLUDED.registration_number
-        """).format(sql.Identifier("customers"))
-
         insert_orders_query = sql.SQL("""
             INSERT INTO {} (
                 id,
@@ -159,10 +113,38 @@ async def insert_orders(orders, mp_name:str):
                 finalization_date,
                 details,
                 payment_mode_id,
-                order_market_place
+                order_market_place,
+                mkt_id,
+                name,
+                company,
+                gender,
+                phone_1,
+                billing_name,
+                billing_phone,
+                billing_country,
+                billing_suburb,
+                billing_city,
+                billing_locality_id,
+                billing_street,
+                shipping_country,
+                shipping_suburb,
+                shipping_city,
+                shipping_locality_id,
+                shipping_contact,
+                shipping_phone,
+                shipping_street,
+                created,
+                modified,
+                legal_entity,
+                is_vat_payer,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (id, order_market_place) DO UPDATE SET
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
                 date = EXCLUDED.date,
@@ -171,13 +153,14 @@ async def insert_orders(orders, mp_name:str):
                 payment_status = EXCLUDED.payment_status,
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,
+                sale_price = EXCLUDED.sale_price,
                 shipping_tax = EXCLUDED.shipping_tax,
                 shipping_tax_voucher_split = EXCLUDED.shipping_tax_voucher_split,
                 refunded_amount = EXCLUDED.refunded_amount,
-                is_complete = EXCLUDED.is_complete,
-                refund_status = EXCLUDED.refund_status,
                 cancellation_request = EXCLUDED.cancellation_request,
                 cancellation_reason = EXCLUDED.cancellation_reason,
+                is_complete = EXCLUDED.is_complete,
+                refund_status = EXCLUDED.refund_status,
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
@@ -209,46 +192,11 @@ async def insert_orders(orders, mp_name:str):
             customer_modified = None
             customer_legal_entity = 0
             customer_is_vat_payer = 0
-            market_place = mp_name
             code = order.get('billing_company_code')
             bank = order.get('billing_company_bank')
             iban = order.get('billing_company_iban')
             email = ""
             registration_number = order.get('billing_company_registration_number')
-
-            customer_value = (
-                customer_id,
-                customer_mkt_id,
-                customer_name,
-                customer_company,
-                customer_gender,
-                customer_phone_1,
-                customer_billing_name,
-                customer_billing_phone,
-                customer_billing_country,
-                customer_billing_suburb,
-                customer_billing_city,
-                customer_billing_locality_id,
-                customer_billing_street,
-                customer_shipping_country,
-                customer_shipping_suburb,
-                customer_shipping_city,
-                customer_shipping_locality_id,
-                customer_shipping_contact,
-                customer_shipping_phone,
-                customer_shipping_street,
-                customer_created,
-                customer_modified,
-                customer_legal_entity,
-                customer_is_vat_payer,
-                market_place,
-                code,
-                bank,
-                iban,
-                email,
-                registration_number
-            )
-            cursor_order.execute(insert_customers_query, customer_value)
 
             id = order.get('order_id')
             vendor_name = ""
@@ -259,7 +207,6 @@ async def insert_orders(orders, mp_name:str):
             delivery_mode = order.get('delivery_mode')
             status = order.get('status')
             payment_status = 0
-            customer_id = customer_id
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
             sale_price = [product.get('selling_price') for product in order.get('products')]
@@ -319,7 +266,35 @@ async def insert_orders(orders, mp_name:str):
                 finalization_date,
                 details,
                 payment_mode_id,
-                order_martet_place
+                order_martet_place,
+                customer_mkt_id,
+                customer_name,
+                customer_company,
+                customer_gender,
+                customer_phone_1,
+                customer_billing_name,
+                customer_billing_phone,
+                customer_billing_country,
+                customer_billing_suburb,
+                customer_billing_city,
+                customer_billing_locality_id,
+                customer_billing_street,
+                customer_shipping_country,
+                customer_shipping_suburb,
+                customer_shipping_city,
+                customer_shipping_locality_id,
+                customer_shipping_contact,
+                customer_shipping_phone,
+                customer_shipping_street,
+                customer_created,
+                customer_modified,
+                customer_legal_entity,
+                customer_is_vat_payer,
+                code,
+                bank,
+                iban,
+                email,
+                registration_number
             )
 
             cursor_order.execute(insert_orders_query, values)
