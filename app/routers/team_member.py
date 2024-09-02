@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from typing import List
 from app.database import get_db
+from app.models.user import User
 from app.models.team_member import Team_member
 from app.schemas.team_member import Team_memberCreate, Team_memberRead, Team_memberUpdate
 
@@ -42,8 +43,16 @@ async def update_team_member(team_member_id: int, team_member: Team_memberUpdate
         raise HTTPException(status_code=404, detail="Team_member not found")
     for var, value in vars(team_member).items():
         setattr(db_team_member, var, value) if value is not None else None
+    
+    user_id = db_team_member.user_id
+    role = db_team_member.role
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalars().first()
+    db_user.role = role
+    
     db.add(db_team_member)
     await db.commit()
+    await db.refresh(db_user)
     await db.refresh(db_team_member)
     return db_team_member
 
