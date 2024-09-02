@@ -383,14 +383,19 @@ async def get_orders_count(
 
 @router.get("/{order_id}")
 async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    db_order = result.scalars().first()
-    if db_order is None:
+    AWBAlias = aliased(AWB)
+    query = select(Order, AWBAlias).outerjoin(
+        AWBAlias,
+        AWBAlias.order_id == Order.id
+    )
+    query = query.where(Order.id == order_id)
+    result = await db.execute(query)
+
+    db_order_awb = result.all()
+    if db_order_awb is None:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
-    awb = result.scalars().first()
-
+    db_order, awb = db_order_awb[0]
     product_id_list = db_order.product_id
     ean = []
     stock = []
