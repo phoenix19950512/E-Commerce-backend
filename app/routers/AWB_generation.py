@@ -5,6 +5,7 @@ from sqlalchemy import func, or_
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
+from app.models.replacement import Replacement
 from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
@@ -110,8 +111,13 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         db_awb.awb_number = result_awb.get('awb_number') if result_awb.get('awb_number') else ""
         db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
 
+    if db_awb.number < 0:
+        result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
+        db_replacement = result.scalars().first()
+        db_replacement.awb == db_awb.awb_number
     db.add(db_awb)
     await db.commit()
+    await db.refresh(db_replacement)
     await db.refresh(db_awb)
 
     return db_awb

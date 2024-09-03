@@ -157,10 +157,6 @@ async def get_orders_info(ean: str, db: AsyncSession):
     for order in orders:
         order_id = order.id
         order_date = order.date
-        # customer_id = order.customer_id
-        # customer_result = await db.execute(select(Customer).where(Customer.id = customer_id))
-        # customer = customer_result.scalars().first()
-        # customer_name = customer.name
         unit = sum(order.quantity)
         order_data.append(
             {

@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class InvoicesBase(BaseModel):
+    replacement_id: Optional[int] = None
     order_id: Optional[int] = None
     companyVatCode: Optional[str] = None
     seriesName: Optional[str] = None

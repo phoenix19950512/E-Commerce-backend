@@ -5,6 +5,7 @@ class Invoice(Base):
     __tablename__ = "invoices"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    replacement_id = Column(Integer, nullable=True, index=True)
     order_id = Column(Integer, nullable=True)
     companyVatCode = Column(Text, nullable=True)
     seriesName = Column(Text, nullable=True)

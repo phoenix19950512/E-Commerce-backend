@@ -6,6 +6,7 @@ from sqlalchemy import func, any_, or_, and_
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
+from app.models.invoice import Invoice
 from app.models.replacement import Replacement
 from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, ReplacementsUpdate
 
@@ -56,12 +57,16 @@ async def get_replacements(
     db: AsyncSession = Depends(get_db)
 ):
     AWBAlias = aliased(AWB)
+    InvoiceAlias = aliased(Invoice)
     query = select(Replacement, AWBAlias).outerjoin(
         AWBAlias,
         and_(
             Replacement.order_id == AWBAlias.order_id,
             Replacement.number == -AWBAlias.number
         )
+    ).outerjoin(
+        InvoiceAlias,
+        InvoiceAlias.order_id == Replacement.order_id
     )
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
