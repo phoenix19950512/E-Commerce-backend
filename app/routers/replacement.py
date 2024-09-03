@@ -32,10 +32,22 @@ async def get_replacement_count(db: AsyncSession = Depends(get_db)):
 
 @router.get('/count_without_awb')
 async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).where(or_(Replacement.awb == '', Replacement.awb == None)))
-    db_replacements = result.scalars().all()
+    AWBAlias = aliased(AWB)
+    query = select(Replacement, AWBAlias).outerjoin(
+        AWBAlias,
+        and_(
+            Replacement.order_id == AWBAlias.order_id,
+            Replacement.number == -AWBAlias.number
+        )
+    )
+    result = await db.execute(query)
+    db_replacements = result.all()
+    cnt = 0
 
-    return len(db_replacements)
+    for awb in db_replacements:
+        if awb is None:
+            cnt += 1
+    return cnt
 
 @router.get("/")
 async def get_replacements(
