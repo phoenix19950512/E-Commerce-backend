@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func, any_, or_
+from sqlalchemy.orm import aliased
+from sqlalchemy import func, any_, or_, and_
 from typing import List
 from app.database import get_db
+from app.models.awb import AWB
 from app.models.replacement import Replacement
 from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, ReplacementsUpdate
 
@@ -35,18 +37,35 @@ async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
 
     return len(db_replacements)
 
-@router.get("/", response_model=List[ReplacementsRead])
+@router.get("/")
 async def get_replacements(
     page: int = Query(1, ge=1, description="Page number"),
     itmes_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
+    AWBAlias = aliased(AWB)
+    query = select(Replacement, AWBAlias).outerjoin(
+        AWBAlias,
+        and_(
+            Replacement.order_id == AWBAlias.order_id,
+            Replacement.number == -AWBAlias.number
+        )
+    )
     offset = (page - 1) * itmes_per_page
-    result = await db.execute(select(Replacement).offset(offset).limit(itmes_per_page))
-    db_replacements = result.scalars().all()
+    result = await db.execute(query.offset(offset).limit(itmes_per_page))
+    db_replacements = result.all()
+
     if db_replacements is None:
         raise HTTPException(status_code=404, detail="replacement not found")
-    return db_replacements
+    
+    replacement_data = []
+    for replacement, awb in db_replacements:
+        replacement_data.append({
+            **{column.name: getattr(replacement, column.name) for column in replacement.__table__.columns},
+            "awb": awb
+        })
+    
+    return replacement_data
 
 @router.get("/{replacement_id}", response_model=ReplacementsRead)
 async def get_replacement(replacement_id: int, db: AsyncSession = Depends(get_db)):
