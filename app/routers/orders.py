@@ -275,7 +275,7 @@ async def read_orders(
         )
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
-    db_orders = result.all()
+    db_orders = result.scalars().all()
     
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
