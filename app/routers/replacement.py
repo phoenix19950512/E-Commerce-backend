@@ -87,7 +87,7 @@ async def get_replacements(
         if order is not None:
             product_ids = order.product_id
             for product_id in product_ids:
-                result = db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place))
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place))
                 product = result.scalars().first()
                 ean.append(product.ean)
         replacement_data.append({
