@@ -226,21 +226,17 @@ async def read_orders(
     warehouse_id: int = Query('', description="warehouse_id"),
     db: AsyncSession = Depends(get_db)
 ):
-    AWBAlias = aliased(AWB)
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
     offset = (page - 1) * items_per_page
 
-    query = select(Order, AWBAlias).filter(
+    query = select(Order).filter(
         (cast(Order.id, String).ilike(f"%{search_text}%")) |
         (Order.payment_mode.ilike(f"%{search_text}%")) |
         (Order.details.ilike(f"%{search_text}%")) |
         (Order.order_market_place.ilike(f"%{search_text}%")) |
         (Order.delivery_mode.ilike(f"%{search_text}%")) |
         (Order.proforms.ilike(f"%{search_text}%"))
-    ).outerjoin(
-        AWBAlias,
-        AWBAlias.order_id == Order.id
     )
     
     # Apply status filter if needed 
@@ -259,7 +255,7 @@ async def read_orders(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id, AWBAlias.order_id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
@@ -269,7 +265,7 @@ async def read_orders(
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
-        query = query.group_by(Order.id, AWBAlias.order_id)
+        query = query.group_by(Order.id)
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         query = query.having(
             and_(
@@ -284,9 +280,19 @@ async def read_orders(
     if db_orders is None:
         raise HTTPException(status_code=404, detail="Order not found")
     
+    order_ids = [order.id for order in db_orders]
+
+    awb_query = select(AWB).where(cast(AWB.order_id, BigInteger) == any_(order_ids))
+    awb_result = await db.execute(awb_query)
+    awbs = awb_result.scalars().all()
+
+    awb_dict = defaultdict(list)
+    for awb in awbs:
+        awb_dict[awb.order_id].append(awb)
+
     orders_data = []
 
-    for db_order, awb in db_orders:
+    for db_order in db_orders:
         ean = []
         stock = []
         marketplace = db_order.order_market_place
@@ -328,7 +334,7 @@ async def read_orders(
             "total_price": total,
             "ean": ean,
             "stock": stock,
-            "awb": awb
+            "awb": awb_dict[db_order.id]
         })
 
     return orders_data
