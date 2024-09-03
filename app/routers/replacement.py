@@ -7,6 +7,7 @@ from typing import List
 from app.database import get_db
 from app.models.awb import AWB
 from app.models.orders import Order
+from app.models.product import Product
 from app.models.invoice import Invoice
 from app.models.replacement import Replacement
 from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, ReplacementsUpdate
@@ -82,11 +83,19 @@ async def get_replacements(
     
     replacement_data = []
     for replacement, awb, invoice, order in db_replacements:
+        ean = []
+        if order is not None:
+            product_ids = order.product_id
+            for product_id in product_ids:
+                result = db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place))
+                product = result.scalars().first()
+                ean.append(product.ean)
         replacement_data.append({
             **{column.name: getattr(replacement, column.name) for column in replacement.__table__.columns},
             "awb": awb,
             "invoice": invoice,
-            "order": order
+            "order": order,
+            "ean": ean
         })
     
     return replacement_data
