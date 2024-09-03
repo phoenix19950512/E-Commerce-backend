@@ -5,7 +5,8 @@ from typing import Optional
 from decimal import Decimal
 
 class AWBBase(BaseModel):
-    order_id: int
+    order_id: Optional[int] = None
+    number: Optional[int] = 0
     sender_name: Optional[str] = None
     sender_phone1: Optional[str] = None
     sender_phone2: Optional[str] = None
@@ -48,6 +49,7 @@ class AWBUpdate(AWBBase):
 
 class AWBRead(AWBBase):
     order_id: int
+    number: int
 
     class Config:
         orm_mode = True

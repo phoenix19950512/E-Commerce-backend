@@ -1,5 +1,5 @@
 # app/models/awb.py
-from sqlalchemy import Column, Integer, String, BigInteger, DECIMAL
+from sqlalchemy import Column, Integer, String, BigInteger, DECIMAL, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -7,7 +7,8 @@ from app.database import Base
 class AWB(Base):
     __tablename__ = "awbs"
     
-    order_id = Column(Integer, primary_key=True, nullable=False)
+    order_id = Column(Integer, nullable=True)
+    number = Column(Integer, default_value=0)
     sender_name = Column(String, nullable=True)
     sender_phone1 = Column(String, nullable=True)
     sender_phone2 = Column(String, nullable=True)
@@ -41,3 +42,7 @@ class AWB(Base):
     awb_number = Column(String, nullable=True)
     awb_barcode = Column(String, nullable=True)
     awb_marketplace = Column(String, nullable=True)
+
+    __table_args__ = (
+        PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number')
+    )
