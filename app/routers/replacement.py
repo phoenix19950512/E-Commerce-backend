@@ -66,7 +66,7 @@ async def get_replacements(
         )
     ).outerjoin(
         InvoiceAlias,
-        InvoiceAlias.order_id == Replacement.order_id
+        InvoiceAlias.replacement_id == Replacement.id
     )
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
@@ -76,10 +76,11 @@ async def get_replacements(
         raise HTTPException(status_code=404, detail="replacement not found")
     
     replacement_data = []
-    for replacement, awb in db_replacements:
+    for replacement, awb, invoice in db_replacements:
         replacement_data.append({
             **{column.name: getattr(replacement, column.name) for column in replacement.__table__.columns},
-            "awb": awb
+            "awb": awb,
+            "invoice": invoice
         })
     
     return replacement_data
