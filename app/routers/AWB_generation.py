@@ -28,7 +28,8 @@ async def create_awb_manually(awb: AWBCreate, db: AsyncSession = Depends(get_db)
 async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
-    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
+    number = db_awb.number
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.number == number))
     awb = result.scalars().first()
 
     if awb:
@@ -127,8 +128,8 @@ async def get_awbs_order_id(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(AWB).where(AWB.order_id == order_id))
-    db_awb = result.scalars().first()
-    return db_awb
+    db_awbs = result.scalars().all()
+    return db_awbs
 
 @router.get("/awb_barcode")
 async def get_order(
