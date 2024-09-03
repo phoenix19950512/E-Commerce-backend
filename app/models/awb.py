@@ -44,5 +44,5 @@ class AWB(Base):
     awb_marketplace = Column(String, nullable=True)
 
     __table_args__ = (
-        PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number')
+        PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number'),
     )
