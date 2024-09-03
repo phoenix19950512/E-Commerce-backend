@@ -45,7 +45,7 @@ async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
     db_replacements = result.all()
     cnt = 0
 
-    for awb in db_replacements:
+    for replacement, awb in db_replacements:
         if awb is None:
             cnt += 1
     return cnt
