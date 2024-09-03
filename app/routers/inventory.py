@@ -122,7 +122,7 @@ async def get_product_info(
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).join(
         ProductAlias,
-        ProductAlias.id == func.any_(Order.product_id)
+        ProductAlias.id == any_(Order.product_id)
     )
 
     time = datetime.now()
@@ -175,6 +175,7 @@ async def get_product_info(
                 "type": type,
                 "product_name": product.product_name,
                 "ean": product.ean,
+                "sales_per_day": 0,
                 "quantity": query_imports_stocks,
                 "image_link":product.image_link,
                 "link_address_1688": product.link_address_1688,
