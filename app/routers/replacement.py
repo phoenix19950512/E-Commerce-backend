@@ -6,6 +6,7 @@ from sqlalchemy import func, any_, or_, and_
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
+from app.models.orders import Order
 from app.models.invoice import Invoice
 from app.models.replacement import Replacement
 from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, ReplacementsUpdate
@@ -58,7 +59,8 @@ async def get_replacements(
 ):
     AWBAlias = aliased(AWB)
     InvoiceAlias = aliased(Invoice)
-    query = select(Replacement, AWBAlias, InvoiceAlias).outerjoin(
+    OrderAlias = aliased(Order)
+    query = select(Replacement, AWBAlias, InvoiceAlias, OrderAlias).outerjoin(
         AWBAlias,
         and_(
             Replacement.order_id == AWBAlias.order_id,
@@ -67,6 +69,9 @@ async def get_replacements(
     ).outerjoin(
         InvoiceAlias,
         InvoiceAlias.replacement_id == Replacement.id
+    ).outerjoin(
+        OrderAlias,
+        OrderAlias.id == Replacement.order_id
     )
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
@@ -76,11 +81,12 @@ async def get_replacements(
         raise HTTPException(status_code=404, detail="replacement not found")
     
     replacement_data = []
-    for replacement, awb, invoice in db_replacements:
+    for replacement, awb, invoice, order in db_replacements:
         replacement_data.append({
             **{column.name: getattr(replacement, column.name) for column in replacement.__table__.columns},
             "awb": awb,
-            "invoice": invoice
+            "invoice": invoice,
+            "order": order
         })
     
     return replacement_data
