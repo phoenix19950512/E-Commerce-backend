@@ -58,7 +58,7 @@ async def get_replacements(
 ):
     AWBAlias = aliased(AWB)
     InvoiceAlias = aliased(Invoice)
-    query = select(Replacement, AWBAlias).outerjoin(
+    query = select(Replacement, AWBAlias, InvoiceAlias).outerjoin(
         AWBAlias,
         and_(
             Replacement.order_id == AWBAlias.order_id,
