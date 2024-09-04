@@ -18,6 +18,7 @@ class ReplacementsBase(BaseModel):
     customer_name: Optional[str] = None
     customer_address: Optional[str] = None
     customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
     review: Optional[bool] = None
     review_content: Optional[str] = None
     customer_comment: Optional[str] = None
