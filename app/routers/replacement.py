@@ -56,6 +56,7 @@ async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
 async def get_replacements(
     page: int = Query(1, ge=1, description="Page number"),
     itmes_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    status: int = Query(0, description="status"),
     db: AsyncSession = Depends(get_db)
 ):
     AWBAlias = aliased(AWB)
@@ -74,6 +75,8 @@ async def get_replacements(
         OrderAlias,
         OrderAlias.id == Replacement.order_id
     )
+    if status == 1:
+        query = query.where(AWBAlias.order_id.is_(None))
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
     db_replacements = result.all()
