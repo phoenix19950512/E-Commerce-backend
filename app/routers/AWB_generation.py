@@ -9,6 +9,7 @@ from app.models.replacement import Replacement
 from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
+from app.models.product import Product
 from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
@@ -114,7 +115,7 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
     if db_awb.number < 0:
         result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
         db_replacement = result.scalars().first()
-        db_replacement.awb == db_awb.awb_number
+        db_replacement.awb = db_awb.awb_number
     db.add(db_awb)
     await db.commit()
     await db.refresh(db_replacement)
@@ -153,8 +154,18 @@ async def get_order(
     order_id = db_awb.order_id
     result = await db.execute(select(Order).where(Order.id == order_id))
     db_order = result.scalars().first()
+    product_ids = db_order.product_id
+    marketplace = db_order.order_market_place
+    ean = []
+    for product_id in product_ids:
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        product = result.scalars().first()
+        ean.append(product.ean)
 
-    return db_order
+    return {
+        **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
+        "ean": ean
+    }
 
 @router.get("/", response_model=List[AWBRead])
 async def get_awbs(
