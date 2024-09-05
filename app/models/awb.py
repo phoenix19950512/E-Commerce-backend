@@ -39,7 +39,7 @@ class AWB(Base):
     reservation_id = Column(Integer, nullable=True)
     courier_id = Column(Integer, nullable=True)
     courier_name = Column(String, nullable=True)
-    awb_number = Column(String, nullable=True)
+    awb_number = Column(String, nullable=True, index=True)
     awb_barcode = Column(String, nullable=True)
     awb_marketplace = Column(String, nullable=True)
 
