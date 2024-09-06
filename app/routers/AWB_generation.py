@@ -97,9 +97,6 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
 
         result = await save_awb(market_place, data, db)
     
-    if result.status_code != 200:
-        return result.text()
-    
     result = result.json()
     if result['isError'] == True:
         return result
