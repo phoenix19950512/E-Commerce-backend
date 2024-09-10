@@ -109,19 +109,19 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
             result_awb = results.get('awb')[0]
             db_awb.awb_number = result_awb.get('awb_number') if result_awb.get('awb_number') else ""
             db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
-
+        db.add(db_awb)
+        await db.commit()
+        await db.refresh(db_awb)
         if db_awb.number < 0:
             result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
             db_replacement = result.scalars().first()
             if db_replacement:
                 db_replacement.awb = db_awb.awb_number
-        db.add(db_awb)
-        await db.commit()
-        await db.refresh(db_awb)
+        
         if db_replacement:
             await db.refresh(db_replacement) 
         return db_awb
-    except:
+    except Exception as e:
         await db.rollback()  # Roll back any changes made before the error
         logging.info(f"Error processing AWB: {str(e)}")
         return {"error": "Failed to process AWB", "message": str(e)}

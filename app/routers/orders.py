@@ -282,7 +282,7 @@ async def read_orders(
     
     order_ids = [order.id for order in db_orders]
 
-    awb_query = select(AWB).where(cast(AWB.order_id, BigInteger) == any_(order_ids))
+    awb_query = select(AWB).where(cast(AWB.order_id, BigInteger) == any_(order_ids), AWB.number >= 0)
     awb_result = await db.execute(awb_query)
     awbs = awb_result.scalars().all()
 
