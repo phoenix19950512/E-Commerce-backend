@@ -34,9 +34,9 @@ async def get_replacement_count(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Replacement).filter(
-        (cast(Replacement.order_id, String).ilike(f"%{search_text}")) |
-        (Replacement.awb.ilike(f"%{search_text}")) |
-        (Replacement.customer_name.ilike(f"%{search_text}"))
+        (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
+        (Replacement.awb.ilike(f"%{search_text}%")) |
+        (Replacement.customer_name.ilike(f"%{search_text}%"))
     ))
     db_replacements = result.scalars().all()
     return len(db_replacements)
@@ -84,9 +84,9 @@ async def get_replacements(
         OrderAlias,
         OrderAlias.id == Replacement.order_id
     ).filter(
-        (cast(Replacement.order_id, String).ilike(f"%{search_text}")) |
-        (Replacement.awb.ilike(f"%{search_text}")) |
-        (Replacement.customer_name.ilike(f"%{search_text}"))
+        (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
+        (Replacement.awb.ilike(f"%{search_text}%")) |
+        (Replacement.customer_name.ilike(f"%{search_text}%"))
     )
     if status == 1:
         query = query.where(AWBAlias.order_id.is_(None))
