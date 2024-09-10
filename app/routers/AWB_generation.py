@@ -40,85 +40,91 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
     result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == marketplace))
     market_place = result.scalars().first()
 
-    if market_place.marketplaceDomain == "altex.ro":
-        data = {
-            "courier_id": db_awb.courier_account_id,
-            "location_id": db_awb.receiver_locality_id,
-            "sender_name": db_awb.sender_name,
-            "sender_contact_person": None,
-            "sender_phone": db_awb.sender_phone1,
-            "sender_address": db_awb.sender_street,
-            "sender_country": None,
-            "sender_city": None,
-            "sender_postalcode": db_awb.sender_zipcode,
-            "destination_contact_person ": db_awb.receiver_contact,
-            "destination_phone": db_awb.receiver_phone1,
-            "destination_address": db_awb.receiver_street,
-            "destination_county ": None,
-            "destination_postalcode ": db_awb.receiver_zipcode,
-        }
+    try:
+        if market_place.marketplaceDomain == "altex.ro":
+            data = {
+                "courier_id": db_awb.courier_account_id,
+                "location_id": db_awb.receiver_locality_id,
+                "sender_name": db_awb.sender_name,
+                "sender_contact_person": None,
+                "sender_phone": db_awb.sender_phone1,
+                "sender_address": db_awb.sender_street,
+                "sender_country": None,
+                "sender_city": None,
+                "sender_postalcode": db_awb.sender_zipcode,
+                "destination_contact_person ": db_awb.receiver_contact,
+                "destination_phone": db_awb.receiver_phone1,
+                "destination_address": db_awb.receiver_street,
+                "destination_county ": None,
+                "destination_postalcode ": db_awb.receiver_zipcode,
+            }
 
-        result = await save_altex_awb(market_place, data, db_awb.order_id, db)
-    else:
-        data = {
-            "order_id": db_awb.order_id,
-            "sender": {
-                "name": db_awb.sender_name,
-                "phone1": db_awb.sender_phone1,
-                "phone2": db_awb.sender_phone2,
-                "locality_id": db_awb.sender_locality_id,
-                "street": db_awb.sender_street,
-                "zipcode": db_awb.sender_zipcode
-            },
-            "receiver": {
-                "name": db_awb.receiver_name,
-                "contact": db_awb.receiver_contact,
-                "phone1": db_awb.receiver_phone1,
-                "phone2": db_awb.receiver_phone1,
-                "legal_entity": db_awb.receiver_legal_entity,
-                "locality_id": db_awb.receiver_locality_id,
-                "street": db_awb.receiver_street,
-                "zipcode": db_awb.receiver_zipcode
-            },
-            "locker_id": db_awb.locker_id,
-            "is_oversize": db_awb.is_oversize,
-            "insured_value": db_awb.insured_value,
-            "weight": db_awb.weight,
-            "envelope_number": db_awb.envelope_number,
-            "parcel_number": db_awb.parcel_number,
-            "observation": db_awb.observation,
-            "cod": db_awb.cod,
-            "courier_account_id": db_awb.courier_account_id,
-            "pickup_and_return": db_awb.pickup_and_return,
-            "saturday_delivery": db_awb.saturday_delivery,
-            "sameday_delivery": db_awb.sameday_delivery,
-            "dropoff_locker": db_awb.dropoff_locker
-        }
+            result = await save_altex_awb(market_place, data, db_awb.order_id, db)
+        else:
+            data = {
+                "order_id": db_awb.order_id,
+                "sender": {
+                    "name": db_awb.sender_name,
+                    "phone1": db_awb.sender_phone1,
+                    "phone2": db_awb.sender_phone2,
+                    "locality_id": db_awb.sender_locality_id,
+                    "street": db_awb.sender_street,
+                    "zipcode": db_awb.sender_zipcode
+                },
+                "receiver": {
+                    "name": db_awb.receiver_name,
+                    "contact": db_awb.receiver_contact,
+                    "phone1": db_awb.receiver_phone1,
+                    "phone2": db_awb.receiver_phone1,
+                    "legal_entity": db_awb.receiver_legal_entity,
+                    "locality_id": db_awb.receiver_locality_id,
+                    "street": db_awb.receiver_street,
+                    "zipcode": db_awb.receiver_zipcode
+                },
+                "locker_id": db_awb.locker_id,
+                "is_oversize": db_awb.is_oversize,
+                "insured_value": db_awb.insured_value,
+                "weight": db_awb.weight,
+                "envelope_number": db_awb.envelope_number,
+                "parcel_number": db_awb.parcel_number,
+                "observation": db_awb.observation,
+                "cod": db_awb.cod,
+                "courier_account_id": db_awb.courier_account_id,
+                "pickup_and_return": db_awb.pickup_and_return,
+                "saturday_delivery": db_awb.saturday_delivery,
+                "sameday_delivery": db_awb.sameday_delivery,
+                "dropoff_locker": db_awb.dropoff_locker
+            }
 
-        result = await save_awb(market_place, data, db)
-    
-    result = result.json()
-    if result['isError'] == True:
-        return result
-    results = result['results']
-    db_awb.reservation_id = results.get('reservation_id') if results.get('reservation_id') else 0
-    db_awb.courier_id = results.get('courier_id') if results.get('courier_id') else 0
-    db_awb.courier_name = results.get('courier_name') if results.get('courier_name') else ""
-    if results.get('awb'):
-        result_awb = results.get('awb')[0]
-        db_awb.awb_number = result_awb.get('awb_number') if result_awb.get('awb_number') else ""
-        db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
+            result = await save_awb(market_place, data, db)
+        
+        result = result.json()
+        if result['isError'] == True:
+            return result
+        results = result['results']
+        db_awb.reservation_id = results.get('reservation_id') if results.get('reservation_id') else 0
+        db_awb.courier_id = results.get('courier_id') if results.get('courier_id') else 0
+        db_awb.courier_name = results.get('courier_name') if results.get('courier_name') else ""
+        if results.get('awb'):
+            result_awb = results.get('awb')[0]
+            db_awb.awb_number = result_awb.get('awb_number') if result_awb.get('awb_number') else ""
+            db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
 
-    if db_awb.number < 0:
-        result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
-        db_replacement = result.scalars().first()
-        db_replacement.awb = db_awb.awb_number
-    db.add(db_awb)
-    await db.commit()
-    await db.refresh(db_replacement)
-    await db.refresh(db_awb)
-
-    return db_awb
+        if db_awb.number < 0:
+            result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
+            db_replacement = result.scalars().first()
+            if db_replacement:
+                db_replacement.awb = db_awb.awb_number
+        db.add(db_awb)
+        await db.commit()
+        await db.refresh(db_awb)
+        if db_replacement:
+            await db.refresh(db_replacement) 
+        return db_awb
+    except:
+        await db.rollback()  # Roll back any changes made before the error
+        logging.info(f"Error processing AWB: {str(e)}")
+        return {"error": "Failed to process AWB", "message": str(e)}
 
 @router.get("/count")
 async def count_awb(db: AsyncSession = Depends(get_db)):

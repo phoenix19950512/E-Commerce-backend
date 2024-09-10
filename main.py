@@ -78,28 +78,15 @@ app.include_router(invoice.router, prefix="/api/invoice", tags=["invoice"])
 app.include_router(billing_software.router, prefix="/api/smartbill_account", tags=["smartbill_account"])
 app.include_router(damaged_good.router, prefix="/api/damaged_good", tags=["damaged_good"])
 app.include_router(sync_stock.router, prefix="/api/sync_stock", tags=["sync_stock"])
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
 if __name__ == "__main__":
-    # Check if SSL arguments are provided
     import uvicorn
     ssl_keyfile = "ssl/key.pem"
     ssl_certfile = "ssl/cert.pem"
-    # if ssl_keyfile and ssl_certfile:
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
         ssl_keyfile=ssl_keyfile,
         ssl_certfile=ssl_certfile,
-        # reload=True  # Optional: Enables auto-reload for code changes
     )
-    # else:
-    #     print("SSL keyfile or certfile not found. Running without SSL.")
-    #     uvicorn.run(
-    #         "main:app",
-    #         host="0.0.0.0",
-    #         port=8000,
-    #         reload=True  # Optional: Enables auto-reload for code changes
-    #     )
