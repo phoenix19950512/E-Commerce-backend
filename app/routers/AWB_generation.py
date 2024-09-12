@@ -112,6 +112,9 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         db.add(db_awb)
         await db.commit()
         await db.refresh(db_awb)
+
+        db_replacement = None
+
         if db_awb.number < 0:
             result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
             db_replacement = result.scalars().first()
