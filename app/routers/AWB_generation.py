@@ -168,6 +168,8 @@ async def get_order(
     for product_id in product_ids:
         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
         product = result.scalars().first()
+        if product is None:
+            return HTTPException(status_code=404, detail=f"{product_id} not found in {marketplace}")
         ean.append(product.ean)
 
     return {
