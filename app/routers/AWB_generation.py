@@ -131,8 +131,13 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         return {"error": "Failed to process AWB", "message": str(e)}
 
 @router.get("/awb_status")
-async def get_awb_status(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB))
+async def get_awb_status(
+    page: int = Query(1, ge=1, description="Page number"),
+    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    db: AsyncSession = Depends(get_db)
+):
+    offset = (page - 1) * items_per_page
+    result = await db.execute(select(AWB).offset(offset).limit(items_per_page))
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
