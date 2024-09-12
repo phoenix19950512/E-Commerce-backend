@@ -32,7 +32,7 @@ def tracking(awb_number):
     response = requests.get(f"{url}/{awb_number}/status?_format=json", headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         result = response.json()
-        return result.get('expeditionStatus').get('statusId')
+        return int(result.get('expeditionStatus').get('statusId'))
     else:
         print("Status Code:", response.status_code)
         print("Error:", response.json())
