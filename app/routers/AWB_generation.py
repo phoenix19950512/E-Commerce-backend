@@ -140,7 +140,7 @@ async def get_awb_status(db: AsyncSession = Depends(get_db)):
     for awb in db_awbs:
         awb_number = awb.awb_number
         logging.info(f"!@##@!#@!#@#@ awb_number is {awb_number}")
-        status = tracking(awb_number)
+        status = await tracking(awb_number)
         logging.info(f"!@##@!#@!#@#@ Status is {status}")
         awb.awb_status = status
         if flag:
