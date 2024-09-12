@@ -160,6 +160,8 @@ async def get_order(
     order_id = db_awb.order_id
     result = await db.execute(select(Order).where(Order.id == order_id))
     db_order = result.scalars().first()
+    if db_order is None:
+        return HTTPException(status_code=404, detail=f"{order_id} not found")
     product_ids = db_order.product_id
     marketplace = db_order.order_market_place
     ean = []
