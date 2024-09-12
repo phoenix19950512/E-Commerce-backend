@@ -132,17 +132,18 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
 
 @router.get("/awb_status")
 async def get_awb_status(
-    page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    # page: int = Query(1, ge=1, description="Page number"),
+    # items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
-    offset = (page - 1) * items_per_page
-    result = await db.execute(select(AWB).offset(offset).limit(items_per_page))
+    # offset = (page - 1) * items_per_page
+    # result = await db.execute(select(AWB).offset(offset).limit(items_per_page))
+    result = await db.execute(select(AWB))
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
-    flag = 1
     cnt = 1
+    
     for awb in db_awbs:
         awb_number = awb.awb_number
         logging.info(f"!@##@!#@!#@#@ {cnt} awb_number is {awb_number}")
@@ -152,11 +153,7 @@ async def get_awb_status(
         awb.awb_status = status
     
     await db.commit()
-
-    # Refresh each AWB after the commit to reflect the updated status
-    for awb in db_awbs:
-        await db.refresh(awb)
-    return "Success to improve awb_status"
+    return {"message": "Successfully updated AWB statuses", "updated_records": cnt - 1}
 
 @router.get("/count")
 async def count_awb(db: AsyncSession = Depends(get_db)):
