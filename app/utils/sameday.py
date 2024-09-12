@@ -17,8 +17,8 @@ import httpx
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 PROXIES = {
-    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'http://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+    'https://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
 }
 
 
