@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
 from decimal import Decimal
+from datetime import datetime
 
 class AWBBase(BaseModel):
     order_id: Optional[int] = None
@@ -40,6 +41,8 @@ class AWBBase(BaseModel):
     awb_number: Optional[str] = None
     awb_barcode: Optional[str]= None
     awb_marketplace: Optional[str] = None
+    awb_status: Optional[int] = 0
+    awb_date: Optional[datetime] = None
 
 class AWBCreate(AWBBase):
     pass
