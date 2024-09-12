@@ -43,6 +43,7 @@ class AWBBase(BaseModel):
     awb_marketplace: Optional[str] = None
     awb_status: Optional[int] = 0
     awb_date: Optional[datetime] = None
+    awb_trigger: Optional[str] = None
 
 class AWBCreate(AWBBase):
     pass

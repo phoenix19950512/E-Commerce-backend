@@ -44,6 +44,7 @@ class AWB(Base):
     awb_marketplace = Column(String, nullable=True)
     awb_status = Column(Integer, default_value=0)
     awb_date = Column(DateTime, nullable=True)
+    awb_trigger = Column(String, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number'),
