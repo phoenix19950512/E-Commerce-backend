@@ -14,6 +14,7 @@ from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
 from app.utils.altex_awb import save_altex_awb
+from app.utils.sameday import tracking
 from sqlalchemy import any_
 
 router = APIRouter()
@@ -128,6 +129,22 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         await db.rollback()  # Roll back any changes made before the error
         logging.info(f"Error processing AWB: {str(e)}")
         return {"error": "Failed to process AWB", "message": str(e)}
+
+@router.get("/awb_status")
+async def get_awb_status(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AWB))
+    db_awbs = result.scalars().all()
+    flag = 1
+    for awb in db_awbs:
+        awb_number = awb.awb_number
+        status = tracking(awb_number)
+        logging.info(f"!@##@!#@!#@#@ Status is {status}")
+        awb.awb_status = status
+        if flag:
+            await db.commit()
+            flag = 0
+        await db.refresh(awb)
+    return "Success to improve awb_status"
 
 @router.get("/count")
 async def count_awb(db: AsyncSession = Depends(get_db)):

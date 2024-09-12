@@ -1,57 +1,60 @@
 {
-    "companyVatCode": "RO41996145", 
-    "seriesName": "EMGeMAG.ro", 
-    "client": {
-        "name": "Monica", 
-        "vatCode": "", 
-        "isTaxPayer": true, 
-        "address": "Sos. Nicolae Titulescu nr. 39-49, bloc 12, sc. B, et. 7, ap. 87", 
-        "city": "Sectorul 1", 
-        "country": "RO", 
-        "county": "Bucuresti", 
-        "email": "", 
-        "bank": "", 
-        "iban": "", 
-        "saveToDb": false, 
-        "regCom": ""
+    'expeditionSummary': {
+        'deliveredAt': '', 
+        'lastDeliveryAttempt': '', 
+        'deliveryAttempts': 0, 
+        'delivered': False, 
+        'canceled': False, 
+        'redirectionsAttempts': 0, 
+        'cashOnDelivery': 0.0, 
+        'awbWeight': 1.0, 
+        'awbNumber': '012EMGXL14752602', 
+        'servicePayment': 0.0
     }, 
-    "useStock": false, 
-    "isDraft": false, 
-    "mentions": "Internal Order id: 1 [eMAg: 266361029]", 
-    "observations": "266361029_RO", 
-    "language": null, 
-    "precision": 2, 
-    "useEstimateDetails": false, 
-    "estimate": {
-        "seriesName": "", 
-        "number": 0
+    'expeditionStatus': {
+        'statusId': 1, 
+        'status': 'AWB Emis', 
+        'statusLabel': 
+        'Document de transport emis', 
+        'statusState': 'Expedierea a fost inregistrata', 
+        'statusDate': '2024-09-12T14:54:36+03:00', 
+        'county': 'София-град', 
+        'reason': '', 
+        'transitLocation': ''
     }, 
-    "currency": "RON", 
-    "issueDate": "2024-08-26", 
-    "products": [
+    'parcelsStatus': [
         {
-            "code": "52", 
-            "name": "Umidificator de aer ultrasonic profesional, rezervor 1.5L, pentru casa, birou, living, camera bebe, umidificare reglabila, inchidere automata, silentios, albastru", 
-            "measuringUnitName": "mm", 
-            "isDiscount": false, 
-            "currency": "RON", 
-            "quantity": 1, 
-            "price": 151.25, 
-            "isTaxIncluded": false, 
-            "taxPercentage": 19, 
-            "saveToDb": false
+            'statusId': 1, 
+            'status': 'AWB Emis', 
+            'statusLabel': 'Document de transport emis', 
+            'statusState': 'Expedierea a fost inregistrata', 
+            'statusDate': '2024-09-12T14:54:36+03:00', 
+            'county': 'София-град', 
+            'parcelAwbNumber': '012EMGXL14752602001', 
+            'reason': '', 
+            'parcelDetails': 'https://api.sameday.ro/api/client/parcel/012EMGXL14752602001/status-history',
+            'transitLocation': '', 
+            'inReturn': False
+        }
+    ], 
+    'expeditionHistory': [
+        {
+            'statusId': 1, 
+            'status': 'AWB Emis', 
+            'statusLabel': 'Document de transport emis', 
+            'statusState': 'Expedierea a fost inregistrata', 
+            'statusDate': '2024-09-12T14:54:36+03:00', 
+            'county': 'София-град', 
+            'reason': '', 
+            'transitLocation': ''
         }, 
         {
-            "code": "36", 
-            "name": "Marsupiu ergonomic pentru bebe, buzunar de depozitare, suport lombar, pozitii orientate in spate sau rucsac pentru nou-nascuti si copii mici, Gri-Alb", 
-            "measuringUnitName": "mm", 
-            "isDiscount": false, 
-            "currency": "RON", 
-            "quantity": 1, 
-            "price": 109.24, 
-            "isTaxIncluded": false, 
-            "taxPercentage": 19, 
-            "saveToDb": false
+            'statusId': 1, 
+            'status': 'AWB Emis', 
+            'statusLabel': 'Document de transport emis', 
+            'statusState': 'Expedierea a fost inregistrata', 
+            'statusDate': '2024-09-12T14:54:34+03:00', 
+            'reason': '', 'transitLocation': ''
         }
     ]
 }
