@@ -143,9 +143,11 @@ async def get_awb_status(db: AsyncSession = Depends(get_db)):
         status = await tracking(awb_number)
         logging.info(f"!@##@!#@!#@#@ Status is {status}")
         awb.awb_status = status
-        if flag:
-            await db.commit()
-            flag = 0
+    
+    await db.commit()
+
+    # Refresh each AWB after the commit to reflect the updated status
+    for awb in db_awbs:
         await db.refresh(awb)
     return "Success to improve awb_status"
 
