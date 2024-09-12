@@ -137,9 +137,11 @@ async def get_awb_status(db: AsyncSession = Depends(get_db)):
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
     flag = 1
+    cnt = 1
     for awb in db_awbs:
         awb_number = awb.awb_number
-        logging.info(f"!@##@!#@!#@#@ awb_number is {awb_number}")
+        logging.info(f"!@##@!#@!#@#@ {cnt} awb_number is {awb_number}")
+        cnt += 1
         status = await tracking(awb_number)
         logging.info(f"!@##@!#@!#@#@ Status is {status}")
         awb.awb_status = status
