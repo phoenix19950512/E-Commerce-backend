@@ -210,11 +210,16 @@ async def get_order(
 async def get_awbs(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    status: int = Query('', description="awb_status"),
     db: AsyncSession = Depends(get_db)
 ):
     
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(AWB).offset(offset).limit(items_per_page))
+    query = select(AWB)
+    if status:
+        query = query.where(AWB.awb_status == status)
+    query = query.offset(offset).limit(items_per_page)
+    result = await db.execute(query)
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
