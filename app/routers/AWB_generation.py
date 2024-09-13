@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import aliased
 from sqlalchemy import func, or_
 from typing import List
 from app.database import get_db
@@ -10,6 +11,7 @@ from app.schemas.awb import AWBCreate, AWBRead, AWBUpdate
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from app.models.product import Product
+from app.models.warehouse import Warehouse
 from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
 from app.utils.emag_awbs import *
@@ -159,13 +161,21 @@ async def get_awb_status(
 
 @router.get("/count")
 async def count_awb(
-    status_str: str = Query('', description="awb_status"),    
+    status_str: str = Query('', description="awb_status"),
+    warehouse_id: int = Query('', description='warehouse_id'),
     db: AsyncSession = Depends(get_db)
 ):
+    warehouseAlias = aliased(Warehouse)
     query = select(AWB)
     if status_str:
         status_list = [int(status.strip()) for status in status_str.split(",")]
         query = query.where(AWB.awb_status == any_(status_list))
+    query = query.outerjoin(
+        warehouseAlias,
+        warehouseAlias.street == AWB.sender_street
+    )
+    if warehouse_id:
+        query = query.where(warehouseAlias.id == warehouse_id)
     result = await db.execute(query)
     db_awb = result.scalars().all()
     return len(db_awb)
@@ -222,19 +232,28 @@ async def get_order(
         "ean": ean
     }
 
-@router.get("/", response_model=List[AWBRead])
+@router.get("/")
 async def get_awbs(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     status_str: str = Query('', description="awb_status"),
+    warehouse_id: int = Query('', description="warehouse_id"),
     db: AsyncSession = Depends(get_db)
 ):
-    
+    warehousealiased = aliased(Warehouse)
     offset = (page - 1) * items_per_page
-    query = select(AWB)
+    query = select(AWB, warehousealiased)
     if status_str:
         status_list = [int(status.strip()) for status in status_str.split(",")]
         query = query.where(AWB.awb_status == any_(status_list))
+
+    query = query.outerjoin(
+        warehousealiased,
+        warehousealiased.street == AWB.sender_street
+    )
+    
+    if warehouse_id:
+        query = query.where(warehousealiased.id == warehouse_id)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_awbs = result.scalars().all()
