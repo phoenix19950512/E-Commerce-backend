@@ -259,7 +259,14 @@ async def get_awbs(
     db_awbs = result.all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
-    return db_awbs
+    
+    awb_data = []
+    for db_awb, warehouse in db_awbs:
+        awb_data.append ({
+            **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
+            **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
+        })
+    return awb_data
 
 @router.get("/warehouse")
 async def get_warehouse(
