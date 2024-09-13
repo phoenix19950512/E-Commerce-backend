@@ -136,11 +136,10 @@ async def get_awb_status(
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(AWB).where(AWB.awb_status > 0))
-    awbs = result.scalars().all()
-    number = len(awbs)
+    result = await db.execute(select(AWB).where(AWB.awb_status == 0))
+    number = result.scalar()
 
-    result = await db.execute(select(AWB).where(AWB.awb_status > 0).offset(offset).limit(items_per_page))
+    result = await db.execute(select(AWB).where(AWB.awb_status == 0).offset(offset).limit(items_per_page))
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
