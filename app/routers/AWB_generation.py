@@ -175,7 +175,7 @@ async def count_awb_not_shipped(
     db: AsyncSession = Depends(get_db)
 ):
     status_list = [1, 23, 74]
-    result = await db.execute(func.count(AWB.awb_number).where(AWB.awb_status == any_(status_list)))
+    result = await db.execute(select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list)))
     count = result.scalar()
 
     return count
