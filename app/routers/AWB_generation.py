@@ -210,14 +210,15 @@ async def get_order(
 async def get_awbs(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
-    status: int = Query('', description="awb_status"),
+    status_str: str = Query('', description="awb_status"),
     db: AsyncSession = Depends(get_db)
 ):
     
     offset = (page - 1) * items_per_page
     query = select(AWB)
-    if status:
-        query = query.where(AWB.awb_status == status)
+    if status_str:
+        status_list = [int(status.strip()) for status in status_str.split(",")]
+        query = query.where(AWB.awb_status == any_(status_list))
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_awbs = result.scalars().all()
