@@ -136,8 +136,11 @@ async def get_awb_status(
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
+    result = await db.execute(select(AWB).where(AWB.awb_status > 0))
+    awbs = result.scalars().all()
+    number = len(awbs)
+
     result = await db.execute(select(AWB).where(AWB.awb_status > 0).offset(offset).limit(items_per_page))
-    # result = await db.execute(select(AWB).where(AWB.awb_status > 0))
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
@@ -153,7 +156,7 @@ async def get_awb_status(
         
     await db.commit()
     
-    return {"message": "Successfully updated AWB statuses", "total_awbs": len(db_awbs), "updated_records": cnt - 1}
+    return {"message": "Successfully updated AWB statuses", "total_awbs": number, "updated_records": cnt - 1}
 
 @router.get("/count")
 async def count_awb(db: AsyncSession = Depends(get_db)):
