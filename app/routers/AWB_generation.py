@@ -170,6 +170,15 @@ async def count_awb(
     db_awb = result.scalars().all()
     return len(db_awb)
 
+@router.get("/count/not_shipped")
+async def count_awb_not_shipped(
+    db: AsyncSession = Depends(get_db)
+):
+    status_list = [1, 23, 74]
+    result = await db.execute(select(AWB.awb_number).where(AWB.awb_status == any_(status_list)))
+    count = result.scalar()
+
+    return count
 @router.get("/order_id")
 async def get_awbs_order_id(
     order_id: int,
