@@ -256,7 +256,7 @@ async def get_awbs(
         query = query.where(warehousealiased.id == warehouse_id)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
-    db_awbs = result.scalars().all()
+    db_awbs = result.all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
     return db_awbs
