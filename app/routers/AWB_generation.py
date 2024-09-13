@@ -158,8 +158,15 @@ async def get_awb_status(
     return {"message": "Successfully updated AWB statuses", "total_awbs": number, "updated_records": cnt - 1}
 
 @router.get("/count")
-async def count_awb(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB))
+async def count_awb(
+    status_str: str = Query('', description="awb_status"),    
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(AWB)
+    if status_str:
+        status_list = [int(status.strip()) for status in status_str.split(",")]
+        query = query.where(AWB.awb_status == any_(status_list))
+    result = await db.execute(query)
     db_awb = result.scalars().all()
     return len(db_awb)
 
