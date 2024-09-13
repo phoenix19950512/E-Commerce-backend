@@ -136,7 +136,7 @@ async def get_awb_status(
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(AWB).where(AWB.awb_status == 0))
+    result = await db.execute(select(func.count(AWB.awb_number)).where(AWB.awb_status == 0))
     number = result.scalar()
 
     result = await db.execute(select(AWB).where(AWB.awb_status == 0).offset(offset).limit(items_per_page))
