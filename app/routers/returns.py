@@ -4,6 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func, any_, or_
 from typing import List
 from app.database import get_db
+from app.models.product import Product
 from app.models.returns import Returns
 from app.schemas.returns import ReturnsCreate, ReturnsRead, ReturnsUpdate
 
@@ -45,7 +46,20 @@ async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="awb not found")
-    return db_return
+    product_ids = db_return.products
+    marketplace = db_return.return_market_place
+    ean = []
+    for product_id in product_ids:
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        product = result.scalars().first()
+        if product is None:
+            result = await db.execute(select(Product).where(Product.id == product_id))
+            product = result.scalars().first()
+        ean.append(product.ean)
+    return {
+        **{column.name: getattr(db_return, column.name) for column in Returns.__table__.columns},
+        "ean": ean
+    }
 
 @router.put("/{return_id}", response_model=ReturnsRead)
 async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession = Depends(get_db)):
