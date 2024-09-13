@@ -88,6 +88,6 @@ async def send_stock(
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-        await db.rollback() 
+        # await db.rollback() 
 
 

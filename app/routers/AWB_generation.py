@@ -125,20 +125,19 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         if db_replacement:
             await db.refresh(db_replacement) 
         return db_awb
-    except Exception as e:
-        await db.rollback()  # Roll back any changes made before the error
+    except Exception as e:  # Roll back any changes made before the error
         logging.info(f"Error processing AWB: {str(e)}")
         return {"error": "Failed to process AWB", "message": str(e)}
 
 @router.get("/awb_status")
 async def get_awb_status(
-    # page: int = Query(1, ge=1, description="Page number"),
-    # items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    page: int = Query(1, ge=1, description="Page number"),
+    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
-    # offset = (page - 1) * items_per_page
-    # result = await db.execute(select(AWB).offset(offset).limit(items_per_page))
-    result = await db.execute(select(AWB).where(AWB.awb_status > 0))
+    offset = (page - 1) * items_per_page
+    result = await db.execute(select(AWB).where(AWB.awb_status > 0).offset(offset).limit(items_per_page))
+    # result = await db.execute(select(AWB).where(AWB.awb_status > 0))
     db_awbs = result.scalars().all()
     if db_awbs is None:
         raise HTTPException(status_code=404, detail="awbs not found")
@@ -151,7 +150,8 @@ async def get_awb_status(
         status = await tracking(awb_number)
         logging.info(f"!@##@!#@!#@#@ Status is {status}")
         awb.awb_status = status
-        await db.commit()
+        
+    await db.commit()
     
     return {"message": "Successfully updated AWB statuses", "updated_records": cnt - 1}
 
