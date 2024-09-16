@@ -165,6 +165,7 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             logging.info("Success to insert review into notification")
         except Exception as e:
             logging.info(f"Failed to insert review into notification: {e}")
+            await db.rollback()
             
     for hijacker in hijackers:
         date_str = datetime.now()            
