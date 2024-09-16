@@ -108,7 +108,6 @@ def generate_signature(public_key, private_key, params):
     month = now.strftime('%m')
     timestamp = f"{day}{month}"
 
-    print(timestamp)
     string_to_hash = f"{public_key}||{hashlib.sha512(private_key.encode()).hexdigest()}||{params}||{timestamp}"
     hash_result = hashlib.sha512(string_to_hash.encode()).hexdigest().lower()
     signature = f"{timestamp}{hash_result}"
