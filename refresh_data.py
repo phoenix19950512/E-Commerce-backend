@@ -137,40 +137,40 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
 #             logging.error(f"An error occurred: {e}")
 #             await session.rollback()                
 
-@app.on_event("startup")
-@repeat_every(seconds=7200)
-async def refresh_stock(db: AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting stock refresh")
-            result = await session.execute(select(Billing_software))
-            db_smarts = result.scalars().all()
-            if db_smarts is None:
-                logging.info("Can't find billing software")
-            else:
-                logging.info("Fetch stock via smarbill api")
-                product_code_list = []
-                for db_smart in db_smarts:
-                    products_list = get_stock(db_smart)
-                    for products in products_list:
-                        products = products.get('products')
-                        for product in products:
-                            logging.info(product)
-                            product_code = product.get('productCode')
-                            logging.info(f"Update stock {product_code}")
-                            result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
-                            db_product = result.scalars().first()
-                            if db_product is None:
-                                product_code_list.append({
-                                    "product_code": product_code,
-                                    "quantity": int(product.get('quantity'))
-                                })
-                                continue
-                            db_product.smartbill_stock = int(product.get('quantity'))
-                            await session.commit()
-                            await session.refresh(db_product)
-                logging.info(f"product_code_list: {product_code_list}")
-                logging.info("Finish sync stock")
+# @app.on_event("startup")
+# @repeat_every(seconds=7200)
+# async def refresh_stock(db: AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting stock refresh")
+#             result = await session.execute(select(Billing_software))
+#             db_smarts = result.scalars().all()
+#             if db_smarts is None:
+#                 logging.info("Can't find billing software")
+#             else:
+#                 logging.info("Fetch stock via smarbill api")
+#                 product_code_list = []
+#                 for db_smart in db_smarts:
+#                     products_list = get_stock(db_smart)
+#                     for products in products_list:
+#                         products = products.get('products')
+#                         for product in products:
+#                             logging.info(product)
+#                             product_code = product.get('productCode')
+#                             logging.info(f"Update stock {product_code}")
+#                             result = await session.execute(select(Internal_Product).where(Internal_Product.product_code == product_code))
+#                             db_product = result.scalars().first()
+#                             if db_product is None:
+#                                 product_code_list.append({
+#                                     "product_code": product_code,
+#                                     "quantity": int(product.get('quantity'))
+#                                 })
+#                                 continue
+#                             db_product.smartbill_stock = int(product.get('quantity'))
+#                             await session.commit()
+#                             await session.refresh(db_product)
+#                 logging.info(f"product_code_list: {product_code_list}")
+#                 logging.info("Finish sync stock")
 
 @app.on_event("startup")
 @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
@@ -196,16 +196,18 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
 
 @app.on_event("startup")
 @repeat_every(seconds = 14400)
-async def update_awb(db:AsyncSession = Depends(get_db)):
+async def update_awb(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 93, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 15, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17, 
 68, 101, 147, 73, 126, 47, 145, 128, 19]
             logging.info("Update awb status")
-            result = await session.execute(select(AWB.awb_number).where(AWB.awb_status == any_(awb_status_list)))
-            awb_numbers = result.scalars.all()
-            for awb_number in awb_numbers:
-                await tracking(awb_number)
+            result = await session.execute(select(AWB).where(AWB.awb_status == any_(awb_status_list)))
+            db_awbs = result.scalars.all()
+            for awb in db_awbs:
+                awb_number = awb.awb_number
+                awb_status = await tracking(awb_number)
+                awb.awb_status = awb_status
             await session.commit()
             logging.info("Update awb_status successfully")
 
