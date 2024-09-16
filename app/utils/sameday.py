@@ -30,7 +30,7 @@ async def tracking(awb_number):
         "X-Auth-TOKEN": api_key,
     }
 
-    async with httpx.AsyncClient(proxies=PROXIES) as client:
+    async with httpx.AsyncClient(proxies=PROXIES, timeout=10) as client:
         response = await client.get(f"{url}/{awb_number}/status?_format=json", headers=headers)
         
         if response.status_code == 200:
