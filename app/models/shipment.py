@@ -34,3 +34,4 @@ class Shipment(Base):
     supplier_name = Column(ARRAY(Text), nullable=True)
     before = Column(ARRAY(Text), nullable=True)
     user = Column(ARRAY(Integer), nullable=True)
+    address = Column(Text, nullable=True)

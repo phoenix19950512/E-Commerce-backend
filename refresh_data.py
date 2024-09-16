@@ -194,6 +194,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                     logging.info("Check hijacker and review")
                     await check_hijacker_and_bad_reviews(marketplace, session)
 
+@app.on_event("startup")
+@repeat_every(seconds=14400)
 async def update_awb(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
