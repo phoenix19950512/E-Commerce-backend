@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func, any_, or_
+from sqlalchemy import func, any_, or_, cast, Integer
 from typing import List
 from app.database import get_db
 from app.models.product import Product
@@ -58,7 +58,7 @@ async def get_returns(
 
 @router.get("/return_id")
 async def get_return_info(return_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).where(Returns.emag_id == return_id))
+    result = await db.execute(select(Returns).where(cast(Returns.emag_id, Integer) == return_id))
     db_return = result.scalars().first
     if db_return is None:
         raise HTTPException(status_code=404, detail="awb not found")
