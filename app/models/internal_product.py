@@ -41,5 +41,6 @@ class Internal_Product(Base):
     warehouse_id = Column(Integer, nullable=True)
     internal_shipping_price = Column(Numeric(12, 6), nullable=True)
     observation = Column(Text, nullable=True)
+    short_product_name = Column(Text, nullable=True)
     market_place = Column(ARRAY(Text), nullable=True)
     

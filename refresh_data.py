@@ -23,6 +23,7 @@ from app.utils.altex_location import refresh_altex_locations
 from app.utils.stock_sync import calc_order_stock
 from app.utils.smart_api import get_stock
 from app.routers.reviews import *
+from app.models.awb import AWB
 from app.models.marketplace import Marketplace
 from app.models.billing_software import Billing_software
 from app.models.orders import Order
@@ -191,6 +192,16 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                     # await refresh_emag_reviews(marketplace, session)
                     logging.info("Check hijacker and review")
                     await check_hijacker_and_bad_reviews(marketplace, session)
+
+@app.on_event("startup")
+@repeat_every(seconds = 14400)
+async def update_awb(db:AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        async with db as session:
+            awb_status_list = [56, 85, 84, 9, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 93, 112, 81, 10, 113, 27, 87, 4, 99, 16, 74, 116, 15, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17, 
+68, 101, 147, 73, 126, 47, 145, 128, 19]
+            logging.info("Update awb status")
+            result = await session.execute(select(AWB).where(AWB.awb_status == any_(awb_status_list)))
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("refresh_data:app", host="0.0.0.0", port=3000, reload=False)

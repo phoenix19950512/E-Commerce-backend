@@ -39,6 +39,7 @@ class Internal_ProductBase(BaseModel):
     warehouse_id: Optional[int] = None
     internal_shipping_price: Optional[Decimal] = None
     observation: Optional[str] = None
+    short_product_name: Optional[str] = None
     market_place: Optional[List[str]] = None
 
 class Internal_ProductCreate(Internal_ProductBase):
