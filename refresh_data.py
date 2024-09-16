@@ -203,7 +203,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
 68, 101, 147, 73, 126, 47, 145, 128, 19]
             logging.info("Update awb status")
             result = await session.execute(select(AWB).where(AWB.awb_status == any_(awb_status_list)))
-            db_awbs = result.scalars.all()
+            db_awbs = result.scalars().all()
             for awb in db_awbs:
                 awb_number = awb.awb_number
                 awb_status = await tracking(awb_number)
