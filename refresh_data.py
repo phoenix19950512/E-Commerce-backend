@@ -197,55 +197,56 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 @app.on_event("startup")
 @repeat_every(seconds=14400)
 async def update_awb(db: AsyncSession = Depends(get_db)):
-    async with db as session:
-        awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 93, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 15, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
+    async for db in get_db():
+        async with db as session:
+            awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 93, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 15, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
                             68, 101, 147, 73, 126, 47, 145, 128, 19]
-        logging.info("Start updating AWB status")
+            logging.info("Start updating AWB status")
 
-        batch_size = 100
-        offset = 0
-        while True:
-            try:
-                result = await session.execute(
-                    select(AWB)
-                    .where(AWB.awb_status == any_(awb_status_list))
-                    .offset(offset)
-                    .limit(batch_size)
-                )
-                db_awbs = result.scalars().all()
-
-                if not db_awbs:
-                    break
-
-                for awb in db_awbs:
-                    awb_number = awb.awb_number
-                    try:
-                        # Track and update awb status
-                        awb_status = await tracking(awb_number)
-                        if awb_status is not None:
-                            awb.awb_status = awb_status
-                        else:
-                            logging.error(f"Invalid status for AWB {awb_number}, skipping update")
-                    except Exception as track_ex:
-                        logging.error(f"Tracking API error for AWB {awb_number}: {str(track_ex)}")
-                        continue  # Continue to next AWB if tracking fails
-
+            batch_size = 100
+            offset = 0
+            while True:
                 try:
-                    await session.commit()
-                    logging.info(f"Successfully committed batch starting from offset {offset}")
-                except Exception as e:
+                    result = await session.execute(
+                        select(AWB)
+                        .where(AWB.awb_status == any_(awb_status_list))
+                        .offset(offset)
+                        .limit(batch_size)
+                    )
+                    db_awbs = result.scalars().all()
+
+                    if not db_awbs:
+                        break
+
+                    for awb in db_awbs:
+                        awb_number = awb.awb_number
+                        try:
+                            # Track and update awb status
+                            awb_status = await tracking(awb_number)
+                            if awb_status is not None:
+                                awb.awb_status = awb_status
+                            else:
+                                logging.error(f"Invalid status for AWB {awb_number}, skipping update")
+                        except Exception as track_ex:
+                            logging.error(f"Tracking API error for AWB {awb_number}: {str(track_ex)}")
+                            continue  # Continue to next AWB if tracking fails
+
+                    try:
+                        await session.commit()
+                        logging.info(f"Successfully committed batch starting from offset {offset}")
+                    except Exception as e:
+                        await session.rollback()
+                        logging.error(f"Failed to commit batch at offset {offset}: {str(e)}")
+                        break
+
+                    offset += batch_size
+
+                except Exception as db_ex:
+                    logging.error(f"Database query failed at offset {offset}: {str(db_ex)}")
                     await session.rollback()
-                    logging.error(f"Failed to commit batch at offset {offset}: {str(e)}")
                     break
 
-                offset += batch_size
-
-            except Exception as db_ex:
-                logging.error(f"Database query failed at offset {offset}: {str(db_ex)}")
-                await session.rollback()
-                break
-
-        logging.info("AWB status update completed")
+            logging.info("AWB status update completed")
 
 if __name__ == "__main__":
     import uvicorn
