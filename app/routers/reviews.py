@@ -189,9 +189,12 @@ async def check_hijacker_and_bad_reviews(marketplace: Marketplace, db: AsyncSess
             user_id,
             market_place
         )
-
-        cursor.execute(insert_notification_query, values)
-        id += 1
+        try:
+            cursor.execute(insert_notification_query, values)
+            id += 1
+        except Exception as e:
+            logging.info(f"Failed to insert hijacker into notification: {e}")
+            await db.rollback()    
     conn.commit()
     cursor.close()
     conn.close()
