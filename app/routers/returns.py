@@ -56,6 +56,14 @@ async def get_returns(
         })
     return return_data
 
+@router.get("/return_id")
+async def get_return_info(return_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).where(Returns.emag_id == return_id))
+    db_return = result.scalars().first
+    if db_return is None:
+        raise HTTPException(status_code=404, detail="awb not found")
+    return db_return
+
 @router.get("/awb")
 async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
     if awb[:2] == "01":
