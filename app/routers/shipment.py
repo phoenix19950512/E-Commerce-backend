@@ -44,14 +44,14 @@ async def get_shipments(
     return db_shipments
 
 @router.get("/move", response_model=ShipmentRead)
-async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier_name:str, db:AsyncSession = Depends(get_db)):
+async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: int, db:AsyncSession = Depends(get_db)):
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id1))
     shipment_1 = result.scalars().first()
 
     ean_list = shipment_1.ean
 
     for i in range(len(ean_list)):
-        if ean_list[i] == ean and shipment_1.supplier_name[i] == supplier_name:
+        if ean_list[i] == ean and shipment_1.ship_id[i] == ship_id:
             index = i
             break
     quantity = shipment_1.quantity[index]
@@ -68,18 +68,10 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     date_added = shipment_1.date_added[index]
     date_agent = shipment_1.date_agent[index]
 
-    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-    db_product = result.scalars().first()
-    supplier_id = db_product.supplier_id
-
-    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id))
-    db_supplier = result.scalars().first()
-    supplier_name = db_supplier.name
-
     before = shipment_1.before[index]
     if before:
         before = json.loads(before)
-        before = before + [shipment_1.id]
+        before = before + [f"{ship_id}_{shipment_1.id}"]
         before = str(before)
     else:
         before = str([shipment_1.id])
@@ -99,7 +91,6 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_1.document = shipment_1.document[:index] + shipment_1.document[index+1:]
     shipment_1.date_added = shipment_1.date_added[:index] + shipment_1.date_added[index+1:]
     shipment_1.date_agent = shipment_1.date_agent[:index] + shipment_1.date_agent[index+1:]
-    shipment_1.supplier_name = shipment_1.supplier_name[:index] + shipment_1.supplier_name[index+1:]
     shipment_1.before = shipment_1.before[:index] + shipment_1.before[index+1:]
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
 
@@ -123,7 +114,6 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, supplier
     shipment_2.document = shipment_2.document + [document]
     shipment_2.date_added = shipment_2.date_added + [date_added]
     shipment_2.date_agent = shipment_2.date_agent + [date_agent]
-    shipment_2.supplier_name = shipment_2.supplier_name + [supplier_name]
     shipment_2.before = shipment_2.before + [before]
     shipment_2.user = shipment_2.user + [user]
 
