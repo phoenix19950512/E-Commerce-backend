@@ -318,8 +318,7 @@ async def refresh_altex_orders(marketplace: Marketplace):
         try:
             result = get_orders(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
             if result['status'] == 'error':
-                page_nr += 1
-                continue
+                break
             data = result['data']
             orders = data.get('items')
             detail_orders = []
