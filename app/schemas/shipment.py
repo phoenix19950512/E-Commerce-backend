@@ -34,6 +34,7 @@ class ShipmentBase(BaseModel):
     before: Optional[List[str]] = None
     user: Optional[List[int]] = None
     address: Optional[str] = None
+    cnt: Optional[int] = None
 
 class ShipmentCreate(ShipmentBase):
     pass

@@ -71,10 +71,10 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     before = shipment_1.before[index]
     if before:
         before = json.loads(before)
-        before = before + [f"{ship_id}_{shipment_1.id}"]
+        before = before + [f"{ship_id}_{shipment_1.title}"]
         before = str(before)
     else:
-        before = str([shipment_1.id])
+        before = str([f"{ship_id}_{shipment_1.title}"])
     user = shipment_1.user[index]
 
     shipment_1.ean = shipment_1.ean[:index] + shipment_1.ean[index+1:]

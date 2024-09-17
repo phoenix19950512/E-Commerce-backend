@@ -35,3 +35,4 @@ class Shipment(Base):
     before = Column(ARRAY(Text), nullable=True)
     user = Column(ARRAY(Integer), nullable=True)
     address = Column(Text, nullable=True)
+    cnt = Column(Integer, nullable=True)
