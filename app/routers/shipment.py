@@ -95,7 +95,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
 
     
-    await db.refresh(shipment_1)
+    # await db.refresh(shipment_1)
 
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id2))
     shipment_2 = result.scalars().first()
