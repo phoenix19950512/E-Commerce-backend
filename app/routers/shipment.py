@@ -116,6 +116,8 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_2.date_agent = shipment_2.date_agent + [date_agent]
     shipment_2.before = shipment_2.before + [before]
     shipment_2.user = shipment_2.user + [user]
+    shipment_2.ship_id = shipment_2.ship_id + [shipment_2.cnt + 1]
+    shipment_2.cnt = shipment_2.cnt + 1
 
     await db.commit()
     await db.refresh(shipment_2)
