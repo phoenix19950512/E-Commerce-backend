@@ -184,6 +184,7 @@ async def get_product_info(
                 "stock_imports": [product.stock, 0, imports],
                 "day_stock": [0, 0],
                 "imports_data": imports_datas,
+                "pcs_ctn": product.pcs_ctn,
                 "observation": product.observation
             })
         else:
@@ -212,6 +213,7 @@ async def get_product_info(
                     "stock_imports": [product.stock, ave_sales, imports],
                     "day_stock": [stock_days, stock_imports_days],
                     "imports_data": imports_datas,
+                    "pcs_ctn": product.pcs_ctn,
                     "observation": product.observation
                 })
     return product_data
