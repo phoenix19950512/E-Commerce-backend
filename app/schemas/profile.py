@@ -28,6 +28,7 @@ class UserProfileRead(BaseModel):
     full_name: Optional[str] = None
     role: Optional[str] = None
     username: Optional[str] = None
+    address: Optional[str] = None
     updated_at: Optional[datetime] = None
     last_login: Optional[str] = None
     profile: Optional[ProfileRead] = None
