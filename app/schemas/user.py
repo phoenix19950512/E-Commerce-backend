@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
+    address: Optional[str] = None
     username: str
     email: EmailStr
     full_name: Optional[str] = None
