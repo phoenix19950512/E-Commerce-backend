@@ -185,6 +185,9 @@ async def get_product_info(
                 "day_stock": [0, 0],
                 "imports_data": imports_datas,
                 "pcs_ctn": product.pcs_ctn,
+                "price_1688": product.price_1688,
+                "link_address_1688": product.link_address_1688,
+                "variation_name_1688": product.variation_name_1688,
                 "observation": product.observation
             })
         else:
@@ -214,6 +217,9 @@ async def get_product_info(
                     "day_stock": [stock_days, stock_imports_days],
                     "imports_data": imports_datas,
                     "pcs_ctn": product.pcs_ctn,
+                    "price_1688": product.price_1688,
+                    "link_address_1688": product.link_address_1688,
+                    "variation_name_1688": product.variation_name_1688,
                     "observation": product.observation
                 })
     return product_data
