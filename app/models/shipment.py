@@ -23,7 +23,7 @@ class Shipment(Base):
     pdf_sent = Column(ARRAY(Boolean), nullable=True)
     pay_url = Column(ARRAY(Text), nullable=True)
     tracking = Column(ARRAY(Text), nullable=True)
-    inland_cost = Column(ARRAY(Numeric(12, 4), nullable=True))
+    inland_cost = Column(ARRAY(Numeric(12, 4)), nullable=True)
     arrive_agent = Column(ARRAY(Boolean), nullable=True)
     wechat_group = Column(ARRAY(Text), nullable=True)
     pp = Column(ARRAY(Text), nullable=True)
