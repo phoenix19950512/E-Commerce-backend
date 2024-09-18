@@ -68,6 +68,7 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
             full_name=user.full_name,
             username=user.username,
             email=user.email,
+            address = user.address,
             role=convert_role_to_string(user.role),
             joined_day=humanize.naturaltime(user.created_at),
             updated_at=user.updated_at,
