@@ -29,6 +29,17 @@ async def get_shipments_count(db: AsyncSession = Depends(get_db)):
     count = result.scalar()
     return count
 
+@router.get("/agent")
+async def get_shipments_agent(
+    agent: str,
+    db:AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Shipment).where(Shipment.agent == agent))
+    db_shipments = result.scalars().all()
+    if db_shipments is None:
+        raise HTTPException(status_code=404, detail="shipment not found")
+    return db_shipments
+
 @router.get("/", response_model=List[ShipmentRead])
 async def get_shipments(
     page: int = Query(1, ge=1, description="Page number"),
