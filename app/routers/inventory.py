@@ -152,8 +152,17 @@ async def get_product_info(
 
     product_data = []
     for product in products:
-
-        if product.weight < 250 and product.volumetric_weight < 250:
+        dimension = product.dimensions
+        if dimension:
+            numbers = dimension.split('*')
+            w,h,d = map(int, numbers)
+        else:
+            w,h,d = (0, 0, 0)
+        if product.pcs_ctn:
+            volumetric_weight = w * h * d / 5000 / product.pcs_ctn
+        else:
+            volumetric_weight = 0
+        if product.weight < 250 and volumetric_weight < 250:
             type = 1
         elif product.battery:
             type = 2
