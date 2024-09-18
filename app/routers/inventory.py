@@ -179,7 +179,7 @@ async def get_product_info(
                 "quantity": query_imports_stocks,
                 "image_link":product.image_link,
                 "link_address_1688": product.link_address_1688,
-                "sale_price": product.sale_price,
+                "sale_price": product.price,
                 "wechat": product.supplier_id,
                 "stock_imports": [product.stock, 0, imports],
                 "day_stock": [0, 0],
