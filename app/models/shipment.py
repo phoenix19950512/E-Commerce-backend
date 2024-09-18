@@ -36,4 +36,4 @@ class Shipment(Base):
     user = Column(ARRAY(Integer), nullable=True)
     address = Column(Text, nullable=True)
     cnt = Column(Integer, nullable=True)
-    target_day = Column(ARRAY(Integer), nullable=True)
+    target_day = Column(Integer, nullable=True, default=180)
