@@ -22,6 +22,10 @@ class ShipmentBase(BaseModel):
     pdf_sent: Optional[List[bool]] = None
     pay_url: Optional[List[str]] = None
     tracking: Optional[List[str]] = None
+    inland_cost: Optional[List[Decimal]] = None
+    price_1688: Optional[List[Decimal]] = None
+    link_address_1688: Optional[List[str]] = None
+    variation_name_1688: Optional[List[str]] = None
     arrive_agent: Optional[List[bool]] = None
     wechat_group: Optional[List[str]] = None
     pp: Optional[List[str]] = None
