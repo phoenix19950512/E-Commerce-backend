@@ -122,7 +122,10 @@ async def get_product_info(
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).join(
         ProductAlias,
-        ProductAlias.id == any_(Order.product_id)
+        and_(
+            ProductAlias.id == any_(Order.product_id),
+            ProductAlias.product_marketplace == Order.order_market_place
+        )
     )
 
     time = datetime.now()
@@ -203,6 +206,7 @@ async def get_product_info(
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
             ave_sales = cnt[ean] / days
+            logging.info(f" sales per day is {ave_sales}")
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
             stock_imports_days = int(((stock + imports) / ave_sales)) if ave_sales > 0 else -1
 
