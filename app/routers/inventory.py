@@ -139,13 +139,12 @@ async def get_product_info(
         product_ids = order.product_id
         quantities = order.quantity
         for i in range(len(product_ids)):
-            if product_ids[i] not in cnt:
-                if product.id == product_ids[i]:
+            if product.id == product_ids[i]:
+                if product.ean not in cnt:
                     cnt[product.ean] = quantities[i]
                     min_time[product.ean] = order.date
                     max_time[product.ean] = order.date
-            else:
-                if product.id == product_ids[i]:
+                else:
                     cnt[product.ean] += quantities[i]
                     min_time[product.ean] = min(min_time[product.ean], order.date)
                     max_time[product.ean] = max(max_time[product.ean], order.date)
