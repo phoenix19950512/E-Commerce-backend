@@ -159,7 +159,7 @@ async def get_product_info(
         else:
             w,h,d = (0, 0, 0)
         if product.pcs_ctn:
-            volumetric_weight = w * h * d / 5000 / product.pcs_ctn
+            volumetric_weight = w * h * d / 5000 / int(product.pcs_ctn)
         else:
             volumetric_weight = 0
         if product.weight < 250 and volumetric_weight < 250:
