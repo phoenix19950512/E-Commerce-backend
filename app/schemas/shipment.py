@@ -36,6 +36,7 @@ class ShipmentBase(BaseModel):
     user: Optional[List[int]] = None
     address: Optional[str] = None
     cnt: Optional[int] = None
+    other_cost: Optional[List[Decimal]] = None
     target_day: Optional[int] = 180
 
 class ShipmentCreate(ShipmentBase):
