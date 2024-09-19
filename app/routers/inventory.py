@@ -157,9 +157,13 @@ async def get_product_info(
         dimension = product.dimensions
         if dimension:
             numbers = dimension.split('*')
-            w,h,d = map(float, numbers)
+            # Ensure all parts are valid before conversion
+            if len(numbers) == 3 and all(num.strip() for num in numbers):
+                w, h, d = map(float, numbers)
+            else:
+                w, h, d = (0.0, 0.0, 0.0)
         else:
-            w,h,d = (0.0, 0.0, 0.0)
+            w, h, d = (0.0, 0.0, 0.0)
         if product.pcs_ctn:
             volumetric_weight = w * h * d / 5000 / int(product.pcs_ctn)
         else:
