@@ -45,6 +45,16 @@ async def get_imports(ean: str, db:AsyncSession):
 
     return imports_data
 
+@router.get("count")
+async def get_count(
+    shipment_type: int = Query(0),
+    query_stock_days: int = Query(0),
+    query_imports_stocks: int = Query(0),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Internal_Product)
+
+
 @router.get('/product')
 async def get_product_info(
     shipment_type: int = Query(0),
@@ -68,9 +78,9 @@ async def get_product_info(
 
     time = datetime.now()
     thirty_days_ago = time - timedelta(days=30)
-    query = query.where(Order.date > thirty_days_ago)
+    query1 = query.where(Order.date > thirty_days_ago)
 
-    result = await db.execute(query)
+    result = await db.execute(query1)
     orders_with_products = result.all()
 
     for order, product in orders_with_products:
@@ -86,6 +96,23 @@ async def get_product_info(
                     cnt[product.ean] += quantities[i]
                     min_time[product.ean] = min(min_time[product.ean], order.date)
                     max_time[product.ean] = max(max_time[product.ean], order.date)
+
+    ninety_days_ago = time - timedelta(days=90)
+    query2 = query.where(Order.date > ninety_days_ago)
+
+    result = await db.execute(query2)
+
+    orders_with_products_ninety = result.all
+    cnt90 = {}
+    for order, product in orders_with_products_ninety:
+        product_ids = order.product_id
+        quantities = order.quantity
+        for i in range(len(product_ids)):
+            if product.id == product_ids[i]:
+                if product.ean not in cnt:
+                    cnt90[product.ean] = quantities[i]
+                else:
+                    cnt90[product.ean] += quantities[i]
 
     product_result = await db.execute(select(Internal_Product))
     products = product_result.scalars().all()
@@ -129,6 +156,11 @@ async def get_product_info(
         imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
 
         if ean not in cnt:
+            if ean not in cnt90:
+                sales90 = 0
+            else:
+                sales90 = cnt90[ean]
+
             product_data.append({
                 "id": product.id,
                 "type": type,
@@ -155,7 +187,8 @@ async def get_product_info(
                 "model_name": product.model_name,
                 "short_product_name": product.short_product_name,
                 "observation": product.observation,
-                "sales": 0
+                "sales": 0,
+                "sales90": sales90
             })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
@@ -196,7 +229,8 @@ async def get_product_info(
                     "model_name": product.model_name,
                     "short_product_name": product.short_product_name,
                     "observation": product.observation,
-                    "sales": cnt[ean]
+                    "sales": cnt[ean],
+                    "sales90": cnt90[ean]
                 })
     return product_data
 
