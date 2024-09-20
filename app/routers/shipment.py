@@ -194,6 +194,14 @@ async def get_info(ean: str, item_per_box: int, db:AsyncSession = Depends(get_db
             "imports_data": imports_data
         }
 
+@router.get("/{shipement_id}")
+async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id))
+    db_shipment = result.scalars().first()
+    if db_shipment is None:
+        raise HTTPException(status_code=404, detail="shipment not found")
+    return db_shipment
+
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id))
