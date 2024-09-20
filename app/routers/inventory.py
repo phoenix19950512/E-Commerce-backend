@@ -117,6 +117,9 @@ async def get_product_info(
         
         if type != shipment_type and shipment_type != 0:
             continue
+        
+        if type == 2:
+            volumetric_weight = w * h * d / 6000 / int(product.pcs_ctn)
         stock = product.stock
         product_id = product.id
         ean = product.ean
