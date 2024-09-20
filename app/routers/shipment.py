@@ -194,7 +194,7 @@ async def get_info(ean: str, item_per_box: int, db:AsyncSession = Depends(get_db
             "imports_data": imports_data
         }
 
-@router.get("/")
+@router.get("/{shipment_id}")
 async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id))
     db_shipment = result.scalars().first()
