@@ -281,9 +281,9 @@ async def get_products(
         raise HTTPException(status_code=404, detail="Internal_Product not found")
     return db_products
 
-@router.put("/{product_id}", response_model=Internal_ProductRead)
-async def update_product(product_id: int, product: Internal_ProductUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.id == product_id))
+@router.put("/{ean}", response_model=Internal_ProductRead)
+async def update_product(ean: str, product: Internal_ProductUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
     db_product = result.scalars().first()
 
     if db_product is None:
@@ -296,9 +296,9 @@ async def update_product(product_id: int, product: Internal_ProductUpdate, db: A
     await db.refresh(db_product)
     return db_product
 
-@router.delete("/{product_id}", response_model=Internal_ProductRead)
-async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.id == product_id))
+@router.delete("/{ean}", response_model=Internal_ProductRead)
+async def delete_product(ean: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
