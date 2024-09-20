@@ -55,6 +55,8 @@ def get_orders(url, public_key, private_key, page_nr):
     response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
     if response.status_code == 200:
         logging.info("Get orders in Altex Successed!")
+    else:
+        logging.info(response.json())
     return response.json()
 
 def get_detail_order(url, public_key, private_key, order_id):
@@ -318,7 +320,6 @@ async def refresh_altex_orders(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
-            
             result = get_orders(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
             if result['status'] == 'error':
                 break
