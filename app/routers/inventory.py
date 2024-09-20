@@ -27,14 +27,16 @@ async def get_imports(ean: str, db:AsyncSession):
     imports_data = []
 
     for shipment in shipments:
+        quantity = 0
+        if shipment.status == "arrived":
+            continue
         ean_list = shipment.ean
         quantity_list = shipment.quantity
-        status_list = shipment.each_status
         title = shipment.title
-        index = ean_list.index(ean)
-        quantity = quantity_list[index]
-        if status_list[index] == "arrived":
-            continue
+        for i in range(len(ean_list)):
+            if ean_list[i] != ean:
+                continue
+            quantity += quantity_list[i]
         imports_data.append({
             "title": title,
             "quantity": quantity
