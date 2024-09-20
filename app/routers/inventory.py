@@ -42,71 +42,6 @@ async def get_imports(ean: str, db:AsyncSession):
 
     return imports_data
 
-
-# @router.get('/shipment/product')
-# async def get_product_info(
-#     query_stock_days: int = Query(None),
-#     ean: str = Query(...),
-#     db: AsyncSession = Depends(get_db)
-# ):
-#     query = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
-#     product = query.scalars().first()
-#     product_id = product.id
-
-#     if product.weight < 350 and product.volumetric_weight < 350:
-#         type = 1
-#     elif product.battery:
-#         type = 2
-#     else:
-#         type = 3
-
-#     query = await db.execute(select(Product).where(Product.ean == ean))
-#     products = query.scalars().all()
-
-#     product_list = []
-#     for product in products:
-#         product_list.append(product.id)
-
-#     query = await db.execute(
-#         select(Order).where(func.array(Order.product_id).op('&&')(product_list))
-#     )
-#     orders = query.scalars().all()
-    
-#     cnt = 0
-#     min_time = datetime.datetime.today()
-#     max_time = datetime.datetime(0, 0, 0, 0, 0, 0)
-#     for order in orders:
-#         product_ids = order.product_id
-#         quantities = order.quantity
-
-#         index = product_ids.index(product_id)
-#         cnt += quantities[index]
-#         min_time = min(min_time, order.date)
-#         max_time = max(max_time, order.date)
-
-#     stock = product.stock
-#     import_datas = await get_imports(ean, db)
-#     imports = sum(import_data.get("quantity") for import_data in import_datas)
-#     days = (max_time - min_time).days + 1
-#     ave_sale = cnt / days
-#     stock_days = int(stock / ave_sale) if ave_sale > 0 else -1
-#     stock_imports_days = int((stock + imports) / ave_sale)
-
-#     if query_stock_days and stock_imports_days < query_stock_days:
-#         quantity = int(query_stock_days * ave_sale) - stock - imports
-#     else:
-#         quantity = ""
-
-#     return {
-#         "type": type,
-#         "quantity": quantity,
-#         "image_link": product.image_link,
-#         "wechat": product.supplier_id,
-#         "stock_imports": [product.stock, ave_sale, imports],
-#         "day_stock": [stock_days, stock_imports_days],
-#         "imports_data": import_datas
-#     }
-
 @router.get('/product')
 async def get_product_info(
     shipment_type: int = Query(0),
@@ -171,7 +106,7 @@ async def get_product_info(
         
         if w == 0.0 or h == 0.0 or d == 0.0:
             type = -1
-        elif product.weight < 250 and volumetric_weight < 250:
+        elif product.weight < 0.35 and volumetric_weight < 0.35:
             type = 1
         elif product.battery:
             type = 2
