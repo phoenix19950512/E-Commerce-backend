@@ -109,7 +109,7 @@ async def get_product_info(
         quantities = order.quantity
         for i in range(len(product_ids)):
             if product.id == product_ids[i]:
-                if product.ean not in cnt:
+                if product.ean not in cnt90:
                     cnt90[product.ean] = quantities[i]
                 else:
                     cnt90[product.ean] += quantities[i]
