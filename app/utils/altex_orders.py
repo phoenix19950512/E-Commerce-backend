@@ -53,6 +53,8 @@ def get_orders(url, public_key, private_key, page_nr):
         'X-Request-Signature': signature
     }
     response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
+    if response.status_code == 200:
+        logging.info("Get orders in Altex Successed!")
     return response.json()
 
 def get_detail_order(url, public_key, private_key, order_id):
