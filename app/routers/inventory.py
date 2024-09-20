@@ -208,6 +208,10 @@ async def get_product_info(
                 "price_1688": product.price_1688,
                 "link_address_1688": product.link_address_1688,
                 "variation_name_1688": product.variation_name_1688,
+                "dimensions": product.dimensions,
+                "weigth": product.weight,
+                "model_name": product.model_name,
+                "short_product_name": product.short_product_name,
                 "observation": product.observation
             })
         else:
@@ -243,6 +247,10 @@ async def get_product_info(
                     "price_1688": product.price_1688,
                     "link_address_1688": product.link_address_1688,
                     "variation_name_1688": product.variation_name_1688,
+                    "dimensions": product.dimensions,
+                    "weigth": product.weight,
+                    "model_name": product.model_name,
+                    "short_product_name": product.short_product_name,
                     "observation": product.observation
                 })
     return product_data
