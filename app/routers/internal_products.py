@@ -37,10 +37,25 @@ async def create_product(product: Internal_ProductCreate, db: AsyncSession = Dep
     return db_product
 
 @router.get('/count')
-async def get_products_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product))
-    count = result.scalars().all()
-    return len(count)
+async def get_products_count(
+    supplier_ids: str = Query('', description="Supplier id"),
+    search_text: str = Query('', description="Text for searching"),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Internal_Product)
+    if supplier_ids:
+        supplier_id_list = [int(id.strip()) for id in supplier_ids.split(",")]
+        query = query.filter(Internal_Product.supplier_id == any_(supplier_id_list))
+    
+    query = query.filter(
+        (cast(Internal_Product.id, String).ilike(f"%{search_text}")) |
+        (Internal_Product.product_name.ilike(f"%{search_text}%")) |
+        (Internal_Product.model_name.ilike(f"%{search_text}%")) |
+        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
+
+    result = await db.execute(query)
+    db_products = result.scalars().all()
+    return len(db_products)
 
 @router.get("/all_products")
 async def get_all_products(
