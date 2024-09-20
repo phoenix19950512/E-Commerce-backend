@@ -102,7 +102,7 @@ async def get_product_info(
 
     result = await db.execute(query2)
 
-    orders_with_products_ninety = result.all
+    orders_with_products_ninety = result.all()
     cnt90 = {}
     for order, product in orders_with_products_ninety:
         product_ids = order.product_id
