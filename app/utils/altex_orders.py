@@ -323,10 +323,12 @@ async def refresh_altex_orders(marketplace: Marketplace):
                 break
             data = result['data']
             orders = data.get('items')
+            logging.info(f"Get {len(orders)}")
             detail_orders = []
             for order in orders:
                 if order.get('order_id') is not None:
                     order_id = order.get('order_id')
+                    logging.info(f"Get order id is {order_id}")
                     detail_order_result = get_detail_order(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, order_id)
                     if detail_order_result.get('status') == 'success':
                         detail_orders.append(detail_order_result.get('data'))
