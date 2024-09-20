@@ -38,6 +38,7 @@ async def get_imports(ean: str, db:AsyncSession):
                 continue
             quantity += quantity_list[i]
         imports_data.append({
+            "id": shipment.id,
             "title": title,
             "quantity": quantity
         })
@@ -117,7 +118,7 @@ async def get_product_info(
         
         if type != shipment_type and shipment_type != 0:
             continue
-        
+
         if type == 2:
             volumetric_weight = w * h * d / 6000 / int(product.pcs_ctn)
         stock = product.stock
