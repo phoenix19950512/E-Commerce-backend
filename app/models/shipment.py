@@ -39,3 +39,4 @@ class Shipment(Base):
     cnt = Column(Integer, nullable=True)
     other_cost = Column(ARRAY(Numeric(12, 4)), nullable=True)
     target_day = Column(Integer, nullable=True, default=180)
+    received = Column(Integer, nullable=True)
