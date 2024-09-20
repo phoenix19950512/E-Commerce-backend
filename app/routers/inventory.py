@@ -45,16 +45,6 @@ async def get_imports(ean: str, db:AsyncSession):
 
     return imports_data
 
-@router.get("count")
-async def get_count(
-    shipment_type: int = Query(0),
-    query_stock_days: int = Query(0),
-    query_imports_stocks: int = Query(0),
-    db: AsyncSession = Depends(get_db)
-):
-    query = select(Internal_Product)
-
-
 @router.get('/product')
 async def get_product_info(
     shipment_type: int = Query(0),
@@ -156,40 +146,41 @@ async def get_product_info(
         imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
 
         if ean not in cnt:
-            if ean not in cnt90:
-                sales90 = 0
-            else:
-                sales90 = cnt90[ean]
+            continue
+            # if ean not in cnt90:
+            #     sales90 = 0
+            # else:
+            #     sales90 = cnt90[ean]
 
-            product_data.append({
-                "id": product.id,
-                "type": type,
-                "product_name": product.product_name,
-                "ean": product.ean,
-                "sales_per_day": 0,
-                "quantity": query_imports_stocks,
-                "image_link":product.image_link,
-                "link_address_1688": product.link_address_1688,
-                "sale_price": product.price,
-                "wechat": product.supplier_id,
-                "stock_imports": [product.stock, 0, imports],
-                "day_stock": [0, 0],
-                "imports_data": imports_datas,
-                "pcs_ctn": product.pcs_ctn,
-                "masterbox_title": product.masterbox_title,
-                "barcode_title": product.barcode_title,
-                "price_1688": product.price_1688,
-                "link_address_1688": product.link_address_1688,
-                "variation_name_1688": product.variation_name_1688,
-                "dimensions": product.dimensions,
-                "weight": product.weight,
-                "volumetric_weight": volumetric_weight,
-                "model_name": product.model_name,
-                "short_product_name": product.short_product_name,
-                "observation": product.observation,
-                "sales": 0,
-                "sales90": sales90
-            })
+            # product_data.append({
+            #     "id": product.id,
+            #     "type": type,
+            #     "product_name": product.product_name,
+            #     "ean": product.ean,
+            #     "sales_per_day": 0,
+            #     "quantity": query_imports_stocks,
+            #     "image_link":product.image_link,
+            #     "link_address_1688": product.link_address_1688,
+            #     "sale_price": product.price,
+            #     "wechat": product.supplier_id,
+            #     "stock_imports": [product.stock, 0, imports],
+            #     "day_stock": [0, 0],
+            #     "imports_data": imports_datas,
+            #     "pcs_ctn": product.pcs_ctn,
+            #     "masterbox_title": product.masterbox_title,
+            #     "barcode_title": product.barcode_title,
+            #     "price_1688": product.price_1688,
+            #     "link_address_1688": product.link_address_1688,
+            #     "variation_name_1688": product.variation_name_1688,
+            #     "dimensions": product.dimensions,
+            #     "weight": product.weight,
+            #     "volumetric_weight": volumetric_weight,
+            #     "model_name": product.model_name,
+            #     "short_product_name": product.short_product_name,
+            #     "observation": product.observation,
+            #     "sales": 0,
+            #     "sales90": sales90
+            # })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
             ave_sales = cnt[ean] / days
@@ -231,6 +222,162 @@ async def get_product_info(
                     "observation": product.observation,
                     "sales": cnt[ean],
                     "sales90": cnt90[ean]
+                })
+    return product_data
+
+@router.get('/shipment_product')
+async def get_product_info(
+    shipment_type: int = Query(0),
+    query_stock_days: int = Query(0),
+    query_imports_stocks: int = Query(0),
+    db: AsyncSession = Depends(get_db)
+):
+
+    cnt = {}
+    min_time = {}
+    max_time = {}
+
+    ProductAlias = aliased(Product)
+    query = select(Order, ProductAlias).join(
+        ProductAlias,
+        and_(
+            ProductAlias.id == any_(Order.product_id),
+            ProductAlias.product_marketplace == Order.order_market_place
+        )
+    )
+
+    time = datetime.now()
+    thirty_days_ago = time - timedelta(days=30)
+    query1 = query.where(Order.date > thirty_days_ago)
+
+    result = await db.execute(query1)
+    orders_with_products = result.all()
+
+    for order, product in orders_with_products:
+        product_ids = order.product_id
+        quantities = order.quantity
+        for i in range(len(product_ids)):
+            if product.id == product_ids[i]:
+                if product.ean not in cnt:
+                    cnt[product.ean] = quantities[i]
+                    min_time[product.ean] = order.date
+                    max_time[product.ean] = order.date
+                else:
+                    cnt[product.ean] += quantities[i]
+                    min_time[product.ean] = min(min_time[product.ean], order.date)
+                    max_time[product.ean] = max(max_time[product.ean], order.date)
+
+    product_result = await db.execute(select(Internal_Product))
+    products = product_result.scalars().all()
+
+    product_data = []
+    for product in products:
+        dimension = product.dimensions
+        if dimension:
+            numbers = dimension.split('*')
+            # Ensure all parts are valid before conversion
+            if len(numbers) == 3 and all(num.strip() for num in numbers):
+                w, h, d = map(float, numbers)
+            else:
+                w, h, d = (0.0, 0.0, 0.0)
+        else:
+            w, h, d = (0.0, 0.0, 0.0)
+        if product.pcs_ctn:
+            volumetric_weight = w * h * d / 5000 / int(product.pcs_ctn)
+        else:
+            volumetric_weight = 0
+        
+        if w == 0.0 or h == 0.0 or d == 0.0:
+            type = -1
+        elif product.weight < 0.35 and volumetric_weight < 0.35:
+            type = 1
+        elif product.battery:
+            type = 2
+        else:
+            type = 3
+        
+        if type != shipment_type and shipment_type != 0:
+            continue
+
+        if type == 2:
+            volumetric_weight = w * h * d / 6000 / int(product.pcs_ctn)
+        stock = product.stock
+        product_id = product.id
+        ean = product.ean
+
+        imports_datas = await get_imports(ean, db)
+        imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
+
+        if ean not in cnt:
+
+            product_data.append({
+                "id": product.id,
+                "type": type,
+                "product_name": product.product_name,
+                "ean": product.ean,
+                "sales_per_day": 0,
+                "quantity": query_imports_stocks,
+                "image_link":product.image_link,
+                "link_address_1688": product.link_address_1688,
+                "sale_price": product.price,
+                "wechat": product.supplier_id,
+                "stock_imports": [product.stock, 0, imports],
+                "day_stock": [0, 0],
+                "imports_data": imports_datas,
+                "pcs_ctn": product.pcs_ctn,
+                "masterbox_title": product.masterbox_title,
+                "barcode_title": product.barcode_title,
+                "price_1688": product.price_1688,
+                "link_address_1688": product.link_address_1688,
+                "variation_name_1688": product.variation_name_1688,
+                "dimensions": product.dimensions,
+                "weight": product.weight,
+                "volumetric_weight": volumetric_weight,
+                "model_name": product.model_name,
+                "short_product_name": product.short_product_name,
+                "observation": product.observation,
+                "sales": 0
+            })
+        else:
+            days = (max_time[ean] - min_time[ean]).days + 1
+            ave_sales = cnt[ean] / days
+            logging.info(f" sales per day is {ave_sales}")
+            stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
+            stock_imports_days = int(((stock + imports) / ave_sales)) if ave_sales > 0 else -1
+
+            if  stock_imports_days < query_stock_days:
+                quantity = int(query_stock_days * ave_sales) - stock - imports
+            else:
+                quantity = ""
+        
+            if (query_imports_stocks == 0 or imports < query_imports_stocks) and (query_stock_days == 0 or stock_imports_days < query_stock_days):
+                product_data.append({
+                    "id": product.id,
+                    "type": type,
+                    "product_name": product.product_name,
+                    "ean": product.ean,
+                    "sales_per_day": ave_sales,
+                    "quantity": quantity,
+                    "image_link": product.image_link,
+                    "link_address_1688": product.link_address_1688,
+                    "sale_price": product.price,
+                    "wechat": product.supplier_id,
+                    "stock_imports": [product.stock, ave_sales, imports],
+                    "day_stock": [stock_days, stock_imports_days],
+                    "imports_data": imports_datas,
+                    "pcs_ctn": product.pcs_ctn,
+                    "masterbox_title": product.masterbox_title,
+                    "barcode_title": product.barcode_title, 
+                    "price_1688": product.price_1688,
+                    "link_address_1688": product.link_address_1688,
+                    "variation_name_1688": product.variation_name_1688,
+                    "dimensions": product.dimensions,
+                    "weight": product.weight,
+                    "volumetric_weight": volumetric_weight,
+                    "model_name": product.model_name,
+                    "short_product_name": product.short_product_name,
+                    "observation": product.observation,
+                    "sales": cnt[ean]
                 })
     return product_data
 
