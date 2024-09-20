@@ -51,7 +51,7 @@ async def get_products_count(
         (cast(Internal_Product.id, String).ilike(f"%{search_text}")) |
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
-        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
+        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id)
 
     result = await db.execute(query)
     db_products = result.scalars().all()
