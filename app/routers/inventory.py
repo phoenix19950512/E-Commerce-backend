@@ -315,7 +315,6 @@ async def get_product_info(
                 "type": type,
                 "product_name": product.product_name,
                 "ean": product.ean,
-                "sales_per_day": 0,
                 "quantity": query_imports_stocks,
                 "image_link":product.image_link,
                 "link_address_1688": product.link_address_1688,
@@ -334,9 +333,7 @@ async def get_product_info(
                 "weight": product.weight,
                 "volumetric_weight": volumetric_weight,
                 "model_name": product.model_name,
-                "short_product_name": product.short_product_name,
-                "observation": product.observation,
-                "sales": 0
+                "short_product_name": product.short_product_name
             })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
@@ -356,7 +353,6 @@ async def get_product_info(
                     "type": type,
                     "product_name": product.product_name,
                     "ean": product.ean,
-                    "sales_per_day": ave_sales,
                     "quantity": quantity,
                     "image_link": product.image_link,
                     "link_address_1688": product.link_address_1688,
@@ -375,9 +371,7 @@ async def get_product_info(
                     "weight": product.weight,
                     "volumetric_weight": volumetric_weight,
                     "model_name": product.model_name,
-                    "short_product_name": product.short_product_name,
-                    "observation": product.observation,
-                    "sales": cnt[ean]
+                    "short_product_name": product.short_product_name
                 })
     return product_data
 
