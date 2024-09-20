@@ -38,7 +38,7 @@ async def create_product(product: Internal_ProductCreate, db: AsyncSession = Dep
 
 @router.get('/count')
 async def get_products_count(
-    supplier_ids: str = Query('', description="Supplier id"),
+    supplier_ids: str = Query(None),
     search_text: str = Query('', description="Text for searching"),
     db: AsyncSession = Depends(get_db)
 ):
