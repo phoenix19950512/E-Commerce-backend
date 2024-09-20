@@ -318,6 +318,7 @@ async def refresh_altex_orders(marketplace: Marketplace):
     page_nr = 1
     while True:
         try:
+            
             result = get_orders(marketplace.baseAPIURL, PUBLIC_KEY, PRIVATE_KEY, page_nr)
             if result['status'] == 'error':
                 break
@@ -334,6 +335,7 @@ async def refresh_altex_orders(marketplace: Marketplace):
                         detail_orders.append(detail_order_result.get('data'))
 
             await insert_orders(detail_orders, marketplace.marketplaceDomain)
+            logging.info(f"Fishish fetching orders in {page_nr} pages!")
             page_nr += 1
         except Exception as e:
             logging.error(f"Exception occurred: {e}")
