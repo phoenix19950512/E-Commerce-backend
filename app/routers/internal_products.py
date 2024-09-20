@@ -54,9 +54,9 @@ async def get_all_products(
         raise HTTPException(status_code=404, detail="Internal_Product not found")
     return db_products
 
-@router.get("/{product_id}", response_model=Internal_ProductRead)
-async def read_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.id == product_id))
+@router.get("/{ean}", response_model=Internal_ProductRead)
+async def read_product(ean: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
