@@ -145,6 +145,7 @@ async def get_product_info(
                 "variation_name_1688": product.variation_name_1688,
                 "dimensions": product.dimensions,
                 "weight": product.weight,
+                "volumetric_weight": volumetric_weight,
                 "model_name": product.model_name,
                 "short_product_name": product.short_product_name,
                 "observation": product.observation
@@ -184,6 +185,7 @@ async def get_product_info(
                     "variation_name_1688": product.variation_name_1688,
                     "dimensions": product.dimensions,
                     "weight": product.weight,
+                    "volumetric_weight": volumetric_weight,
                     "model_name": product.model_name,
                     "short_product_name": product.short_product_name,
                     "observation": product.observation
