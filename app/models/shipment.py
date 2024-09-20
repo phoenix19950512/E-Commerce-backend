@@ -38,5 +38,5 @@ class Shipment(Base):
     address = Column(Text, nullable=True)
     cnt = Column(Integer, nullable=True)
     other_cost = Column(ARRAY(Numeric(12, 4)), nullable=True)
-    target_day = Column(Integer, nullable=True, default=180)
+    target_day = Column(Integer, nullable=True, default=90)
     received = Column(Integer, nullable=True)
