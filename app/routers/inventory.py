@@ -154,7 +154,8 @@ async def get_product_info(
                 "volumetric_weight": volumetric_weight,
                 "model_name": product.model_name,
                 "short_product_name": product.short_product_name,
-                "observation": product.observation
+                "observation": product.observation,
+                "sales": 0
             })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
@@ -194,7 +195,8 @@ async def get_product_info(
                     "volumetric_weight": volumetric_weight,
                     "model_name": product.model_name,
                     "short_product_name": product.short_product_name,
-                    "observation": product.observation
+                    "observation": product.observation,
+                    "sales": cnt[ean]
                 })
     return product_data
 
