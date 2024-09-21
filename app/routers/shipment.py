@@ -62,11 +62,8 @@ async def get_shipments(
 
 @router.get("/new", response_model=List[ShipmentRead])
 async def get_new_shipments(
-    page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     db: AsyncSession = Depends(get_db)
 ):
-    offset = (page - 1) * items_per_page
     result = await db.execute(select(Shipment).where(Shipment.status == "New"))
     db_new_shipments = result.scalars().all()
     if db_new_shipments is None:
