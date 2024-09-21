@@ -21,11 +21,6 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
-
 def change_string(ean_str):
     if len(ean_str) == 12:
         return '0' + ean_str
@@ -47,7 +42,7 @@ def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, A
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    response = requests.get(url, headers=headers, proxies=PROXIES)
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         logging.info("success count")
         return response.json()
@@ -72,7 +67,7 @@ def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API
         "itemsPerPage": 100,
         "currentPage": currentPage,
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         products = response.json()
         return products
@@ -399,12 +394,12 @@ async def refresh_emag_products(marketplace: Marketplace):
         PUBLIC_KEY = marketplace.credentials["firstKey"]
         PRIVATE_KEY = marketplace.credentials["secondKey"]
         logging.info("starting count")
-        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], sign, PUBLIC_KEY, True, proxies=PROXIES)
+        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], sign, PUBLIC_KEY, True)
         if result:
             pages = result['results']['noOfPages']
             currentPage = 1
             while currentPage <= pages:
-                products = get_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["read"], sign, currentPage, PUBLIC_KEY, True, proxies=PROXIES)
+                products = get_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["read"], sign, currentPage, PUBLIC_KEY, True)
                 if products and not products['isError']:
                     insert_products_into_db(products['results'], PUBLIC_KEY)
                     currentPage += 1
@@ -424,7 +419,7 @@ def save(MARKETPLACE_API_URL, ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLIC_KE
             "Content-Type": "application/json"
         }
 
-    response = requests.post(url, data=json.dumps(data), headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=json.dumps(data), headers=headers)
     if response.status_code == 200:
         products = response.json()
         return products
@@ -457,7 +452,7 @@ def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
         "resourceId": product_id,
         "value": stock
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:

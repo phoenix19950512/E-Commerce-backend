@@ -437,11 +437,6 @@ async def get_product_advanced_info(
 
     return product_data
 
-# @router.get('/count')
-# async def get_count():
-#     count = count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False, PROXIES=None)
-#     return
-
 @router.get('/shipment')
 async def  get_shipment_info(
     db: AsyncSession = Depends(get_db),

@@ -17,12 +17,7 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
-
-def get_all_awbs(MARKETPLACE_API_URL, ENDPOINT, READ_ENDPOINT,  API_KEY, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
+def get_all_awbs(MARKETPLACE_API_URL, ENDPOINT, READ_ENDPOINT,  API_KEY, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ENDPOINT}/{READ_ENDPOINT}"
     
     if usePublicKey is True:
@@ -37,7 +32,7 @@ def get_all_awbs(MARKETPLACE_API_URL, ENDPOINT, READ_ENDPOINT,  API_KEY, PROXIES
             "Content-Type": "application/json"
         }
 
-    response = requests.post(url, headers=headers, proxies=PROXIES)
+    response = requests.post(url, headers=headers)
     return response
 
 async def insert_couriers_into_db(couriers, place:str):
@@ -111,5 +106,5 @@ async def refresh_emag_awbs(marketplace: Marketplace):
         endpoint = "/awb"
         read_endpoint = "/read"
 
-        result = get_all_awbs(baseAPIURL, endpoint, read_endpoint, API_KEY, PROXIES=PROXIES)
+        result = get_all_awbs(baseAPIURL, endpoint, read_endpoint, API_KEY)
         # await insert_couriers_into_db(result['results'], marketplace.marketplaceDomain)

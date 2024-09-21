@@ -17,12 +17,7 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
-
-def get_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
+def get_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{Localities_ENDPOINT}/{READ_ENDPOINT}"
     
     if usePublicKey is True:
@@ -41,7 +36,7 @@ def get_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, READ_ENDPOINT, 
         "itmesPerPage": 100,
         "currentPage": currentPage
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         localities = response.json()
         return localities
@@ -49,7 +44,7 @@ def get_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, READ_ENDPOINT, 
         logging.info(f"Failed to retrieve refunds: {response.status_code}")
         return None
 
-def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOINT, API_KEY, PROXIES, PUBLIC_KEY=None, usePublicKey=False):
+def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{Localities_ENDPOINT}/{COUNT_ENGPOINT}"
     if usePublicKey is False:
         api_key = str(API_KEY).replace("b'", '').replace("'", "")
@@ -63,7 +58,7 @@ def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOIN
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    response = requests.get(url, headers=headers, proxies=PROXIES)
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
@@ -159,10 +154,7 @@ async def refresh_emag_localities(marketplace: Marketplace):
         read_endpoint = "/read"
         count_endpoint = "/count"
 
-        # result = get_attachments(API_KEY, PROXIES)
-        # print(result)
-
-        result = count_all_localities(baseAPIURL, endpoint, count_endpoint, API_KEY, PROXIES=PROXIES)
+        result = count_all_localities(baseAPIURL, endpoint, count_endpoint, API_KEY)
         if result:
             pages = result['results']['noOfPages']
             items = result['results']['noOfItems']
@@ -171,7 +163,7 @@ async def refresh_emag_localities(marketplace: Marketplace):
         try:
             current_page  = 1
             while current_page <= int(pages):
-                localities = get_all_localities(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page, PROXIES=PROXIES)
+                localities = get_all_localities(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
                 logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
                 if len(localities['results'] ) == 0:
                     print("empty locality")

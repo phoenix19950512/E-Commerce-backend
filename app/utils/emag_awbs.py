@@ -20,11 +20,6 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
-
 def convert_decimal_to_float(obj):
     if isinstance(obj, Decimal):
         return float(obj)
@@ -44,7 +39,7 @@ def save(MARKETPLACE_API_URL, awb_ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLI
             "Content-Type": "application/json"
         }
 
-    response = requests.post(url, data=json.dumps(data, default=convert_decimal_to_float), headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=json.dumps(data, default=convert_decimal_to_float), headers=headers)
     return response
 
 async def save_awb(marketplace: Marketplace, data, db: AsyncSession):

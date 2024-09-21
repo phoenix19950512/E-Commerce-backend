@@ -24,11 +24,6 @@ MARKETPLACE_URL = 'https://marketplace.emag.ro/'
 MARKETPLACE_API_URL = 'https://marketplace-api.emag.ro/api-3'
 ORDERS_ENDPOINT = "/order"
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
-
 def count_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_KEY, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{COUNT_ENGPOINT}"
     if usePublicKey is False:
@@ -48,7 +43,7 @@ def count_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_KEY, 
     data = json.dumps({
         "modifiedAfter": modifiedAfter_date
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         logging.info("success to count orders")
         return response.json()
@@ -73,7 +68,7 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
     modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
     modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
 
-    response = requests.post(url, headers=headers, proxies=PROXIES)
+    response = requests.post(url, headers=headers)
     if response.status_code == 200:
         logging.info("success to count orders")
         return response.json()
@@ -103,7 +98,7 @@ def get_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "currentPage": currentPage,
         "modifiedAfter": modifiedAfter_date
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         orders = response.json()
         return orders
@@ -132,7 +127,7 @@ def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY
         "itemsPerPage": 100,
         "currentPage": currentPage
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         orders = response.json()
         return orders
@@ -147,7 +142,7 @@ def acknowledge(MARKETPLACE_API_URL, ORDERS_ENDPOINT, API_KEY, order_id):
         "Authorization": f"Basic {api_key}",
         "Content-Type": "application/json"
     }
-    response = requests.get(url, headers=headers, proxies=PROXIES)
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
