@@ -29,6 +29,12 @@ async def get_shipments_count(db: AsyncSession = Depends(get_db)):
     count = result.scalar()
     return count
 
+@router.get("/new_count")
+async def get_new_shipments(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).where(Shipment.status == "New"))
+    db_new_shipments = result.scalars().all()
+    return len(db_new_shipments)
+
 @router.get("/agent")
 async def get_shipments_agent(
     agent: str,
@@ -53,6 +59,19 @@ async def get_shipments(
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
+
+@router.get("/new", response_model=List[ShipmentRead])
+async def get_new_shipments(
+    page: int = Query(1, ge=1, description="Page number"),
+    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    db: AsyncSession = Depends(get_db)
+):
+    offset = (page - 1) * items_per_page
+    result = await db.execute(select(Shipment).where(Shipment.status == "New"))
+    db_new_shipments = result.scalars().all()
+    if db_new_shipments is None:
+        raise HTTPException(status_code=400, detail="New shipment not found")
+    return db_new_shipments
 
 @router.get("/move", response_model=ShipmentRead)
 async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: int, db:AsyncSession = Depends(get_db)):
