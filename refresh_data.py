@@ -199,7 +199,7 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
 async def update_awb(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
-            awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 93, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 15, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
+            awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
                             68, 101, 147, 73, 126, 47, 145, 128, 19]
             logging.info("Start updating AWB status")
 
