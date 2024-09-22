@@ -241,6 +241,7 @@ async def get_awbs(
     db: AsyncSession = Depends(get_db)
 ):
     warehousealiased = aliased(Warehouse)
+    orderaliased = aliased(Order)
     offset = (page - 1) * items_per_page
     query = select(AWB, warehousealiased)
     if status_str:
@@ -251,6 +252,12 @@ async def get_awbs(
         warehousealiased,
         warehousealiased.street == AWB.sender_street
     )
+
+
+    query = query.outerjoin(
+        orderaliased,
+        orderaliased.id == AWB.order_id
+    ).order_by(orderaliased.maximum_date_for_shipment.desc())
     
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
@@ -261,10 +268,11 @@ async def get_awbs(
         raise HTTPException(status_code=404, detail="awbs not found")
     
     awb_data = []
-    for db_awb, warehouse in db_awbs:
+    for db_awb, warehouse, order in db_awbs:
         awb_data.append ({
             **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
             **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
+            **{column.name: getattr(order, column.name) for column in Order.__table__.columns},
         })
     return awb_data
 
