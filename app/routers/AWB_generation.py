@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
-from sqlalchemy import func, or_, cast, Integer
+from sqlalchemy import func, or_, cast, Integer, BigInteger
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
@@ -256,7 +256,7 @@ async def get_awbs(
 
     query = query.outerjoin(
         orderaliased,
-        cast(orderaliased.id, Integer) == AWB.order_id
+        orderaliased.id == cast(AWB.order_id, BigInteger)
     ).order_by(orderaliased.maximum_date_for_shipment.desc())
     
     if warehouse_id:
