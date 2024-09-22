@@ -220,6 +220,8 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
 
                     for awb in db_awbs:
                         awb_number = awb.awb_number
+                        if awb_number == "4EMGLN79599035":
+                            logging.info(f"Success Find awb {awb_number}")
                         try:
                             # Track and update awb status
                             awb_status = await tracking(awb_number)
