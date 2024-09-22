@@ -253,7 +253,6 @@ async def get_awbs(
         warehousealiased.street == AWB.sender_street
     )
 
-
     query = query.outerjoin(
         orderaliased,
         orderaliased.id == cast(AWB.order_id, BigInteger)
@@ -273,9 +272,9 @@ async def get_awbs(
             **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
             **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
             "order": {
-                **{column.name: getattr(order, column.name) for column in Order.__table__.columns},
-                }
-            })
+                **{column.name: getattr(order, column.name) for column in Order.__table__.columns}
+            }
+        })
     return awb_data
 
 @router.get("/warehouse")
