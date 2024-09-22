@@ -8,6 +8,7 @@ from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
 from app.models.product import Product
+from app.models.invoice import Invoice
 from app.models.internal_product import Internal_Product
 from app.models.awb import AWB
 from app.models.marketplace import Marketplace
@@ -290,6 +291,14 @@ async def read_orders(
     for awb in awbs:
         awb_dict[awb.order_id].append(awb)
 
+    invoice_query = select(Invoice).where(cast(Invoice.order_id, BigInteger) == any_(order_ids), Invoice.replacement_id == 0)
+    invoice_result = await db.execute(invoice_query)
+    invoices = invoice_result.scalars().all()
+
+    invoice_dict = defaultdict(list)
+    for invoice in invoices:
+        invoice_dict[invoice.order_id].append(invoice)
+
     orders_data = []
 
     for db_order in db_orders:
@@ -334,7 +343,8 @@ async def read_orders(
             "total_price": total,
             "ean": ean,
             "stock": stock,
-            "awb": awb_dict[db_order.id]
+            "awb": awb_dict[db_order.id],
+            "invoice": invoice_dict[db_order.id]
         })
 
     return orders_data

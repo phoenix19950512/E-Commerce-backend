@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import aliased
-from sqlalchemy import func, or_, cast, Integer, BigInteger
+from sqlalchemy import func, or_, cast, Integer, BigInteger, and_
 from typing import List
 from app.database import get_db
 from app.models.awb import AWB
@@ -242,6 +242,7 @@ async def get_awbs(
 ):
     warehousealiased = aliased(Warehouse)
     orderaliased = aliased(Order)
+    productaliased = aliased(Product)
     offset = (page - 1) * items_per_page
     query = select(AWB, warehousealiased, orderaliased)
     if status_str:
@@ -257,6 +258,14 @@ async def get_awbs(
         orderaliased,
         orderaliased.id == cast(AWB.order_id, BigInteger)
     ).order_by(orderaliased.maximum_date_for_shipment.desc())
+
+    # query = query.outerjoin(
+    #     productaliased,
+    #     and_(
+    #         productaliased.id == any_(orderaliased.product_id),
+    #         productaliased.product_marketplace == orderaliased.order_market_place
+    #     )
+    # )
     
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
