@@ -277,11 +277,18 @@ async def get_awbs(
     
     awb_data = []
     for db_awb, warehouse, order in db_awbs:
-        awb_data.append ({
-            **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
-            **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
-            "order": order
-        })
+        if warehouse:
+            awb_data.append ({
+                **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
+                **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
+                "order": order
+            })
+        else:
+            awb_data.append({
+                **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
+                **{column.name: getattr(None, column.name) for column in Warehouse.__table__.columns},
+                "order": order
+            })
     return awb_data
 
 @router.get("/warehouse")
