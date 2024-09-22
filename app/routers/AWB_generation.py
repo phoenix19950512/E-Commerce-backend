@@ -243,7 +243,7 @@ async def get_awbs(
     warehousealiased = aliased(Warehouse)
     orderaliased = aliased(Order)
     offset = (page - 1) * items_per_page
-    query = select(AWB, warehousealiased)
+    query = select(AWB, warehousealiased, orderaliased)
     if status_str:
         status_list = [int(status.strip()) for status in status_str.split(",")]
         query = query.where(AWB.awb_status == any_(status_list))
