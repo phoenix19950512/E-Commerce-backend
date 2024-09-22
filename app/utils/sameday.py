@@ -16,10 +16,10 @@ import httpx
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-}
+# PROXIES = {
+#     'http://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+#     'https://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
+# }
 
 
 async def tracking(awb_number):
@@ -30,7 +30,7 @@ async def tracking(awb_number):
         "X-Auth-TOKEN": api_key,
     }
 
-    async with httpx.AsyncClient(proxies=PROXIES, timeout=10) as client:
+    async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(f"{url}/{awb_number}/status?_format=json", headers=headers)
         
         if response.status_code == 200:
