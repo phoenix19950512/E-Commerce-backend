@@ -271,9 +271,7 @@ async def get_awbs(
         awb_data.append ({
             **{column.name: getattr(db_awb, column.name) for column in AWB.__table__.columns},
             **{column.name: getattr(warehouse, column.name) for column in Warehouse.__table__.columns},
-            "order": {
-                **{column.name: getattr(order, column.name) for column in Order.__table__.columns}
-            }
+            "order": order
         })
     return awb_data
 
