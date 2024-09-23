@@ -80,6 +80,11 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 #                     continue
 
 @app.on_event("startup")
+@repeat_every(seconds=86400)
+def backup_db():
+    export_to_csv()
+
+@app.on_event("startup")
 @repeat_every(seconds=900)
 async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
     async for db in get_db():
@@ -252,11 +257,6 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                     break
 
             logging.info("AWB status update completed")
-
-@app.on_event("startup")
-@repeat_every(seconds=86400)
-def backup_db():
-    export_to_csv()
 
 if __name__ == "__main__":
     import uvicorn
