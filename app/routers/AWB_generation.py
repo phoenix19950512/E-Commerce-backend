@@ -167,6 +167,7 @@ async def get_awb_status(
 async def count_awb(
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description='warehouse_id'),
+    flag: bool = Query(False, description="Generated today or not"),
     db: AsyncSession = Depends(get_db)
 ):
     warehouseAlias = aliased(Warehouse)
@@ -178,6 +179,9 @@ async def count_awb(
         warehouseAlias,
         warehouseAlias.street == AWB.sender_street
     )
+    if flag == False:
+        yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
+        query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
     if warehouse_id:
         query = query.where(warehouseAlias.id == warehouse_id)
     result = await db.execute(query)
