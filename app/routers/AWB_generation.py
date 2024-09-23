@@ -273,7 +273,7 @@ async def get_awbs(
     # )
     if flag == False:
         yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
-        query = query.where(AWB.awb_date <= datetime(yesterday.year(), yesterday.month(), yesterday.day(), 23, 59, 59))
+        query = query.where(AWB.awb_date <= datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
         
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
