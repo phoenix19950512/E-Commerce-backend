@@ -18,6 +18,7 @@ from app.utils.emag_awbs import *
 from app.utils.altex_awb import save_altex_awb
 from app.utils.sameday import tracking
 from sqlalchemy import any_
+import datetime
 
 router = APIRouter()
 
@@ -241,6 +242,7 @@ async def get_awbs(
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description="warehouse_id"),
+    flag: bool = Query(False, description="Generated today or not"),
     db: AsyncSession = Depends(get_db)
 ):
     warehousealiased = aliased(Warehouse)
@@ -269,7 +271,10 @@ async def get_awbs(
     #         productaliased.product_marketplace == orderaliased.order_market_place
     #     )
     # )
-    
+    if flag == False:
+        yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
+        query = query.where(AWB.awb_date <= datetime(yesterday.year(), yesterday.month(), yesterday.day(), 23, 59, 59))
+        
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
     query = query.offset(offset).limit(items_per_page)
