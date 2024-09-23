@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy import any_
 from app.routers import auth, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, warehouse
 from app.database import Base, engine
+from app.backup import export_to_csv, upload_to_google_sheets
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.emag_products import refresh_emag_products, post_stock_emag
@@ -251,6 +252,11 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                     break
 
             logging.info("AWB status update completed")
+
+@app.on_event("startup")
+@repeat_every(seconds=86400)
+def backup_db():
+    export_to_csv()
 
 if __name__ == "__main__":
     import uvicorn
