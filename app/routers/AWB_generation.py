@@ -108,10 +108,13 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         db_awb.reservation_id = results.get('reservation_id') if results.get('reservation_id') else 0
         db_awb.courier_id = results.get('courier_id') if results.get('courier_id') else 0
         db_awb.courier_name = results.get('courier_name') if results.get('courier_name') else ""
+       
         if results.get('awb'):
             result_awb = results.get('awb')[0]
             db_awb.awb_number = result_awb.get('awb_number') if result_awb.get('awb_number') else ""
             db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
+        
+        db_awb.awb_marketplace = marketplace
         db.add(db_awb)
         await db.commit()
         await db.refresh(db_awb)
