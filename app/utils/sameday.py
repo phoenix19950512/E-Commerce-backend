@@ -22,20 +22,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # }
 
 
-async def tracking(awb_number):
+async def tracking(awb_barcode):
     api_key = "84722802fc63bd2ebc424e18acfb5a55b77db096"
-    url = "https://api.sameday.ro/api/client/awb"
+    url = "https://api.sameday.ro/api/client/parcel"
     
     headers = {
         "X-Auth-TOKEN": api_key,
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.get(f"{url}/{awb_number}/status?_format=json", headers=headers)
+        response = await client.get(f"{url}/{awb_barcode}/status-history", headers=headers)
         
         if response.status_code == 200:
             result = response.json()
-            return int(result.get('expeditionStatus').get('statusId'))
+            return result
         else:
             print("Status Code:", response.status_code)
             print("Error:", response.json())

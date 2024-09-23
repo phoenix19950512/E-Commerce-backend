@@ -219,18 +219,19 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         break
 
                     for awb in db_awbs:
-                        awb_number = awb.awb_number
-                        if awb_number == "4EMGLN79599035":
-                            logging.info(f"Success Find awb {awb_number}")
+                        awb_barcode = awb.awb_barcode
                         try:
                             # Track and update awb status
-                            awb_status = await tracking(awb_number)
+                            awb_status_result = await tracking(awb_barcode)
+                            awb_status = awb_status_result.get('expeditionStatus').get('statusId')
+                            pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
                             if awb_status is not None:
                                 awb.awb_status = awb_status
+                                awb.pickedup = pickedup
                             else:
-                                logging.error(f"Invalid status for AWB {awb_number}, skipping update")
+                                logging.error(f"Invalid status for AWB {awb_barcode}, skipping update")
                         except Exception as track_ex:
-                            logging.error(f"Tracking API error for AWB {awb_number}: {str(track_ex)}")
+                            logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                             continue  # Continue to next AWB if tracking fails
 
                     try:
