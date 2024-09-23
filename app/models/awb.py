@@ -1,5 +1,5 @@
 # app/models/awb.py
-from sqlalchemy import Column, Integer, String, BigInteger, DECIMAL, PrimaryKeyConstraint, DateTime
+from sqlalchemy import Column, Integer, String, BigInteger, DECIMAL, PrimaryKeyConstraint, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -43,6 +43,7 @@ class AWB(Base):
     awb_barcode = Column(String, nullable=True)
     awb_marketplace = Column(String, nullable=True)
     awb_status = Column(Integer, default_value=0)
+    pickedup = Column(Boolean, defaulf_value=False)
     awb_date = Column(DateTime, nullable=True)
     awb_trigger = Column(String, nullable=True)
 

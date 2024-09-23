@@ -48,7 +48,7 @@ async def get_products_count(
         query = query.filter(Internal_Product.supplier_id == any_(supplier_id_list))
     
     query = query.filter(
-        (cast(Internal_Product.id, String).ilike(f"%{search_text}")) |
+        (cast(Internal_Product.id, String).ilike(f"%{search_text}%")) |
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
         (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id)

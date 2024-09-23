@@ -44,6 +44,7 @@ class AWBBase(BaseModel):
     awb_status: Optional[int] = 0
     awb_date: Optional[datetime] = None
     awb_trigger: Optional[str] = None
+    pickedup: Optional[bool] = False
 
 class AWBCreate(AWBBase):
     pass
