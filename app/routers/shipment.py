@@ -75,7 +75,7 @@ async def get_extra_info(
     db: AsyncSession = Depends(get_db)
 ):
     query = text("""
-        SELECT id, title From orders
+        SELECT id, title From shipments
     """)
     
     result = await db.execute(query)
