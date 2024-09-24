@@ -105,6 +105,8 @@ async def read_new_orders(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
+        
+    query = query.distinct(Order.id)
     result = await db.execute(query)
     db_orders = result.scalars().all()
     
