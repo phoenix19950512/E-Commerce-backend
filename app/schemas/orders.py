@@ -64,6 +64,7 @@ class OrderBase(BaseModel):
     bank: Optional[str] = None
     iban: Optional[str] = None
     email: Optional[str] = None
+    product_voucher_split: Optional[List[str]] = None
     registration_number: Optional[str] = None
 
 class OrderCreate(OrderBase):

@@ -64,4 +64,5 @@ class Order(Base):
     bank = Column(String, nullable=True)
     iban = Column(String, nullable=True)
     email = Column(String, nullable=True)
+    product_voucher_split = Column(ARRAY(String), nullable=True)
     registration_number = Column(String, nullable=True)

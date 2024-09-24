@@ -224,9 +224,10 @@ async def insert_orders(orders, marketplace: Marketplace):
                 bank,
                 iban,
                 email,
+                product_voucher_split,
                 registration_number
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -248,6 +249,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
                 payment_mode_id = EXCLUDED.payment_mode_id
+                product_voucher_split = EXCLUDED.product_voucher_split
         """).format(sql.Identifier("orders"))
         
         for order in orders:
@@ -324,6 +326,7 @@ async def insert_orders(orders, marketplace: Marketplace):
             finalization_date = order.get('finalization_date')
             details = json.dumps(order.get('details'))
             payment_mode_id = order.get('payment_mode_id')
+            product_voucher_split = [str(product.get('product_voucher_split')) for product in order.get('products')]
             order_martet_place = marketplace.marketplaceDomain
             
             values = (
@@ -388,6 +391,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 bank,
                 iban,
                 email,
+                product_voucher_split,
                 registration_number
             )
 

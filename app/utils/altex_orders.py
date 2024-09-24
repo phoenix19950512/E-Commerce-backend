@@ -145,9 +145,10 @@ async def insert_orders(orders, mp_name:str):
                 bank,
                 iban,
                 email,
+                product_voucher_split,
                 registration_number
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -213,6 +214,7 @@ async def insert_orders(orders, mp_name:str):
             payment_status = 0
             products_id = [str(product.get('product_id')) for product in order.get('products')]
             quantity = [product.get('quantity') for product in order.get('products')]
+            product_voucher_split = ["" for product in order.get('products')]
             sale_price = [product.get('selling_price') for product in order.get('products')]
             shipping_tax = Decimal(order.get('shipping_tax'))
             shipping_tax_voucher_split = ""
@@ -298,6 +300,7 @@ async def insert_orders(orders, mp_name:str):
                 bank,
                 iban,
                 email,
+                product_voucher_split,
                 registration_number
             )
 
