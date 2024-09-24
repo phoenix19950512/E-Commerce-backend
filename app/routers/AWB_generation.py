@@ -137,8 +137,8 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         return {"error": "Failed to process AWB", "message": str(e)}
 
 @router.get("/backup")
-def get_awb_status():
-    export_to_csv()
+async def get_awb_status():
+    await export_to_csv()
 
 @router.get("/count")
 async def count_awb(
