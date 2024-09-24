@@ -205,6 +205,7 @@ async def count_new_orders(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id == 0)
+        query = query.group_by(Order.id)
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
