@@ -106,7 +106,6 @@ async def read_new_orders(
             )
         )
         
-    query = query.distinct(Order.id)
     result = await db.execute(query)
     db_orders = result.scalars().all()
     
@@ -229,6 +228,7 @@ async def read_orders(
     status: int = Query(-1, description="Status of the order"),
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description="warehouse_id"),
+    no_stock: bool = Query(False, description="No stock"),
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -259,6 +259,8 @@ async def read_orders(
     if warehouse_id == -1:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
+        if no_stock:
+            query = query.filter(Internal_productAlias.stock == 0)
         query = query.filter(Internal_productAlias.warehouse_id != 0)
         query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
@@ -267,10 +269,14 @@ async def read_orders(
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id == 0)
+        if no_stock:
+            query = query.filter(Internal_productAlias.stock == 0)
         query = query.group_by(Order.id)
     elif warehouse_id and warehouse_id > 0:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
+        if no_stock:
+            query = query.filter(Internal_productAlias.stock == 0)
         query = query.group_by(Order.id)
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         query = query.having(
