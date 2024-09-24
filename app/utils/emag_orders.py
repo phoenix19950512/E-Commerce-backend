@@ -248,7 +248,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
-                payment_mode_id = EXCLUDED.payment_mode_id
+                payment_mode_id = EXCLUDED.payment_mode_id,
                 product_voucher_split = EXCLUDED.product_voucher_split
         """).format(sql.Identifier("orders"))
         
