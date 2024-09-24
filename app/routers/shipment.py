@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
-from sqlalchemy import any_
+from sqlalchemy import any_, text
 from typing import List
 from app.database import get_db
 from app.models.shipment import Shipment
@@ -69,6 +69,20 @@ async def get_new_shipments(
     if db_new_shipments is None:
         raise HTTPException(status_code=400, detail="New shipment not found")
     return db_new_shipments
+
+@router.get("/extra") 
+async def get_extra_info(
+    db: AsyncSession = Depends(get_db)
+):
+    query = text("""
+        SELECT id, title From orders
+    """)
+    
+    result = await db.execute(query)
+    extra_info = result.fetchall()
+    
+    extra_info_list = [{"id": row[0], "title": row[1]} for row in extra_info]
+    return extra_info_list
 
 @router.get("/move", response_model=ShipmentRead)
 async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: int, db:AsyncSession = Depends(get_db)):
