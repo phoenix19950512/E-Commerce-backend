@@ -14,6 +14,7 @@ from app.models.product import Product
 from app.models.warehouse import Warehouse
 from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
+from app.backup import export_to_csv
 from app.utils.emag_awbs import *
 from app.utils.altex_awb import save_altex_awb
 from app.utils.sameday import tracking
@@ -135,33 +136,9 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
         logging.info(f"Error processing AWB: {str(e)}")
         return {"error": "Failed to process AWB", "message": str(e)}
 
-@router.get("/awb_status")
-async def get_awb_status(
-    page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
-    db: AsyncSession = Depends(get_db)
-):
-    offset = (page - 1) * items_per_page
-    result = await db.execute(select(func.count(AWB.awb_number)).where(AWB.awb_status == 0))
-    number = result.scalar()
-
-    result = await db.execute(select(AWB).where(AWB.awb_status == 0).offset(offset).limit(items_per_page))
-    db_awbs = result.scalars().all()
-    if db_awbs is None:
-        raise HTTPException(status_code=404, detail="awbs not found")
-    cnt = 1
-    
-    for awb in db_awbs:
-        awb_number = awb.awb_number
-        logging.info(f"!@##@!#@!#@#@ {cnt} awb_number is {awb_number}")
-        cnt += 1
-        status = await tracking(awb_number)
-        logging.info(f"!@##@!#@!#@#@ Status is {status}")
-        awb.awb_status = status
-        
-    await db.commit()
-    
-    return {"message": "Successfully updated AWB statuses", "total_awbs": number, "updated_records": cnt - 1}
+@router.get("/backup")
+def get_awb_status():
+    export_to_csv()
 
 @router.get("/count")
 async def count_awb(

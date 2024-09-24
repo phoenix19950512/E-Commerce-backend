@@ -22,7 +22,7 @@ def export_to_csv():
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)  # Move to the start of the StringIO buffer
-
+        logging.info(f"Success {table} backup")
         upload_to_google_sheets(csv_buffer, file_name)  # Pass buffer instead of path
 
 def upload_to_google_sheets(csv_buffer, file_name):
