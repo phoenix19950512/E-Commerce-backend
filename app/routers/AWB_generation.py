@@ -193,7 +193,10 @@ async def count_awb_not_shipped(
     db: AsyncSession = Depends(get_db)
 ):
     status_list = [1, 18, 23, 73, 74]
-    result = await db.execute(select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list)))
+    query = select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list))
+    yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
+    query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
+    result = await db.execute(query)
     count = result.scalar()
 
     return count
