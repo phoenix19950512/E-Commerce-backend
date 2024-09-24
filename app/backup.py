@@ -16,21 +16,23 @@ async def export_to_csv():
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     
     async with async_session() as session:
-        inspector = inspect(engine)
-        table_names = inspector.get_table_names()
+        async with session.begin():  # Ensure session is active
+            conn = await session.connection()  # Get a connection
+            inspector = inspect(conn)  # Inspect the connection
+            
+            table_names = inspector.get_table_names()
+            for table in table_names:
+                backup_date = datetime.datetime.now().strftime("%Y%m%d")
+                file_name = f"{table}_{backup_date}.csv"
+                query = f'SELECT * FROM {table}'
+                df = pd.read_sql(query, con=conn)
 
-        for table in table_names:
-            backup_date = datetime.datetime.now().strftime("%Y%m%d")
-            file_name = f"{table}_{backup_date}.csv"
-            query = f'SELECT * FROM {table}'
-            df = pd.read_sql(query, con=session.bind)
-
-            # Use StringIO to create an in-memory CSV
-            csv_buffer = io.StringIO()
-            df.to_csv(csv_buffer, index=False)
-            csv_buffer.seek(0)  # Move to the start of the StringIO buffer
-            logging.info(f"Success {table} backup")
-            await upload_to_google_sheets(csv_buffer, file_name)
+                # Use StringIO to create an in-memory CSV
+                csv_buffer = io.StringIO()
+                df.to_csv(csv_buffer, index=False)
+                csv_buffer.seek(0)  # Move to the start of the StringIO buffer
+                logging.info(f"Success {table} backup")
+                await upload_to_google_sheets(csv_buffer, file_name)
             
 async def upload_to_google_sheets(csv_buffer, file_name):
     SCOPES = ['https://www.googleapis.com/auth/drive.file']
