@@ -126,6 +126,7 @@ async def insert_products(products, mp_name: str):
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
+                id = EXCLUDED.id,
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
                 market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place)))
@@ -269,6 +270,7 @@ async def insert_products_into_db(products, username, place):
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean, product_marketplace) DO UPDATE SET
+                id = EXCLUDED.id,
                 sale_price = EXCLUDED.sale_price,
                 stock = EXCLUDED.stock
         """).format(sql.Identifier("products"))

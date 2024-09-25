@@ -105,6 +105,9 @@ async def get_replacements(
             for product_id in product_ids:
                 result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place))
                 product = result.scalars().first()
+                if product is None:
+                    result = await db.execute(select(Product).where(Product.id == product_id))
+                    product = result.scalars().first()
                 ean.append(product.ean)
         replacement_data.append({
             **{column.name: getattr(replacement, column.name) for column in replacement.__table__.columns},

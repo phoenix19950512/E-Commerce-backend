@@ -278,28 +278,6 @@ async def get_awbs(
         awb_data.append(awb_info)
     return awb_data
 
-@router.get("/warehouse")
-async def get_warehouse(
-    order_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    db_order = result.scalars().first()
-    db_product_list = db_order.product_id
-    
-    result = await db.execute(select(Internal_Product).where(Internal_Product.id == any_(db_product_list)))
-    db_products = result.scalars().all()
-
-    warehouse_id_list = []
-
-    for product in db_products:
-        warehouse_id_list.append(product.warehouse_id)
-
-    result = await db.execute(select(Warehouse).where(Warehouse.id == any_(warehouse_id_list)))
-    db_warehouses = result.scalars().all()
-
-    return db_warehouses
-
 @router.put("/{awb_number}", response_model=AWBRead)
 async def update_awbs(awb_number: str, awb: AWBUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
