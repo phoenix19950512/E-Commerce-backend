@@ -232,8 +232,12 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         try:
                             # Track and update awb status
                             awb_status_result = await tracking(awb_barcode)
-                            history_list = awb_status_result.get('parcelHistory')
                             pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
+                            weight = awb_status_result.get('parcelSummary').get('parcelWeight')
+                            length = awb_status_result.get('parcelSummary').get('parcelLength')
+                            width = awb_status_result.get('parcelSummary').get('parcelWidth')
+                            height = awb_status_result.get('parcelSummary').get('parcelHeight')
+                            history_list = awb_status_result.get('parcelHistory')
                             statusID = []
                             statusDate = []
                             for history in history_list:
@@ -244,6 +248,10 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                             awb_status = statusID[latest_index]
                             awb.awb_status = awb_status
                             awb.pickedup = pickedup
+                            awb.weight = weight
+                            awb.height = height
+                            awb.width = width
+                            awb.length = length
                         except Exception as track_ex:
                             logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                             continue  # Continue to next AWB if tracking fails

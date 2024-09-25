@@ -45,6 +45,10 @@ class AWBBase(BaseModel):
     awb_date: Optional[datetime] = None
     awb_trigger: Optional[str] = None
     pickedup: Optional[bool] = False
+    length: Optional[Decimal] = None
+    width: Optional[Decimal] = None
+    height: Optional[Decimal] = None
+    
 
 class AWBCreate(AWBBase):
     pass

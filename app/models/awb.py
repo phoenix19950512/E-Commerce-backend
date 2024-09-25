@@ -46,6 +46,10 @@ class AWB(Base):
     pickedup = Column(Boolean, defaulf_value=False)
     awb_date = Column(DateTime, nullable=True)
     awb_trigger = Column(String, nullable=True)
+    awb_creation_date = Column(String, nullable=True)
+    length = Column(DECIMAL, nullable=True)
+    width = Column(DECIMAL, nullable=True)
+    height = Column(DECIMAL, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number'),
