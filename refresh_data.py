@@ -245,7 +245,9 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                                 statusDate.append(history.get('statusDate'))
                             parsed_dates = [datetime.fromisoformat(date) for date in statusDate]
                             latest_index = parsed_dates.index(max(parsed_dates))
+                            first_index = parsed_dates.index(min(parsed_dates))
                             awb_status = statusID[latest_index]
+                            awb.awb_creation_date = statusDate[first_index]
                             awb.awb_status = awb_status
                             awb.pickedup = pickedup
                             awb.weight = weight
