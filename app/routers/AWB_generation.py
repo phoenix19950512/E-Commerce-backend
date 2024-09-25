@@ -300,9 +300,9 @@ async def get_warehouse(
 
     return db_warehouses
 
-@router.put("/{awb_id}", response_model=AWBRead)
-async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB).filter(AWB.id == awb_id))
+@router.put("/{awb_number}", response_model=AWBRead)
+async def update_awbs(awb_number: str, awb: AWBUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awbs not found")
@@ -313,9 +313,9 @@ async def update_awbs(awb_id: int, awb: AWBUpdate, db: AsyncSession = Depends(ge
     await db.refresh(db_awb)
     return db_awb
 
-@router.delete("/{awbs__id}", response_model=AWBRead)
-async def delete_awbs(awbs_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB).filter(AWB.id == awbs_id))
+@router.delete("/{awb_number}", response_model=AWBRead)
+async def delete_awbs(awb_number: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
     awb = result.scalars().first()
     if awb is None:
         raise HTTPException(status_code=404, detail="awbs not found")
