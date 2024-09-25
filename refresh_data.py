@@ -33,6 +33,7 @@ from sqlalchemy.orm import Session
 import ssl
 import logging
 from sqlalchemy import update
+from datetime import datetime
 
 
 
@@ -231,13 +232,18 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         try:
                             # Track and update awb status
                             awb_status_result = await tracking(awb_barcode)
-                            awb_status = awb_status_result.get('parcelHistory')[0].get('statusId')
+                            history_list = awb_status_result.get('parcelHistory')
                             pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
-                            if awb_status is not None:
-                                awb.awb_status = awb_status
-                                awb.pickedup = pickedup
-                            else:
-                                logging.error(f"Invalid status for AWB {awb_barcode}, skipping update")
+                            statusID = []
+                            statusDate = []
+                            for history in history_list:
+                                statusID.append(history.get('statusId'))
+                                statusDate.append(history.get('statusDate'))
+                            parsed_dates = [datetime.fromisoformat(date) for date in statusDate]
+                            latest_index = parsed_dates.index(max(parsed_dates))
+                            awb_status = statusID[latest_index]
+                            awb.awb_status = awb_status
+                            awb.pickedup = pickedup
                         except Exception as track_ex:
                             logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                             continue  # Continue to next AWB if tracking fails
