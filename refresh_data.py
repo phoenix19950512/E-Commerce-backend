@@ -231,7 +231,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         try:
                             # Track and update awb status
                             awb_status_result = await tracking(awb_barcode)
-                            awb_status = awb_status_result.get('expeditionStatus').get('statusId')
+                            awb_status = awb_status_result.get('parcelHistory')[0].get('statusId')
                             pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
                             if awb_status is not None:
                                 awb.awb_status = awb_status
