@@ -217,6 +217,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                     result = await session.execute(
                         select(AWB)
                         .where(AWB.awb_status == any_(awb_status_list))
+                        .order_by(AWB.order_id.asc())
                         .offset(offset)
                         .limit(batch_size)
                     )
