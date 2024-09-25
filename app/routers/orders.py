@@ -275,6 +275,8 @@ async def read_orders(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
+    else:
+        query = query.group_by(Order.id)
             
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
