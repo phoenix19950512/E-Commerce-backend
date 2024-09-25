@@ -145,6 +145,7 @@ async def count_awb(
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description='warehouse_id'),
     flag: bool = Query(False, description="Generated today or not"),
+    pickup: bool = Query(False, description="Pickup awb"),
     db: AsyncSession = Depends(get_db)
 ):
     warehouseAlias = aliased(Warehouse)
@@ -161,6 +162,8 @@ async def count_awb(
         query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
     if warehouse_id:
         query = query.where(warehouseAlias.id == warehouse_id)
+    if pickup == False:
+        query = query.where(AWB.awb_status == False)
     result = await db.execute(query)
     db_awb = result.scalars().all()
     return len(db_awb)
@@ -227,6 +230,7 @@ async def get_awbs(
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description="warehouse_id"),
     flag: bool = Query(False, description="Generated today or not"),
+    pickup: bool = Query(False, description="Pickup awb"),
     db: AsyncSession = Depends(get_db)
 ):
     warehousealiased = aliased(Warehouse)
@@ -261,6 +265,10 @@ async def get_awbs(
         
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
+        
+        
+    if pickup == False:
+        query = query.where(AWB.awb_status == False)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_awbs = result.all()
