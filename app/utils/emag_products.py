@@ -441,6 +441,8 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
     return result
 
 def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
+    
+    
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
