@@ -275,6 +275,12 @@ async def get_awbs(
         
         awb_info.update(warehouse_info)
         awb_info["order"] = order
+        if db_awb.number < 0:
+            result = await db.execute(select(Replacement).where(Replacement.order_id == db_awb.order_id, Replacement.number == -db_awb.number))
+            replacement = result.scalars().first()
+            awb_info["replacement"] = replacement
+        else:
+            awb_info["replacement"] = ""
         awb_data.append(awb_info)
     return awb_data
 
