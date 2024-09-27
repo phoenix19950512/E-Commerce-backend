@@ -24,6 +24,7 @@ class MarketplaceBase(BaseModel):
     credentials: Optional[Credentials] = None
     image_url: Optional[str] = None
     vat: Optional[int] = None
+    user_id: Optional[int] = Nones
     proxy: Optional[str] = None
     products_crud: CRUDOperations = CRUDOperations(
         endpoint="/product_offer",

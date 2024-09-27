@@ -89,7 +89,7 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 
 @app.on_event("startup")
 @repeat_every(seconds=900)
-async def refresh_orders_data(user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
+async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting orders refresh")
@@ -104,7 +104,7 @@ async def refresh_orders_data(user: User = Depends(get_current_user), db:AsyncSe
                     await refresh_altex_orders(marketplace)
                 else:
                     logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace, user)
+                    await refresh_emag_products(marketplace)
                     logging.info("Refresh orders from marketplace")
                     await refresh_emag_orders(marketplace)
 

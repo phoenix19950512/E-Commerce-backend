@@ -16,3 +16,4 @@ class Marketplace(Base):
     image_url = Column(String, nullable=False)
     vat = Column(Integer, nullable=True)
     proxy = Column(String, nullable=True)
+    user_id = Column(Integer, nullable=True)

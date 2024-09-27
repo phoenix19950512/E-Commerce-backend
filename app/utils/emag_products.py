@@ -366,14 +366,14 @@ async def insert_products_into_db(products, place, user_id):
     except Exception as e:
         logging.info(f"Failed to insert products into database: {e}")
 
-async def refresh_emag_products(marketplace: Marketplace, user: User):
+async def refresh_emag_products(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
     endpoint = "/product_offer"
     count_point = "/count"
     read_endpoint = "/read"
-    
+    user_id = marketplace.user_id
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
@@ -392,8 +392,8 @@ async def refresh_emag_products(marketplace: Marketplace, user: User):
 
                 logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
                 if products and not products.get('isError'):
-                    await insert_products_into_db(products['results'], marketplace.marketplaceDomain, user.id)
-                    await insert_products(products['results'], marketplace.marketplaceDomain, user.id)
+                    await insert_products_into_db(products['results'], marketplace.marketplaceDomain, user_id)
+                    await insert_products(products['results'], marketplace.marketplaceDomain, user_id)
                 currentPage += 1
         except Exception as e:
             print('++++++++++++++++++++++++++++++++++++++++++')
