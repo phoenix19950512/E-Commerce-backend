@@ -173,12 +173,14 @@ async def count_awb(
 
 @router.get("/count/not_shipped")
 async def count_awb_not_shipped(
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     status_list = [1, 18, 23, 73, 74]
     query = select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list))
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
     query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
+    query = query.where(AWB.user_id == user.id)
     result = await db.execute(query)
     count = result.scalar()
 
@@ -186,15 +188,17 @@ async def count_awb_not_shipped(
 @router.get("/order_id")
 async def get_awbs_order_id(
     order_id: int,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.user_id == user))
     db_awbs = result.scalars().all()
     return db_awbs
 
 @router.get("/awb_barcode")
 async def get_order(
     awb_number: str,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -206,7 +210,7 @@ async def get_order(
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awb not found")
     order_id = db_awb.order_id
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user.id))
     db_order = result.scalars().first()
     if db_order is None:
         return HTTPException(status_code=404, detail=f"{order_id} not found")
@@ -233,6 +237,7 @@ async def get_awbs(
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description="warehouse_id"),
     flag: bool = Query(False, description="Generated today or not"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     warehousealiased = aliased(Warehouse)
@@ -267,7 +272,8 @@ async def get_awbs(
         
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
-        
+    
+    query = query.where(AWB.user_id == user.id)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_awbs = result.all()
@@ -291,8 +297,8 @@ async def get_awbs(
     return awb_data
 
 @router.put("/{awb_number}", response_model=AWBRead)
-async def update_awbs(awb_number: str, awb: AWBUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
+async def update_awbs(awb_number: str, awb: AWBUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user.id))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awbs not found")
@@ -304,7 +310,7 @@ async def update_awbs(awb_number: str, awb: AWBUpdate, db: AsyncSession = Depend
     return db_awb
 
 @router.delete("/{awb_number}", response_model=AWBRead)
-async def delete_awbs(awb_number: str, db: AsyncSession = Depends(get_db)):
+async def delete_awbs(awb_number: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
     awb = result.scalars().first()
     if awb is None:
