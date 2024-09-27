@@ -12,6 +12,7 @@ class Damaged_goodBase(BaseModel):
     product_code: Optional[List[str]] = None
     quantity: Optional[List[int]] = None
     awb: Optional[str] = None
+    user_id: Optional[int] = None
     
 class Damaged_goodCreate(Damaged_goodBase):
     pass

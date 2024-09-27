@@ -11,6 +11,7 @@ class WarehouseBase(BaseModel):
     locality_id: Optional[str] = None
     street: Optional[str] = None
     zipcode: Optional[str] = None
+    user_id: Optional[int] = None
 
 class WarehouseCreate(WarehouseBase):
     pass

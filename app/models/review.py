@@ -13,7 +13,7 @@ class Review(Base):
     moderated_by = Column(Text, nullable=True)
     rating = Column(Integer, nullable=True)
     brand_id = Column(Integer, nullable=True)
-    review_marketplace = Column(Text, nullable=True)    
+    review_marketplace = Column(Text, nullable=True)   
 
     __table_args__ = (
         PrimaryKeyConstraint('id', 'review_marketplace', 'review_id', name='pk_review_id_review_marketplace'),  # Updated composite primary key

@@ -49,6 +49,7 @@ class AWBBase(BaseModel):
     length: Optional[Decimal] = None
     width: Optional[Decimal] = None
     height: Optional[Decimal] = None
+    user_id: Optional[int] = None
     
 
 class AWBCreate(AWBBase):

@@ -11,6 +11,7 @@ class CouriersBase(BaseModel):
     created: Optional[datetime] = None
     status: Optional[int] = None
     market_place: str
+    user_id: Optional[int] = None
 
 class CouriersCreate(CouriersBase):
     pass

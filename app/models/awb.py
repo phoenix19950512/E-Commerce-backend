@@ -50,6 +50,7 @@ class AWB(Base):
     length = Column(DECIMAL, nullable=True)
     width = Column(DECIMAL, nullable=True)
     height = Column(DECIMAL, nullable=True)
+    user_id = Column(Integer, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('order_id', 'number', name='pk_order_id_number'),

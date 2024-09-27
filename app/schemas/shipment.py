@@ -39,6 +39,7 @@ class ShipmentBase(BaseModel):
     other_cost: Optional[List[Decimal]] = None
     target_day: Optional[int] = 90
     received: Optional[List[int]] = None
+    user_id: Optional[int] = None
 
 class ShipmentCreate(ShipmentBase):
     pass

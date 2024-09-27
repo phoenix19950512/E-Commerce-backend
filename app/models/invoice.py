@@ -24,5 +24,6 @@ class Invoice(Base):
     number = Column(Text, nullable=True)
     series = Column(Text, nullable=True)
     url = Column(Text, nullable=True)
+    user_id = Column(Integer, nullable=True)
 
     

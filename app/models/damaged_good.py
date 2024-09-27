@@ -13,5 +13,6 @@ class Damaged_good(Base):
     product_code = Column(ARRAY(Text), nullable=True)
     quantity = Column(ARRAY(Integer), nullable=True)
     awb = Column(Text, nullable=True)
+    user_id = Column(Integer, nullable=True)
 
     

@@ -14,4 +14,5 @@ class Warehouse(Base):
     locality_id = Column(Text, nullable=True)
     street = Column(Text, nullable=True)
     zipcode = Column(Text, nullable=True)
+    user_id = Column(Integer, nullable=True)
     

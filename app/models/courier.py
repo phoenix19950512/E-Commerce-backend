@@ -12,6 +12,7 @@ class Courier(Base):
     created = Column(DateTime, nullable=True)
     status = Column(Integer, nullable=True)
     market_place = Column(String, nullable=True)
+    user_id = Column(Integer, nullable=True)
     __table_args__ = (
         PrimaryKeyConstraint('account_id', 'market_place', name='pk_account_id_market_place'),
     )

@@ -17,6 +17,7 @@ class LocalityBase(BaseModel):
     modified: Optional[datetime] = None
     country_code: Optional[str] = None
     localtity_marketplace: Optional[str] = None
+    user_id: Optional[int] = None
 
 class LocalityCreate(LocalityBase):
     pass

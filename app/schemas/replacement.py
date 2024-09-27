@@ -23,6 +23,7 @@ class ReplacementsBase(BaseModel):
     review_content: Optional[str] = None
     customer_comment: Optional[str] = None
     awb: Optional[str] = None
+    user_id: Optional[int] = None
     
 class ReplacementsCreate(ReplacementsBase):
     pass

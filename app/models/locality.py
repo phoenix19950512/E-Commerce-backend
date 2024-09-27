@@ -18,6 +18,7 @@ class Locality(Base):
     zipcode = Column(String, nullable=True)
     country_code = Column(String, nullable=True)
     localtity_marketplace = Column(String, nullable=True)
+    user_id = Column(Integer, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('id', 'localtity_marketplace', name='pk_id_localtity_marketplace'),

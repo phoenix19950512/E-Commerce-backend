@@ -23,6 +23,7 @@ class Returns(Base):
     request_status = Column(Integer, nullable=True)
     return_market_place = Column(String, nullable=True)
     awb = Column(String, nullable=True)
+    user_id = Column(Integer, nullable=True)
 
     __table_args__ = (
         PrimaryKeyConstraint('order_id', 'return_market_place', name='pk_order_id_return_market_place'),

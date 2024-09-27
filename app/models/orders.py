@@ -66,3 +66,4 @@ class Order(Base):
     email = Column(String, nullable=True)
     product_voucher_split = Column(ARRAY(String), nullable=True)
     registration_number = Column(String, nullable=True)
+    user_id = Column(Integer, nullable=True)
