@@ -23,7 +23,7 @@ class Replacement(Base):
     review = Column(Boolean, nullable=True)
     review_content = Column(Text, nullable=True)
     customer_comment = Column(Text, nullable=True)
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(Integer, index=True, nullable=True)
 
 
     

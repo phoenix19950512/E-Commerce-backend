@@ -43,5 +43,5 @@ class Internal_Product(Base):
     observation = Column(Text, nullable=True)
     short_product_name = Column(Text, nullable=True)
     market_place = Column(ARRAY(Text), nullable=True)
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(Integer, index=True, nullable=True)
     

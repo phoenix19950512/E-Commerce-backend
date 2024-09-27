@@ -26,15 +26,16 @@ import datetime
 router = APIRouter()
 
 @router.post("/manually")
-async def create_awb_manually(awb: AWBCreate, db: AsyncSession = Depends(get_db)):
+async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
+    db_awb.user_id = user.id
     db.add(db_awb)
     await db.commit()
     await db.refresh(db_awb)
     return db_awb
 
 @router.post("/")
-async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depends(get_db)):
+async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
     number = db_awb.number
@@ -119,6 +120,7 @@ async def create_awbs(awb: AWBCreate, marketplace: str, db: AsyncSession = Depen
             db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
         
         db_awb.awb_marketplace = marketplace
+        db_awb.user_id = user.id
         db.add(db_awb)
         await db.commit()
         await db.refresh(db_awb)
@@ -147,6 +149,7 @@ async def count_awb(
     status_str: str = Query('', description="awb_status"),
     warehouse_id: int = Query('', description='warehouse_id'),
     flag: bool = Query(False, description="Generated today or not"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     warehouseAlias = aliased(Warehouse)
@@ -163,6 +166,7 @@ async def count_awb(
         query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
     if warehouse_id:
         query = query.where(warehouseAlias.id == warehouse_id)
+    query = query.where(AWB.user_id == user.id)
     result = await db.execute(query)
     db_awb = result.scalars().all()
     return len(db_awb)

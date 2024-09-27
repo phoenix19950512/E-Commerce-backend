@@ -11,7 +11,7 @@ class Notification(Base):
     ean = Column(Text, nullable=False)
     state = Column(Text, nullable=False)
     read = Column(Boolean, nullable=False)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, index=True, nullable=False)
     market_place = Column(Text, nullable=True)
 
     __table_args__ = (

@@ -37,7 +37,7 @@ class Product(Base):
     internal_shipping_price = Column(Numeric(12, 4), nullable=True)
     observation = Column(Text, nullable=True)
     product_marketplace = Column(Text, nullable=True)
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(Integer, index=True, nullable=True)
     
     __table_args__ = (
         PrimaryKeyConstraint('ean', 'product_marketplace', name='pk_ean_product_marketplace'),
