@@ -87,7 +87,7 @@ async def get_replacements(
         (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
         (Replacement.awb.ilike(f"%{search_text}%")) |
         (Replacement.customer_name.ilike(f"%{search_text}%"))
-    )
+    ).order_by(Replacement.date, Replacement.id)
     if status == 1:
         query = query.where(AWBAlias.order_id.is_(None))
     offset = (page - 1) * itmes_per_page
