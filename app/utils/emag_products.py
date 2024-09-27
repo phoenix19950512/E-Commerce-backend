@@ -12,11 +12,13 @@ import os
 import time
 import logging
 from app.models.marketplace import Marketplace
+from app.models.user import User
 from app.models.internal_product import Internal_Product
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.routers.auth import get_current_user
 from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -75,7 +77,7 @@ def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API
         logging.info(f"Failed to retrieve products: {response.status_code}")
         return None
 
-async def insert_products(products, mp_name: str):
+async def insert_products(products, mp_name: str, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -122,9 +124,10 @@ async def insert_products(products, mp_name: str):
                 damaged_goods, 
                 warehouse_id,
                 internal_shipping_price,
-                market_place
+                market_place,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 id = EXCLUDED.id,
                 buy_button_rank = EXCLUDED.buy_button_rank,
@@ -173,6 +176,7 @@ async def insert_products(products, mp_name: str):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
+            user_id = user_id
 
             values = (
                 id,
@@ -210,7 +214,8 @@ async def insert_products(products, mp_name: str):
                 damaged_goods,
                 warehouse_id,
                 internal_shipping_price,
-                market_place
+                market_place,
+                user_id
             )
 
             cursor.execute(insert_query, values)
@@ -222,7 +227,7 @@ async def insert_products(products, mp_name: str):
     except Exception as e:
         logging.info(f"Failed to insert Internal_Products into database: {e}")
 
-async def insert_products_into_db(products, username, place):
+async def insert_products_into_db(products, place, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -266,9 +271,10 @@ async def insert_products_into_db(products, username, place):
                 stock,
                 warehouse_id,
                 internal_shipping_price,
-                product_marketplace
+                product_marketplace,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean, product_marketplace) DO UPDATE SET
                 id = EXCLUDED.id,
                 sale_price = EXCLUDED.sale_price,
@@ -313,6 +319,7 @@ async def insert_products_into_db(products, username, place):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             product_marketplace = place  # Ensure this is an array to use array_cat
+            user_id = user_id
 
             values = (
                 id,
@@ -347,7 +354,8 @@ async def insert_products_into_db(products, username, place):
                 stock,
                 warehouse_id,
                 internal_shipping_price,
-                product_marketplace
+                product_marketplace,
+                user_id
             )
             cursor.execute(insert_query, values)
             conn.commit()
@@ -365,46 +373,33 @@ async def refresh_emag_products(marketplace: Marketplace):
     endpoint = "/product_offer"
     count_point = "/count"
     read_endpoint = "/read"
+    
+    user = Depends(get_current_user)
+    
+    USERNAME = marketplace.credentials["firstKey"]
+    PASSWORD = marketplace.credentials["secondKey"]
+    API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+    result = count_all_products(marketplace.baseAPIURL, endpoint, count_point, API_KEY)
+    if result:
+        pages = result['results']['noOfPages']
+        items = result['results']['noOfItems']
 
-    if marketplace.credentials["type"] == "user_pass":
-        
-        USERNAME = marketplace.credentials["firstKey"]
-        PASSWORD = marketplace.credentials["secondKey"]
-        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        result = count_all_products(marketplace.baseAPIURL, endpoint, count_point, API_KEY)
-        if result:
-            pages = result['results']['noOfPages']
-            items = result['results']['noOfItems']
+        logging.info(f"------------pages--------------{pages}")
+        logging.info(f"------------items--------------{items}")
+        currentPage = 1
+        baseAPIURL = marketplace.baseAPIURL
+        try:
+            while currentPage <= int(pages):
+                products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
 
-            logging.info(f"------------pages--------------{pages}")
-            logging.info(f"------------items--------------{items}")
-            currentPage = 1
-            baseAPIURL = marketplace.baseAPIURL
-            try:
-                while currentPage <= int(pages):
-                    products = get_all_products(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
-
-                    logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
-                    if products and not products.get('isError'):
-                        await insert_products_into_db(products['results'], USERNAME, marketplace.marketplaceDomain)
-                        await insert_products(products['results'], marketplace.marketplaceDomain)
-                    currentPage += 1
-            except Exception as e:
-                print('++++++++++++++++++++++++++++++++++++++++++')
-                print(e)
-    elif marketplace.credentials["type"] == "pub_priv":
-        PUBLIC_KEY = marketplace.credentials["firstKey"]
-        PRIVATE_KEY = marketplace.credentials["secondKey"]
-        logging.info("starting count")
-        result = count_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["count"], sign, PUBLIC_KEY, True)
-        if result:
-            pages = result['results']['noOfPages']
-            currentPage = 1
-            while currentPage <= pages:
-                products = get_all_products(marketplace.baseAPIURL, marketplace.products_crud["endpoint"], marketplace.products_crud["read"], sign, currentPage, PUBLIC_KEY, True)
-                if products and not products['isError']:
-                    insert_products_into_db(products['results'], PUBLIC_KEY)
-                    currentPage += 1
+                logging.info(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
+                if products and not products.get('isError'):
+                    await insert_products_into_db(products['results'], marketplace.marketplaceDomain, user.id)
+                    await insert_products(products['results'], marketplace.marketplaceDomain, user.id)
+                currentPage += 1
+        except Exception as e:
+            print('++++++++++++++++++++++++++++++++++++++++++')
+            print(e)
 
 
 def save(MARKETPLACE_API_URL, ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLIC_KEY=None, usePublicKey=False):
@@ -441,8 +436,6 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
     return result
 
 def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
-    
-    
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
