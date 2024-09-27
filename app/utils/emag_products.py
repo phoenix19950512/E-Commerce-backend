@@ -133,7 +133,7 @@ async def insert_products(products, mp_name: str, user_id):
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 stock = EXCLUDED.stock,
                 market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place))),
-                user_id = EXCLUDED.user_id,
+                user_id = EXCLUDED.user_id
         """).format(sql.Identifier("internal_products"))
 
         for product in products:
