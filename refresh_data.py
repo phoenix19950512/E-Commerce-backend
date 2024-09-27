@@ -26,6 +26,8 @@ from app.utils.smart_api import get_stock
 from app.utils.sameday import tracking
 from app.routers.reviews import *
 from app.models.awb import AWB
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.marketplace import Marketplace
 from app.models.billing_software import Billing_software
 from app.models.orders import Order
@@ -87,7 +89,7 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 
 @app.on_event("startup")
 @repeat_every(seconds=900)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+async def refresh_orders_data(user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting orders refresh")
@@ -102,7 +104,7 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
                     await refresh_altex_orders(marketplace)
                 else:
                     logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace)
+                    await refresh_emag_products(marketplace, user)
                     logging.info("Refresh orders from marketplace")
                     await refresh_emag_orders(marketplace)
 

@@ -366,15 +366,13 @@ async def insert_products_into_db(products, place, user_id):
     except Exception as e:
         logging.info(f"Failed to insert products into database: {e}")
 
-async def refresh_emag_products(marketplace: Marketplace):
+async def refresh_emag_products(marketplace: Marketplace, user: User):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
     endpoint = "/product_offer"
     count_point = "/count"
     read_endpoint = "/read"
-    
-    user = Depends(get_current_user)
     
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
