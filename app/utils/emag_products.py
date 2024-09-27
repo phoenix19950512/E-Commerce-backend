@@ -401,7 +401,6 @@ async def refresh_emag_products(marketplace: Marketplace):
             print('++++++++++++++++++++++++++++++++++++++++++')
             print(e)
 
-
 def save(MARKETPLACE_API_URL, ENDPOINT, save_ENDPOINT,  API_KEY, data, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ENDPOINT}/{save_ENDPOINT}"
     if usePublicKey is True:

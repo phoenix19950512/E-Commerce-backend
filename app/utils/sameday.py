@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 async def tracking(awb_barcode):
-    api_key = "84722802fc63bd2ebc424e18acfb5a55b77db096"
+    api_key = "71a189a2fd4591695fa6b8a2931dac93d6a4f007"
     url = "https://api.sameday.ro/api/client/parcel"
     
     headers = {
