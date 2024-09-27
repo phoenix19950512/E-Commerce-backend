@@ -37,6 +37,7 @@ class ProductBase(BaseModel):
     internal_shipping_price: Optional[Decimal] = None
     observation: Optional[str] = None
     marketplace: str
+    user_id: Optional[int] = None
 
 class ProductCreate(ProductBase):
     pass

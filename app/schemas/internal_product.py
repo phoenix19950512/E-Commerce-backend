@@ -41,6 +41,7 @@ class Internal_ProductBase(BaseModel):
     observation: Optional[str] = None
     short_product_name: Optional[str] = None
     market_place: Optional[List[str]] = None
+    user_id: Optional[int] = None
 
 class Internal_ProductCreate(Internal_ProductBase):
     pass
