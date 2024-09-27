@@ -5,6 +5,8 @@ from sqlalchemy import func, literal, any_, and_
 from typing import List
 from sqlalchemy.orm import aliased
 from app.database import get_db
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.orders import Order
 from app.models.returns import Returns
 from app.models.product import Product

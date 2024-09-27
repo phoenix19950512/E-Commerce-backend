@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.marketplace import Marketplace
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.database import get_db
 from app.schemas.marketplace import MarketplaceCreate, MarketplaceUpdate, MarketplaceRead
 from fastapi import APIRouter, Depends, HTTPException, status

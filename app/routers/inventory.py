@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import any_
 from sqlalchemy.orm import aliased
 from app.models.product import Product
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
 from app.models.orders import Order
 from app.models.shipment import Shipment 

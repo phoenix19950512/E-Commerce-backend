@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import func, any_, or_
 from typing import List
 from app.database import get_db
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
 from app.models.damaged_good import Damaged_good
 from app.schemas.damaged_good import Damaged_goodCreate, Damaged_goodRead, Damaged_goodUpdate

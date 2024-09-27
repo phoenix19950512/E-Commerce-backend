@@ -6,6 +6,8 @@ from typing import List
 from app.database import get_db
 from app.models.internal_product import Internal_Product
 from app.models.orders import Order
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.product import Product
 from app.models.marketplace import Marketplace
 from app.utils.altex_product import post_stock_altex

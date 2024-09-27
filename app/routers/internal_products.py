@@ -7,6 +7,8 @@ from sqlalchemy.orm import aliased
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.models.orders import Order
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.product import Product
 from app.models.returns import Returns
 from app.models.internal_product import Internal_Product

@@ -5,6 +5,8 @@ from sqlalchemy import func, any_, or_, cast, Integer
 from typing import List
 from app.database import get_db
 from app.models.product import Product
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.returns import Returns
 from app.schemas.returns import ReturnsCreate, ReturnsRead, ReturnsUpdate
 

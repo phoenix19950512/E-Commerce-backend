@@ -14,6 +14,8 @@ from app.models.product import Product
 from app.models.warehouse import Warehouse
 from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.backup import export_to_csv
 from app.utils.emag_awbs import *
 from app.utils.altex_awb import save_altex_awb

@@ -6,6 +6,8 @@ from psycopg2 import sql
 from app.models.internal_product import Internal_Product
 from app.models.notifications import Notification
 from app.models.review import Review
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.routers.notifications import create_new_notification
 from app.utils.emag_reviews import *
 from sqlalchemy.ext.asyncio import AsyncSession

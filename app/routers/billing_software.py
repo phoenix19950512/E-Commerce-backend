@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import func, any_
 from typing import List
 from app.database import get_db
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.billing_software import Billing_software
 from app.schemas.billing_software import Billing_softwaresCreate, Billing_softwaresRead, Billing_softwaresUpdate
 

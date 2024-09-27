@@ -5,6 +5,8 @@ from sqlalchemy import func
 from typing import List
 from app.database import get_db
 from app.models.user import User
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.team_member import Team_member
 from app.schemas.team_member import Team_memberCreate, Team_memberRead, Team_memberUpdate
 

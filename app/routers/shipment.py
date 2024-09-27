@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from sqlalchemy import any_, text
 from typing import List
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.database import get_db
 from app.models.shipment import Shipment
 from app.models.supplier import Supplier

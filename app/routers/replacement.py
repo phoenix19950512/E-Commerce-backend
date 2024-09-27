@@ -6,6 +6,8 @@ from sqlalchemy import func, any_, or_, and_
 from typing import List
 from sqlalchemy import cast, String
 from app.database import get_db
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.awb import AWB
 from app.models.orders import Order
 from app.models.product import Product

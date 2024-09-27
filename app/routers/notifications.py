@@ -2,6 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import text
 from app.models.notifications import Notification
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.database import get_db
 from app.schemas.notifications import NotificationCreate, NotificationUpdate, NotificationRead
 from fastapi import APIRouter, Depends, HTTPException, status

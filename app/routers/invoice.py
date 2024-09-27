@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, any_
 from typing import List
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.database import get_db
 from app.models.invoice import Invoice
 from app.schemas.invoice import InvoicesCreate, InvoicesRead, InvoicesUpdate

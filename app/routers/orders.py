@@ -7,6 +7,8 @@ from sqlalchemy import func, distinct, exists
 from typing import List
 from app.schemas.orders import OrderCreate, OrderUpdate, OrderRead
 from app.models.orders import Order
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.models.product import Product
 from app.models.invoice import Invoice
 from app.models.internal_product import Internal_Product
