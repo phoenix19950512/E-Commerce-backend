@@ -12,22 +12,23 @@ from app.schemas.billing_software import Billing_softwaresCreate, Billing_softwa
 router = APIRouter()
 
 @router.post("/", response_model=Billing_softwaresRead)
-async def create_billing_software(billing_software: Billing_softwaresCreate, db: AsyncSession = Depends(get_db)):
+async def create_billing_software(billing_software: Billing_softwaresCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_billing_software = Billing_software(**billing_software.dict())
+    db_billing_software.user_id = user.id
     db.add(db_billing_software)
     await db.commit()
     await db.refresh(db_billing_software)
     return db_billing_software
 
 @router.get('/count')
-async def get_billing_software_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Billing_software.id))
-    count = result.scalar()
-    return count
+async def get_billing_software_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Billing_software).where(Billing_software.user_id == user.id))
+    db_billing_softwares = result.scalars().all()
+    return len(db_billing_softwares)
 
 @router.get("/", response_model=List[Billing_softwaresRead])
-async def get_billing_softwares(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Billing_software))
+async def get_billing_softwares(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Billing_software).where(Billing_software.user_id == user.id))
     db_billing_softwares = result.scalars().all()
 
     if db_billing_softwares is None:
@@ -44,8 +45,8 @@ async def get_billing_software(user_id: int, db: AsyncSession = Depends(get_db))
     return db_billing_software
 
 @router.put("/{billing_software_id}", response_model=Billing_softwaresRead)
-async def update_billing_software(billing_software_id: int, billing_software: Billing_softwaresUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Billing_software).filter(Billing_software.id == billing_software_id))
+async def update_billing_software(billing_software_id: int, billing_software: Billing_softwaresUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Billing_software).where(Billing_software.id == billing_software_id, Billing_software.user_id == user.id))
     db_billing_software = result.scalars().first()
     if db_billing_software is None:
         raise HTTPException(status_code=404, detail="billing_software not found")
@@ -56,8 +57,8 @@ async def update_billing_software(billing_software_id: int, billing_software: Bi
     return db_billing_software
 
 @router.delete("/{billing_software_id}", response_model=Billing_softwaresRead)
-async def delete_billing_software(billing_software_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Billing_software).filter(Billing_software.id == billing_software_id))
+async def delete_billing_software(billing_software_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Billing_software).where(Billing_software.id == billing_software_id, Billing_software.user_id == user.id))
     billing_software = result.scalars().first()
     if billing_software is None:
         raise HTTPException(status_code=404, detail="billing_software not found")
