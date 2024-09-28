@@ -21,7 +21,7 @@ async def create_couriers_(couriers: CouriersCreate, db: AsyncSession = Depends(
 
 @router.get('/count')
 async def get_couriers_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Courier.order_id))
+    result = await db.execute(func.count(Courier.account_id))
     count = result.scalar()
     return count
 
@@ -41,7 +41,7 @@ async def get_couriers(
 
 @router.put("/{courier_id}", response_model=CouriersRead)
 async def update_couriers(courier_id: int, courier: CouriersUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Courier).filter(Courier.id == courier_id))
+    result = await db.execute(select(Courier).filter(Courier.account_id == courier_id))
     db_courier = result.scalars().first()
     if db_courier is None:
         raise HTTPException(status_code=404, detail="couriers not found")
@@ -53,7 +53,7 @@ async def update_couriers(courier_id: int, courier: CouriersUpdate, db: AsyncSes
 
 @router.delete("/{couriers_id}", response_model=CouriersRead)
 async def delete_couriers(courier_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Courier).filter(Courier.id == courier_id))
+    result = await db.execute(select(Courier).filter(Courier.account_id == courier_id))
     couriers = result.scalars().first()
     if couriers is None:
         raise HTTPException(status_code=404, detail="couriers not found")
