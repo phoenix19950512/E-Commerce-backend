@@ -13,7 +13,7 @@ from app.schemas.damaged_good import Damaged_goodCreate, Damaged_goodRead, Damag
 router = APIRouter()
 
 @router.post("/", response_model=Damaged_goodRead)
-async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession = Depends(get_db)):
+async def create_damaged_good(damaged_good: Damaged_goodCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_damaged_good = Damaged_good(**damaged_good.dict())
     result = await db.execute(select(Damaged_good).where(Damaged_good.return_id == db_damaged_good.return_id))
     damaged_good = result.scalars().first()
@@ -30,41 +30,41 @@ async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession
             product.damaged_goods = product.damaged_goods + db_damaged_good.quantity[i]
         else:
             product.damaged_goods = db_damaged_good.quantity[i]
-        await db.commit()
-        await db.refresh(product)
+    db_damaged_good.user_id = user.id
     db.add(db_damaged_good)
     await db.commit()
     await db.refresh(db_damaged_good)
     return db_damaged_good
 
 @router.get('/count')
-async def get_damaged_good_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Damaged_good.id))
-    count = result.scalar()
-    return count
+async def get_damaged_good_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user.id))
+    damaged_goods = result.scalars().all()
+    return len(damaged_goods)
 
 @router.get("/", response_model=List[Damaged_goodRead])
 async def get_damaged_goods(
     page: int = Query(1, ge=1, description="Page number"),
     itmes_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * itmes_per_page
-    result = await db.execute(select(Damaged_good).offset(offset).limit(itmes_per_page))
+    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user.id).offset(offset).limit(itmes_per_page))
     db_damaged_goods = result.scalars().all()
     if db_damaged_goods is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
     return db_damaged_goods
 
 @router.get("/{damaged_good_id}", response_model=Damaged_goodRead)
-async def get_damaged_good(damaged_good_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).filter(Damaged_good.id == damaged_good_id))
+async def get_damaged_good(damaged_good_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
     db_damaged_good = result.scalars().first()
     return db_damaged_good
 
 @router.put("/{damaged_good_id}", response_model=Damaged_goodRead)
-async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).filter(Damaged_good.id == damaged_good_id))
+async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
     db_damaged_good = result.scalars().first()
     if db_damaged_good is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
@@ -75,8 +75,8 @@ async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUp
     return db_damaged_good
 
 @router.delete("/{damaged_good_id}", response_model=Damaged_goodRead)
-async def delete_damaged_good(damaged_good_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).filter(Damaged_good.id == damaged_good_id))
+async def delete_damaged_good(damaged_good_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
     damaged_good = result.scalars().first()
     if damaged_good is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
