@@ -22,16 +22,31 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # }
 
 
-async def tracking(awb_barcode):
-    api_key = "71a189a2fd4591695fa6b8a2931dac93d6a4f007"
+async def tracking(sameday: Billing_software, awb_barcode):
+    api_key = "4602b354e034ad4afc772effcdcc0910a6674e3f"
     url = "https://api.sameday.ro/api/client/parcel"
+    
+    USERNAME = Billing_software.username
+    PASSWORD = Billing_software.password
+    
+    auth_url = "https://api.sameday.ro/api/authenticate"
+    headers = {
+        "X-Auth-Username": f"{USERNAME}",
+        "X-Auth-Password": f"{PASSWORD}",
+    }
     
     headers = {
         "X-Auth-TOKEN": api_key,
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.get(f"{url}/{awb_barcode}/status-history", headers=headers)
+        response = requests.post(auth_url, headers=headers)
+        api_key = response.get('token')
+        
+        tracking_headers = {
+            "X-Auth-TOKEN": api_key,
+        }
+        response = await client.get(f"{url}/{awb_barcode}/status-history", headers=tracking_headers)
         
         if response.status_code == 200:
             result = response.json()

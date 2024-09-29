@@ -231,9 +231,12 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
 
                     for awb in db_awbs:
                         awb_barcode = awb.awb_barcode
+                        awb_user_id = awb.user_id
+                        result = await session.execute(select(Billing_software).where(Billing_software.user_id == awb_user_id, Billing_software.site_domain == "sameday.ro"))
+                        sameday = result.scalars().first()
                         try:
                             # Track and update awb status
-                            awb_status_result = await tracking(awb_barcode)
+                            awb_status_result = await tracking(sameday, awb_barcode)
                             pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
                             weight = awb_status_result.get('parcelSummary').get('parcelWeight')
                             length = awb_status_result.get('parcelSummary').get('parcelLength')

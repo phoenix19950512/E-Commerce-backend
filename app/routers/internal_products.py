@@ -32,8 +32,9 @@ def get_valid_date(year, month, day):
 router = APIRouter()
 
 @router.post("/", response_model=Internal_ProductRead)
-async def create_product(product: Internal_ProductCreate, db: AsyncSession = Depends(get_db)):
+async def create_product(product: Internal_ProductCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_product = Internal_Product(**product.dict())
+    db_product.user_id = user.id
     db.add(db_product)
     await db.commit()
     await db.refresh(db_product)
@@ -43,6 +44,7 @@ async def create_product(product: Internal_ProductCreate, db: AsyncSession = Dep
 async def get_products_count(
     supplier_ids: str = Query(None),
     search_text: str = Query('', description="Text for searching"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Internal_Product)
@@ -55,16 +57,18 @@ async def get_products_count(
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
         (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id)
-
+    query = query.where(Internal_Product.user_id == user.id)
+    
     result = await db.execute(query)
     db_products = result.scalars().all()
     return len(db_products)
 
 @router.get("/all_products")
 async def get_all_products(
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Internal_Product)
+    query = select(Internal_Product).where(Internal_Product.user_id == user.id)
     result = await db.execute(query)
     db_products = result.scalars().all()
 
@@ -73,10 +77,10 @@ async def get_all_products(
     return db_products
 
 @router.get("/{ean}", response_model=Internal_ProductRead)
-async def read_product(ean: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
+async def read_product(ean: str, user: User = Depends(get_db), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
-    if product is None:
+    if product is None or product.user_id != user.id:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
     return product
 

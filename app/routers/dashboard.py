@@ -46,9 +46,10 @@ async def get_db_connection():
 router = APIRouter()
 
 
-async def get_return(st_datetime, en_datetime, db:AsyncSession):
+async def get_return(st_datetime, en_datetime, user: User, db:AsyncSession):
     
     query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime)
+    query = query.where(Returns.user_id == user.id)
     query = query.where(Returns.type == 3)
     result = await db.execute(query)
     refunds = result.scalars().all()
@@ -207,17 +208,17 @@ async def get_trend(date_string, product_id, st_datetime, en_datetime, db:AsyncS
 
 @router.get('/tiles')
 
-async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_info(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     today = datetime.date.today()
-    orders_today_data = await get_value(today, today, db)
+    orders_today_data = await get_value(today, today, user, db)
 
     yesterday = datetime.date.today() - datetime.timedelta(days = 1)
-    orders_yesterday_data = await get_value(yesterday, yesterday, db)
+    orders_yesterday_data = await get_value(yesterday, yesterday, user, db)
     
     first_day_of_month = datetime.date(today.year, today.month, 1)
-    orders_month_data = await get_value(first_day_of_month, today, db)
+    orders_month_data = await get_value(first_day_of_month, today, user, db)
 
-    orders_forecast_data = await forecast(first_day_of_month, today, db)
+    orders_forecast_data = await forecast(first_day_of_month, today, user, db)
 
     if today.month > 1:
         last_month_st = datetime.date(today.year, today.month - 1, 1)
@@ -225,7 +226,7 @@ async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
     else:
         last_month_st = datetime.date(today.year - 1, 12, 1)
         last_month_en = datetime.date(today.year - 1, 12, 31)
-    orders_last_month_data = await get_value(last_month_st, last_month_en, db)
+    orders_last_month_data = await get_value(last_month_st, last_month_en, user, db)
 
     return {
         "orders_today_data": { "title": "Today", **orders_today_data },
@@ -235,7 +236,7 @@ async def get_dashboard_info(db: AsyncSession = Depends(get_db)):
         "orders_last_month_data": { "title": "Last month", **orders_last_month_data },
     }
 
-async def get_value(st_date, en_date, db:AsyncSession):
+async def get_value(st_date, en_date, user: User, db:AsyncSession):
 
     vat_dict = await get_vat_dict(db)
 
@@ -249,9 +250,23 @@ async def get_value(st_date, en_date, db:AsyncSession):
         FROM orders AS orders
         JOIN products AS products ON products.id = ANY(orders.product_id)
         WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime
+        WHERE orders.user_id = :user_id
+        GROUP BY orders.id
     """)
+    
+    ProductAlias = aliased(Product)
+    query = select(Order, ProductAlias).join(
+        ProductAlias,
+        and_(
+            ProductAlias.id == any_(Order.product_id),
+            ProductAlias.product_marketplace == Order.order_market_place
+            
+        )
+    )
+    query = query.where(Order.date >= st_datetime, Order.date <= en_datetime)
+    query = query.where(Order.user_id == user.id, ProductAlias.user_id == user.id)
 
-    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime})
+    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime, 'user_id': user.id})
     records = result.fetchall()
 
     for record in records:
@@ -267,7 +282,7 @@ async def get_value(st_date, en_date, db:AsyncSession):
     total_sales = 0
     total_orders = len(orders_with_products)
     total_units = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    total_refund = await get_return(st_datetime, en_datetime, user, db)
     total_gross_profit = 0
     total_net_profit = 0
     orders = []
@@ -279,11 +294,6 @@ async def get_value(st_date, en_date, db:AsyncSession):
 
         marketplace_domain = order.get("order_market_place")
         vat = vat_dict[marketplace_domain]
-        # print(marketplace_domain)
-        # query = select(Marketplace).where(marketplace_domain == Marketplace.marketplaceDomain)
-        # marketplace_result = await db.execute(query)
-        # marketplace = marketplace_result.scalars().first()
-        # vat = marketplace.vat
 
         for i in range(len(product_ids)): 
             product = next((p for p in orders_with_products if p['id'] == product_ids[i]), None)
