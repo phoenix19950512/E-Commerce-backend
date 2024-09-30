@@ -7,6 +7,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.database import get_db
 from app.models.invoice import Invoice
+from app.models.team_member import Team_member
 from app.schemas.invoice import InvoicesCreate, InvoicesRead, InvoicesUpdate
 from app.utils.smart_api import generate_invoice
 import json
@@ -16,8 +17,15 @@ router = APIRouter()
 
 @router.post("/")
 async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role != 4 and user.role != 5:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     db_invoice = Invoice(**invoice.dict())
     order_id = db_invoice.order_id
 
@@ -50,7 +58,7 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
     db_invoice.number = result.get('number') if result.get('number') else ''
     db_invoice.series = result.get('series') if result.get('series') else ''
     db_invoice.url = result.get('url') if result.get('url') else ''
-    db_invoice.user_id = user.id
+    db_invoice.user_id = user_id
     
     db.add(db_invoice)
     await db.commit()

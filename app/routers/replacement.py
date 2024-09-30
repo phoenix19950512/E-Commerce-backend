@@ -12,6 +12,7 @@ from app.models.awb import AWB
 from app.models.orders import Order
 from app.models.product import Product
 from app.models.invoice import Invoice
+from app.models.team_member import Team_member
 from app.models.replacement import Replacement
 from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, ReplacementsUpdate
 
@@ -19,15 +20,21 @@ router = APIRouter()
 
 @router.post("/", response_model=ReplacementsRead)
 async def create_replacement(replacement: ReplacementsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role != 4 and user.role != 5:
         raise HTTPException(status_code=401, detail="Authentication error")
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     db_replacement = Replacement(**replacement.dict())
     order_id = db_replacement.order_id
     result = await db.execute(select(Replacement).where(Replacement.order_id == order_id))
     replacements = result.scalars().all()
     count = len(replacements)
     db_replacement.number = count + 1
-    db_replacement.user_id = user.id
+    db_replacement.user_id = user_id
     db.add(db_replacement)
     await db.commit()
     await db.refresh(db_replacement)
@@ -39,16 +46,35 @@ async def get_replacement_count(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role != 4 and user.role != 5:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     result = await db.execute(select(Replacement).where(
         (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
         (Replacement.awb.ilike(f"%{search_text}%")) |
         (Replacement.customer_name.ilike(f"%{search_text}%"))
-    ).where(Replacement.user_id == user.id))
+    ).where(Replacement.user_id == user_id))
     db_replacements = result.scalars().all()
     return len(db_replacements)
 
 @router.get('/count_without_awb')
 async def get_count_without_awb(user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
+    if user.role != 4 and user.role != 5:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    
     AWBAlias = aliased(AWB)
     query = select(Replacement, AWBAlias).outerjoin(
         AWBAlias,
@@ -56,7 +82,7 @@ async def get_count_without_awb(user: User = Depends(get_current_user), db:Async
             Replacement.order_id == AWBAlias.order_id,
             Replacement.number == -AWBAlias.number
         )
-    ).where(Replacement.user_id == user.id)
+    ).where(Replacement.user_id == user_id)
     result = await db.execute(query)
     db_replacements = result.all()
     cnt = 0
@@ -76,6 +102,15 @@ async def get_replacements(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role != 4 and user.role != 5:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     AWBAlias = aliased(AWB)
     InvoiceAlias = aliased(Invoice)
     OrderAlias = aliased(Order)
@@ -102,7 +137,7 @@ async def get_replacements(
     if reason_str:
         reason_list = [str(reason.strip()) for reason in reason_str.split(";")]
         query = query.where(Replacement.reason == any_(reason_list))
-    query = query.where(Replacement.user_id == user.id)
+    query = query.where(Replacement.user_id == user_id)
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
     db_replacements = result.all()
@@ -133,14 +168,24 @@ async def get_replacements(
     return replacement_data
 
 @router.get("/{replacement_id}", response_model=ReplacementsRead)
-async def get_replacement(replacement_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
+async def get_replacement(replacement_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id))
     db_replacement = result.scalars().first()
     return db_replacement
 
 @router.put("/{replacement_id}", response_model=ReplacementsRead)
 async def update_replacement(replacement_id: int, replacement: ReplacementsUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
+    if user.role != 4 and user.role != 5:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user_id))
     db_replacement = result.scalars().first()
     if db_replacement is None:
         raise HTTPException(status_code=404, detail="replacement not found")
@@ -152,7 +197,17 @@ async def update_replacement(replacement_id: int, replacement: ReplacementsUpdat
 
 @router.delete("/{replacement_id}", response_model=ReplacementsRead)
 async def delete_replacement(replacement_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
+    if user.role != 4 and user.role != 5:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user_id))
     replacement = result.scalars().first()
     if replacement is None:
         raise HTTPException(status_code=404, detail="replacement not found")

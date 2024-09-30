@@ -15,6 +15,7 @@ from app.models.warehouse import Warehouse
 from app.models.internal_product import Internal_Product
 from app.models.warehouse import Warehouse
 from app.models.user import User
+from app.models.team_member import Team_member
 from app.routers.auth import get_current_user
 from app.backup import export_to_csv
 from app.utils.emag_awbs import *
@@ -27,10 +28,18 @@ router = APIRouter()
 
 @router.post("/manually")
 async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role != 4 and user.role != 5:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_awb = AWB(**awb.dict())
-    db_awb.user_id = user.id
+    db_awb.user_id = user_id
     db.add(db_awb)
     await db.commit()
     await db.refresh(db_awb)
@@ -38,8 +47,16 @@ async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_u
 
 @router.post("/")
 async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role != 4 and user.role != 5:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 5:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
     number = db_awb.number
@@ -124,7 +141,7 @@ async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get
             db_awb.awb_barcode = result_awb.get('awb_barcode') if result_awb.get('awb_barcode') else ""
         
         db_awb.awb_marketplace = marketplace
-        db_awb.user_id = user.id
+        db_awb.user_id = user_id
         db.add(db_awb)
         await db.commit()
         await db.refresh(db_awb)

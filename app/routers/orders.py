@@ -420,13 +420,13 @@ async def get_orders_count(
     return len(orders)
 
 @router.get("/{order_id}")
-async def read_order(order_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
     AWBAlias = aliased(AWB)
     query = select(Order, AWBAlias).outerjoin(
         AWBAlias,
         AWBAlias.order_id == Order.id
     )
-    query = query.where(Order.id == order_id, Order.user_id == user.id)
+    query = query.where(Order.id == order_id)
     result = await db.execute(query)
 
     db_order_awb = result.all()
