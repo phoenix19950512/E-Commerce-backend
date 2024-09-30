@@ -40,7 +40,7 @@ async def get_team_members(
     
     user_data = []
     for member in db_team:
-        result = await db.execute(select(User).where(User.id == member))
+        result = await db.execute(select(User).where(User.id == member.user))
         db_user = result.scalars().first()
         user_data.append(db_user)
     return user_data
