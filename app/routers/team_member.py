@@ -14,6 +14,8 @@ router = APIRouter()
 
 @router.post("/", response_model=Team_memberRead)
 async def create_team_member(team_member: Team_memberCreate, admin: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_team_member = Team_member(**team_member.dict())
     db_team_member.admin = admin.id
     db.add(db_team_member)

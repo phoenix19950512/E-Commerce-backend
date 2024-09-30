@@ -13,6 +13,8 @@ router = APIRouter()
 
 @router.post("/", response_model=SupplierRead)
 async def create_supplier(supplier: SupplierCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_supplier = Supplier(**supplier.dict())
     db_supplier.user_id = user.id
     db.add(db_supplier)

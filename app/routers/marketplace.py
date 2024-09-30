@@ -11,6 +11,8 @@ from typing import List
 from pydantic import ValidationError
 
 async def create_marketplace(db: AsyncSession, marketplace: MarketplaceCreate, user: User):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_marketplace = Marketplace(**marketplace.dict())
     db_marketplace.user_id = user.id
     db.add(db_marketplace)

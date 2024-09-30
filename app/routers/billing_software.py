@@ -13,6 +13,8 @@ router = APIRouter()
 
 @router.post("/", response_model=Billing_softwaresRead)
 async def create_billing_software(billing_software: Billing_softwaresCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_billing_software = Billing_software(**billing_software.dict())
     db_billing_software.user_id = user.id
     db.add(db_billing_software)

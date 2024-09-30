@@ -16,6 +16,8 @@ router = APIRouter()
 
 @router.post("/")
 async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_invoice = Invoice(**invoice.dict())
     order_id = db_invoice.order_id
 

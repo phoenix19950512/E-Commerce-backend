@@ -14,6 +14,8 @@ router = APIRouter()
 
 @router.post("/", response_model=ReturnsRead)
 async def create_return(returns: ReturnsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_return = Returns(**returns.dict())
     db_return.user_id = user.id
     db.add(db_return)

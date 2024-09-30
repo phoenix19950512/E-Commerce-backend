@@ -52,6 +52,8 @@ async def delete_order(db: AsyncSession, order_id: int, user: User):
 router = APIRouter()
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
 async def create_order(order: OrderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_order = Order(**order.dict())
     db_order.user_id == user.id
     db.add(db_order)

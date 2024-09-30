@@ -27,6 +27,8 @@ router = APIRouter()
 
 @router.post("/manually")
 async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_awb = AWB(**awb.dict())
     db_awb.user_id = user.id
     db.add(db_awb)
@@ -36,6 +38,8 @@ async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_u
 
 @router.post("/")
 async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
     number = db_awb.number

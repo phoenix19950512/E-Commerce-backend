@@ -33,6 +33,8 @@ router = APIRouter()
 
 @router.post("/", response_model=Internal_ProductRead)
 async def create_product(product: Internal_ProductCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_product = Internal_Product(**product.dict())
     db_product.user_id = user.id
     db.add(db_product)

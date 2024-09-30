@@ -18,13 +18,16 @@ from app.schemas.replacement import ReplacementsCreate, ReplacementsRead, Replac
 router = APIRouter()
 
 @router.post("/", response_model=ReplacementsRead)
-async def create_replacement(replacement: ReplacementsCreate, db: AsyncSession = Depends(get_db)):
+async def create_replacement(replacement: ReplacementsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_replacement = Replacement(**replacement.dict())
     order_id = db_replacement.order_id
     result = await db.execute(select(Replacement).where(Replacement.order_id == order_id))
     replacements = result.scalars().all()
     count = len(replacements)
     db_replacement.number = count + 1
+    db_replacement.user_id = user.id
     db.add(db_replacement)
     await db.commit()
     await db.refresh(db_replacement)
@@ -33,18 +36,19 @@ async def create_replacement(replacement: ReplacementsCreate, db: AsyncSession =
 @router.get('/count')
 async def get_replacement_count(
     search_text: str = Query('', description="Text for searching"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Replacement).filter(
+    result = await db.execute(select(Replacement).where(
         (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
         (Replacement.awb.ilike(f"%{search_text}%")) |
         (Replacement.customer_name.ilike(f"%{search_text}%"))
-    ))
+    ).where(Replacement.user_id == user.id))
     db_replacements = result.scalars().all()
     return len(db_replacements)
 
 @router.get('/count_without_awb')
-async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
+async def get_count_without_awb(user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
     AWBAlias = aliased(AWB)
     query = select(Replacement, AWBAlias).outerjoin(
         AWBAlias,
@@ -52,7 +56,7 @@ async def get_count_without_awb(db:AsyncSession = Depends(get_db)):
             Replacement.order_id == AWBAlias.order_id,
             Replacement.number == -AWBAlias.number
         )
-    )
+    ).where(Replacement.user_id == user.id)
     result = await db.execute(query)
     db_replacements = result.all()
     cnt = 0
@@ -69,6 +73,7 @@ async def get_replacements(
     status: int = Query(0, description="status"),
     reason_str: str = Query("", description="reason array"),
     search_text: str = Query('', description="Text for searching"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     AWBAlias = aliased(AWB)
@@ -97,6 +102,7 @@ async def get_replacements(
     if reason_str:
         reason_list = [str(reason.strip()) for reason in reason_str.split(";")]
         query = query.where(Replacement.reason == any_(reason_list))
+    query = query.where(Replacement.user_id == user.id)
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
     db_replacements = result.all()
@@ -127,14 +133,14 @@ async def get_replacements(
     return replacement_data
 
 @router.get("/{replacement_id}", response_model=ReplacementsRead)
-async def get_replacement(replacement_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id))
+async def get_replacement(replacement_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
     db_replacement = result.scalars().first()
     return db_replacement
 
 @router.put("/{replacement_id}", response_model=ReplacementsRead)
-async def update_replacement(replacement_id: int, replacement: ReplacementsUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id))
+async def update_replacement(replacement_id: int, replacement: ReplacementsUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
     db_replacement = result.scalars().first()
     if db_replacement is None:
         raise HTTPException(status_code=404, detail="replacement not found")
@@ -145,8 +151,8 @@ async def update_replacement(replacement_id: int, replacement: ReplacementsUpdat
     return db_replacement
 
 @router.delete("/{replacement_id}", response_model=ReplacementsRead)
-async def delete_replacement(replacement_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id))
+async def delete_replacement(replacement_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Replacement).filter(Replacement.id == replacement_id, Replacement.user_id == user.id))
     replacement = result.scalars().first()
     if replacement is None:
         raise HTTPException(status_code=404, detail="replacement not found")

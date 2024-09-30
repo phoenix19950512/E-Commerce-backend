@@ -14,6 +14,8 @@ from pydantic import ValidationError
 from app.config import settings
 
 async def create_notification(db: AsyncSession, notifications: NotificationCreate, user: User):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     db_notification = Notification(**notifications.dict())
     db_notification.user_id = user.id
     db.add(db_notification)
