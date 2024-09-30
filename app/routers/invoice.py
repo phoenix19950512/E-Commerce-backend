@@ -90,9 +90,9 @@ async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, user: User = 
     await db.refresh(db_invoice)
     return db_invoice
 
-@router.delete("/{invoice__id}", response_model=InvoicesRead)
-async def delete_invoice(invoice_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id))
+@router.delete("/{invoice_id}", response_model=InvoicesRead)
+async def delete_invoice(invoice_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
     invoice = result.scalars().first()
     if invoice is None:
         raise HTTPException(status_code=404, detail="invoice not found")
