@@ -87,6 +87,7 @@ async def get_replacements(
         OrderAlias.id == Replacement.order_id
     ).filter(
         (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
+        (Replacement.customer_phone.ilike(f"%{search_text}%")) |
         (Replacement.awb.ilike(f"%{search_text}%")) |
         (Replacement.customer_name.ilike(f"%{search_text}%"))
     ).order_by(Replacement.date.desc(), Replacement.id)

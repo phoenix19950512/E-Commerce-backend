@@ -76,19 +76,27 @@ async def get_all_products(
     return db_products
 
 @router.get("/{ean}", response_model=Internal_ProductRead)
-async def read_product(ean: str, db: AsyncSession = Depends(get_db)):
+async def read_product(ean: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
+    if product.user_id == user.id:
+        raise HTTPException(status_code=404, detail="You can't see this product")
     return product
 
 @router.get("/info/{ean}")
 async def get_info(
     ean: str,
     type: int,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
+    db_product = result.scalars().first()
+    if db_product is None:
+        raise HTTPException(status_code=404, detail="You can't see this product")
     sales_info = await get_sales_info(ean, type, db)
     orders_info = await get_orders_info(ean, db)
     returns_info = await get_refunded_info(ean, db)
@@ -280,6 +288,7 @@ async def get_products(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=1000, description="Number of items per page"),
     search_text: str = Query('', description="Text for searching"),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     
@@ -294,7 +303,7 @@ async def get_products(
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
         (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
-
+    query = query.where(Internal_Product.user_id == user.id)
     result = await db.execute(query)
     db_products = result.scalars().all()
 
@@ -303,8 +312,8 @@ async def get_products(
     return db_products
 
 @router.put("/{ean}", response_model=Internal_ProductRead)
-async def update_product(ean: str, product: Internal_ProductUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
+async def update_product(ean: str, product: Internal_ProductUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
     db_product = result.scalars().first()
 
     if db_product is None:
@@ -318,8 +327,8 @@ async def update_product(ean: str, product: Internal_ProductUpdate, db: AsyncSes
     return db_product
 
 @router.delete("/{ean}", response_model=Internal_ProductRead)
-async def delete_product(ean: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean))
+async def delete_product(ean: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
