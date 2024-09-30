@@ -188,17 +188,15 @@ async def count_awb_not_shipped(
 @router.get("/order_id")
 async def get_awbs_order_id(
     order_id: int,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.user_id == user))
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id))
     db_awbs = result.scalars().all()
     return db_awbs
 
 @router.get("/awb_barcode")
 async def get_order(
     awb_number: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -210,7 +208,7 @@ async def get_order(
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awb not found")
     order_id = db_awb.order_id
-    result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user.id))
+    result = await db.execute(select(Order).where(Order.id == order_id))
     db_order = result.scalars().first()
     if db_order is None:
         return HTTPException(status_code=404, detail=f"{order_id} not found")
