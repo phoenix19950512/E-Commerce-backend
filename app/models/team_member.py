@@ -4,7 +4,7 @@ from datetime import datetime
 class Team_member(Base):
     __tablename__ = "team_members"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
-    member_id = Column(ARRAY(Integer), nullable=True)
+    id = Column(Integer, primary_key=True)
+    admin = Column(Integer, index=True, nullable=True)
+    user = Column(Integer, nullable=True)
     
