@@ -26,7 +26,7 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-async def insert_locations(locations, place):
+async def insert_locations(locations, place, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -51,9 +51,10 @@ async def insert_locations(locations, place):
                 modified,
                 zipcode,
                 country_code,
-                localtity_marketplace
+                localtity_marketplace,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, localtity_marketplace) DO UPDATE SET
                 name = EXCLUDED.name,
                 name_latin = EXCLUDED.name_latin               
@@ -74,6 +75,7 @@ async def insert_locations(locations, place):
             zipcode = ""
             country_code = ""
             localtity_marketplace = place
+            user_id = user_id
 
             value = (
                 id,
@@ -89,7 +91,8 @@ async def insert_locations(locations, place):
                 modified,
                 zipcode,
                 country_code,
-                localtity_marketplace
+                localtity_marketplace,
+                user_id
             )
 
             cursor.execute(insert_query, value)
@@ -130,6 +133,7 @@ async def refresh_altex_locations(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
 
@@ -142,7 +146,7 @@ async def refresh_altex_locations(marketplace: Marketplace):
             data = result['data']
             locations = data.get("items")
 
-            await insert_locations(locations, marketplace.marketplaceDomain)
+            await insert_locations(locations, marketplace.marketplaceDomain, user_id)
             page_nr += 1
         except Exception as e:
             logging.error(f"Exception occurred: {e}")

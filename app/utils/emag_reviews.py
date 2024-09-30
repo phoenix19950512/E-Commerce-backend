@@ -67,7 +67,7 @@ async def insert_review_into_db(review, place, ean):
                 moderated_by,
                 rating,
                 brand_id,
-                review_marketplace               
+                review_marketplace           
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, review_id, review_marketplace) DO UPDATE SET
@@ -116,7 +116,8 @@ async def insert_reviews_into_db(reviews, place, ean):
         await insert_review_into_db(review, place, ean)
 
 async def refresh_emag_reviews(marketplace: Marketplace, db: AsyncSession):
-    result = await db.execute(select(Product))
+    user_id = marketplace.user_id
+    result = await db.execute(select(Product).where(Product.user_id == user_id))
     products = result.scalars().all()
 
     logging.info(f"Number of products: {len(products)}")

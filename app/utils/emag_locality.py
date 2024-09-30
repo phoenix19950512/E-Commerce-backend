@@ -65,7 +65,7 @@ def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOIN
         logging.error(f"Failed to retrieve localities: {response.status_code}")
         return None
 
-async def insert_localities_into_db(localities, place:str):
+async def insert_localities_into_db(localities, place:str, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -90,9 +90,10 @@ async def insert_localities_into_db(localities, place:str):
                 modified,
                 zipcode,
                 country_code,
-                localtity_marketplace
+                localtity_marketplace,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id, localtity_marketplace) DO UPDATE SET
                 name = EXCLUDED.name,
                 name_latin = EXCLUDED.name_latin               
@@ -113,6 +114,7 @@ async def insert_localities_into_db(localities, place:str):
             zipcode = locality.get('zipcode')
             country_code = locality.get('country_code')
             localtity_marketplace = place
+            user_id = user_id
 
             value = (
                 id,
@@ -128,7 +130,8 @@ async def insert_localities_into_db(localities, place:str):
                 modified,
                 zipcode,
                 country_code,
-                localtity_marketplace
+                localtity_marketplace,
+                user_id
             )
             cursor.execute(insert_query, value)
             conn.commit()
@@ -142,34 +145,33 @@ async def insert_localities_into_db(localities, place:str):
 async def refresh_emag_localities(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    
+    user_id = marketplace.user_id
+    USERNAME = marketplace.credentials["firstKey"]
+    PASSWORD = marketplace.credentials["secondKey"]
+    API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+    
+    baseAPIURL = marketplace.baseAPIURL
+    endpoint = "/locality"
+    read_endpoint = "/read"
+    count_endpoint = "/count"
 
-    if marketplace.credentials["type"] == "user_pass":
-        
-        USERNAME = marketplace.credentials["firstKey"]
-        PASSWORD = marketplace.credentials["secondKey"]
-        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        
-        baseAPIURL = marketplace.baseAPIURL
-        endpoint = "/locality"
-        read_endpoint = "/read"
-        count_endpoint = "/count"
-
-        result = count_all_localities(baseAPIURL, endpoint, count_endpoint, API_KEY)
-        if result:
-            pages = result['results']['noOfPages']
-            items = result['results']['noOfItems']
-            logging.info(f"------------pages--------------{pages}")
-            logging.info(f"------------items--------------{items}")
-        try:
-            current_page  = 1
-            while current_page <= int(pages):
-                localities = get_all_localities(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
-                logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
-                if len(localities['results'] ) == 0:
-                    print("empty locality")
-                    break
-                await insert_localities_into_db(localities['results'], marketplace.marketplaceDomain)
-                current_page += 1
-        except Exception as e:
-            print('++++++++++++++++++++++++++++++++++++++++++')
-            print(e)
+    result = count_all_localities(baseAPIURL, endpoint, count_endpoint, API_KEY)
+    if result:
+        pages = result['results']['noOfPages']
+        items = result['results']['noOfItems']
+        logging.info(f"------------pages--------------{pages}")
+        logging.info(f"------------items--------------{items}")
+    try:
+        current_page  = 1
+        while current_page <= int(pages):
+            localities = get_all_localities(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
+            logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
+            if len(localities['results'] ) == 0:
+                print("empty locality")
+                break
+            await insert_localities_into_db(localities['results'], marketplace.marketplaceDomain, user_id)
+            current_page += 1
+    except Exception as e:
+        print('++++++++++++++++++++++++++++++++++++++++++')
+        print(e)

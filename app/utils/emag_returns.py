@@ -83,7 +83,7 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
         logging.error(f"Failed to retrieve rmas: {response.status_code}")
         return None
 
-async def insert_rmas_into_db(rmas, place:str):
+async def insert_rmas_into_db(rmas, place:str, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -114,12 +114,14 @@ async def insert_rmas_into_db(rmas, place:str):
                 date,
                 request_status,
                 return_market_place,
-                awb
+                awb,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (order_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
-                request_status = EXCLUDED.request_status               
+                request_status = EXCLUDED.request_status,
+                user_id = EXCLUDED.user_id         
         """).format(sql.Identifier("returns"))
 
         for rma in rmas:
@@ -143,6 +145,7 @@ async def insert_rmas_into_db(rmas, place:str):
             request_status = rma.get('request_status')
             return_market_place = place
             awb = ""
+            user_id = user_id
 
             value = (
                 emag_id,
@@ -164,7 +167,8 @@ async def insert_rmas_into_db(rmas, place:str):
                 date,
                 request_status,
                 return_market_place,
-                awb
+                awb,
+                user_id
             )
             cursor.execute(insert_query, value)
             conn.commit()
@@ -179,30 +183,29 @@ async def refresh_emag_returns(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
-    if marketplace.credentials["type"] == "user_pass":
-        
-        USERNAME = marketplace.credentials["firstKey"]
-        PASSWORD = marketplace.credentials["secondKey"]
-        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        
-        baseAPIURL = marketplace.baseAPIURL
-        endpoint = "/rma"
-        read_endpoint = "/read"
-        count_endpoint = "/count"
+    user_id = marketplace.user_id
+    USERNAME = marketplace.credentials["firstKey"]
+    PASSWORD = marketplace.credentials["secondKey"]
+    API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+    
+    baseAPIURL = marketplace.baseAPIURL
+    endpoint = "/rma"
+    read_endpoint = "/read"
+    count_endpoint = "/count"
 
-        result = count_all_rmas(baseAPIURL, endpoint, count_endpoint, API_KEY)
-        if result:
-            pages = result['results']['noOfPages']
-            items = result['results']['noOfItems']
-            logging.info(f"------------pages--------------{pages}")
-            logging.info(f"------------items--------------{items}")
-        try:
-            current_page  = 1
-            while current_page <= int(pages):
-                rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
-                logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
-                await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain)
-                current_page += 1
-        except Exception as e:
-            print('++++++++++++++++++++++++++++++++++++++++++')
-            print(e)
+    result = count_all_rmas(baseAPIURL, endpoint, count_endpoint, API_KEY)
+    if result:
+        pages = result['results']['noOfPages']
+        items = result['results']['noOfItems']
+        logging.info(f"------------pages--------------{pages}")
+        logging.info(f"------------items--------------{items}")
+    try:
+        current_page  = 1
+        while current_page <= int(pages):
+            rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
+            logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
+            await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain, user_id)
+            current_page += 1
+    except Exception as e:
+        print('++++++++++++++++++++++++++++++++++++++++++')
+        print(e)

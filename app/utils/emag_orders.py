@@ -225,9 +225,10 @@ async def insert_orders(orders, marketplace: Marketplace):
                 iban,
                 email,
                 product_voucher_split,
-                registration_number
+                registration_number,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -328,6 +329,7 @@ async def insert_orders(orders, marketplace: Marketplace):
             payment_mode_id = order.get('payment_mode_id')
             product_voucher_split = [str(product.get('product_voucher_split')) for product in order.get('products')]
             order_martet_place = marketplace.marketplaceDomain
+            user_id = marketplace.user_id
             
             values = (
                 id,
@@ -392,7 +394,8 @@ async def insert_orders(orders, marketplace: Marketplace):
                 iban,
                 email,
                 product_voucher_split,
-                registration_number
+                registration_number,
+                user_id
             )
 
             cursor_order.execute(insert_orders_query, values)

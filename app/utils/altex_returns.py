@@ -66,7 +66,7 @@ def get_detail_rma(url, public_key, private_key, order_id):
     response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
     return response.json()
 
-async def insert_rmas(rmas, place:str):
+async def insert_rmas(rmas, place:str, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -95,9 +95,10 @@ async def insert_rmas(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                return_market_place
+                return_market_place,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (order_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status               
@@ -122,6 +123,7 @@ async def insert_rmas(rmas, place:str):
             date = rma.get('created_date')
             request_status = ""
             return_market_place = place
+            user_id = user_id
 
             value = (
                 emag_id,
@@ -141,7 +143,8 @@ async def insert_rmas(rmas, place:str):
                 replacement_product_quantity,
                 date,
                 request_status,
-                return_market_place
+                return_market_place,
+                user_id
             )
             cursor.execute(insert_query, value)
             conn.commit()
@@ -156,6 +159,7 @@ async def refresh_altex_rmas(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
 
@@ -175,7 +179,7 @@ async def refresh_altex_rmas(marketplace: Marketplace):
                     if detail_rma_result.get('status') == 'success':
                         detail_rmas.append(detail_rma_result.get('data'))
 
-            await insert_rmas(detail_rmas, marketplace.marketplaceDomain)
+            await insert_rmas(detail_rmas, marketplace.marketplaceDomain, user_id)
             page_nr += 1
         except Exception as e:
             logging.error(f"Exception occurred: {e}")

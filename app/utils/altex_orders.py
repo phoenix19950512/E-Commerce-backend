@@ -70,7 +70,7 @@ def get_detail_order(url, public_key, private_key, order_id):
     response = requests.get(url, headers=headers, verify=False, proxies=PROXIES)
     return response.json()
 
-async def insert_orders(orders, mp_name:str):
+async def insert_orders(orders, mp_name:str, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -146,9 +146,10 @@ async def insert_orders(orders, mp_name:str):
                 iban,
                 email,
                 product_voucher_split,
-                registration_number
+                registration_number,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (id) DO UPDATE SET
                 vendor_name = EXCLUDED.vendor_name,
                 type = EXCLUDED.type,
@@ -237,6 +238,7 @@ async def insert_orders(orders, mp_name:str):
             details = ""
             payment_mode_id = 0
             order_martet_place = mp_name
+            user_id = user_id
             
             values = (
                 id,
@@ -301,7 +303,8 @@ async def insert_orders(orders, mp_name:str):
                 iban,
                 email,
                 product_voucher_split,
-                registration_number
+                registration_number,
+                user_id
             )
 
             cursor_order.execute(insert_orders_query, values)
@@ -317,6 +320,7 @@ async def refresh_altex_orders(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
 
@@ -338,7 +342,7 @@ async def refresh_altex_orders(marketplace: Marketplace):
                     if detail_order_result.get('status') == 'success':
                         detail_orders.append(detail_order_result.get('data'))
 
-            await insert_orders(detail_orders, marketplace.marketplaceDomain)
+            await insert_orders(detail_orders, marketplace.marketplaceDomain, user_id)
             logging.info(f"Fishish fetching orders in {page_nr} pages!")
             page_nr += 1
         except Exception as e:

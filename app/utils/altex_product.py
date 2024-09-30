@@ -32,7 +32,7 @@ def change_string(ean_str):
     else:
         return ean_str
 
-async def insert_products(products, offers, mp_name):
+async def insert_products(products, offers, mp_name, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -79,9 +79,10 @@ async def insert_products(products, offers, mp_name):
                 damaged_goods,
                 warehouse_id,
                 internal_shipping_price,
-                market_place
+                market_place,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 buy_button_rank = EXCLUDED.buy_button_rank,
                 market_place = array(SELECT DISTINCT unnest(array_cat(EXCLUDED.market_place, internal_products.market_place)))
@@ -130,6 +131,7 @@ async def insert_products(products, offers, mp_name):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
+            user_id = user_id
 
             values = (
                 id,
@@ -167,7 +169,8 @@ async def insert_products(products, offers, mp_name):
                 damaged_goods,
                 warehouse_id,
                 internal_shipping_price,
-                market_place
+                market_place,
+                user_id
             )
 
             cursor.execute(insert_query, values)
@@ -179,7 +182,7 @@ async def insert_products(products, offers, mp_name):
     except Exception as e:
         logging.info(f"Failed to insert Internal_Products into database: {e}")
 
-async def insert_products_into_db(products, offers,  place):
+async def insert_products_into_db(products, offers, place, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -223,9 +226,10 @@ async def insert_products_into_db(products, offers,  place):
                 stock,
                 warehouse_id,
                 internal_shipping_price,
-                product_marketplace
+                product_marketplace,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean, product_marketplace) DO UPDATE SET
                 sale_price = EXCLUDED.sale_price,
                 barcode_title = EXCLUDED.barcode_title,
@@ -271,6 +275,7 @@ async def insert_products_into_db(products, offers,  place):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             product_marketplace = place  # Ensure this is an array to use array_cat
+            user_id = user_id
 
             values = (
                 id,
@@ -305,7 +310,8 @@ async def insert_products_into_db(products, offers,  place):
                 stock,
                 warehouse_id,
                 internal_shipping_price,
-                product_marketplace
+                product_marketplace,
+                user_id
             )
             cursor.execute(insert_query, values)
             conn.commit()
@@ -356,6 +362,7 @@ async def refresh_altex_products(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
 
@@ -372,8 +379,8 @@ async def refresh_altex_products(marketplace: Marketplace):
             data = result['data']
             offers = data.get("items")
 
-            await insert_products(products, offers, marketplace.marketplaceDomain)
-            await insert_products_into_db(products, offers, marketplace.marketplaceDomain)
+            await insert_products(products, offers, marketplace.marketplaceDomain, user_id)
+            await insert_products_into_db(products, offers, marketplace.marketplaceDomain, user_id)
             page_nr += 1
         except Exception as e:
             logging.error(f"Exception occurred: {e}")

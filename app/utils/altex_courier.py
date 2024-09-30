@@ -26,7 +26,7 @@ PROXIES = {
     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
 }
 
-async def insert_couriers(couriers, place):
+async def insert_couriers(couriers, place, user_id):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -45,12 +45,13 @@ async def insert_couriers(couriers, place):
                 courier_account_properties,
                 created,
                 status,
-                market_place
+                market_place,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (account_id, market_place) DO UPDATE SET
                 account_display_name = EXCLUDED.account_display_name,
-                courier_account_type = EXCLUDED.courier_account_type               
+                courier_account_type = EXCLUDED.courier_account_type
         """).format(sql.Identifier("couriers"))
 
         for courier in couriers:
@@ -62,6 +63,7 @@ async def insert_couriers(couriers, place):
             created = None
             status = 0
             market_place = place
+            user_id = user_id
 
             value = (
                 account_id,
@@ -71,7 +73,8 @@ async def insert_couriers(couriers, place):
                 courier_account_properties,
                 created,
                 status,
-                market_place
+                market_place,
+                user_id
             )
 
             print(value)
@@ -113,6 +116,7 @@ async def refresh_altex_couriers(marketplace: Marketplace):
     # create_database()
     logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
 
+    user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]
 
@@ -125,7 +129,7 @@ async def refresh_altex_couriers(marketplace: Marketplace):
             data = result['data']
             couriers = data.get("items")
 
-            await insert_couriers(couriers, marketplace.marketplaceDomain)
+            await insert_couriers(couriers, marketplace.marketplaceDomain, user_id)
             page_nr += 1
         except Exception as e:
             logging.error(f"Exception occurred: {e}")
