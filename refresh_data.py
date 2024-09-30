@@ -212,7 +212,7 @@ async def update_sameday(db: AsyncSession = Depends(get_db)):
             result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
             samedays = result.scalars().all()
             for sameday in samedays:
-                api_key = auth_sameday(sameday)
+                api_key = await auth_sameday(sameday)
                 sameday.registration_number = api_key
             await session.commit()
 
