@@ -35,8 +35,8 @@ async def tracking(sameday: Billing_software, awb_barcode):
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
-        response = requests.post(auth_url, headers=headers)
-        result = response.json()
+        auth_response = await client.post(auth_url, headers=headers)
+        result = auth_response.json()
         api_key = result.get('token')
         
         tracking_headers = {
