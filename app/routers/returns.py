@@ -13,27 +13,29 @@ from app.schemas.returns import ReturnsCreate, ReturnsRead, ReturnsUpdate
 router = APIRouter()
 
 @router.post("/", response_model=ReturnsRead)
-async def create_return(returns: ReturnsCreate, db: AsyncSession = Depends(get_db)):
+async def create_return(returns: ReturnsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_return = Returns(**returns.dict())
+    db_return.user_id = user.id
     db.add(db_return)
     await db.commit()
     await db.refresh(db_return)
     return db_return
 
 @router.get('/count')
-async def get_return_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Returns.order_id))
-    count = result.scalar()
-    return count
+async def get_return_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).where(Returns.user_id == user.id))
+    db_returns = result.scalars().all()
+    return len(db_returns)
 
 @router.get("/")
 async def get_returns(
     page: int = Query(1, ge=1, description="page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Returns).offset(offset).limit(items_per_page))
+    result = await db.execute(select(Returns).where(Returns.user_id == user.id).offset(offset).limit(items_per_page))
     db_returns = result.scalars().all()
     if db_returns is None:
         raise HTTPException(status_code=404, detail="return not found")
@@ -59,8 +61,8 @@ async def get_returns(
     return return_data
 
 @router.get("/return_id")
-async def get_return_info(return_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).where(cast(Returns.emag_id, Integer) == return_id))
+async def get_return_info(return_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).where(cast(Returns.emag_id, Integer) == return_id, Returns.user_id == user.id))
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="awb not found")
@@ -94,8 +96,8 @@ async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
     }
 
 @router.put("/{return_id}", response_model=ReturnsRead)
-async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).filter(Returns.order_id == return_id))
+async def update_return(return_id: int, returns: ReturnsUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user.id))
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="return not found")
@@ -106,8 +108,8 @@ async def update_return(return_id: int, returns: ReturnsUpdate, db: AsyncSession
     return db_return
 
 @router.delete("/{return_id}", response_model=ReturnsRead)
-async def delete_return(return_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).filter(Returns.order_id == return_id))
+async def delete_return(return_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user.id))
     returns = result.scalars().first()
     if ReturnsCreate is None:
         raise HTTPException(status_code=404, detail="return not found")
