@@ -15,7 +15,7 @@ import logging
 router = APIRouter()
 
 @router.post("/")
-async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get_db)):
+async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_invoice = Invoice(**invoice.dict())
     order_id = db_invoice.order_id
 
@@ -48,23 +48,25 @@ async def create_invoice(invoice: InvoicesCreate, db: AsyncSession = Depends(get
     db_invoice.number = result.get('number') if result.get('number') else ''
     db_invoice.series = result.get('series') if result.get('series') else ''
     db_invoice.url = result.get('url') if result.get('url') else ''
-
+    db_invoice.user_id = user.id
+    
     db.add(db_invoice)
     await db.commit()
     await db.refresh(db_invoice)
     return db_invoice
 
 @router.get('/count')
-async def get_invoice_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Invoice.id))
-    count = result.scalar()
-    return count
+async def get_invoice_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Invoice).where(Invoice.user_id == user.id))
+    db_invoices = result.scalars().all()
+    return len(db_invoices)
 
 @router.get("/", response_model=List[InvoicesRead])
 async def get_invoices(
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Invoice))
+    result = await db.execute(select(Invoice).where(Invoice.user_id == user.id))
     db_invoices = result.scalars().all()
     if db_invoices is None:
         raise HTTPException(status_code=404, detail="invoice not found")
