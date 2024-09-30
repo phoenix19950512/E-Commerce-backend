@@ -67,6 +67,7 @@ async def get_replacements(
     page: int = Query(1, ge=1, description="Page number"),
     itmes_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
     status: int = Query(0, description="status"),
+    reason_str: str = Query("", description="reason array"),
     search_text: str = Query('', description="Text for searching"),
     db: AsyncSession = Depends(get_db)
 ):
@@ -93,6 +94,9 @@ async def get_replacements(
     ).order_by(Replacement.date.desc(), Replacement.id)
     if status == 1:
         query = query.where(AWBAlias.order_id.is_(None))
+    if reason_str:
+        reason_list = [str(reason.strip()) for reason in reason_str.split(";")]
+        query = query.where(Replacement.reason == any_(reason_list))
     offset = (page - 1) * itmes_per_page
     result = await db.execute(query.offset(offset).limit(itmes_per_page))
     db_replacements = result.all()
