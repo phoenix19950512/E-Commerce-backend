@@ -40,7 +40,7 @@ def get_all_couriers(MARKETPLACE_API_URL, ENDPOINT, READ_ENDPOINT,  API_KEY, PUB
         logging.info(f"Failed to retrieve refunds: {response.status_code}")
         return None
 
-async def insert_couriers_into_db(couriers, place:str):
+async def insert_couriers_into_db(couriers, place:str, user_id: int):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -59,9 +59,10 @@ async def insert_couriers_into_db(couriers, place:str):
                 courier_account_properties,
                 created,
                 status,
-                market_place
+                market_place,
+                user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (account_id, market_place) DO UPDATE SET
                 account_display_name = EXCLUDED.account_display_name,
                 courier_account_type = EXCLUDED.courier_account_type               
@@ -76,6 +77,7 @@ async def insert_couriers_into_db(couriers, place:str):
             created = courier.get('created')
             status = courier.get('status')
             market_place = place
+            user_id = user_id
 
             value = (
                 account_id,
@@ -85,7 +87,8 @@ async def insert_couriers_into_db(couriers, place:str):
                 courier_account_properties,
                 created,
                 status,
-                market_place
+                market_place,
+                user_id
             )
 
             print(value)
@@ -113,4 +116,5 @@ async def refresh_emag_couriers(marketplace: Marketplace):
 
         result = get_all_couriers(baseAPIURL, endpoint, read_endpoint, API_KEY)
         print(result)
-        await insert_couriers_into_db(result['results'], marketplace.marketplaceDomain)
+        user_id = marketplace.user_id
+        await insert_couriers_into_db(result['results'], marketplace.marketplaceDomain, user_id)

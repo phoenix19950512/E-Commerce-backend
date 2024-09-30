@@ -36,14 +36,6 @@ async def get_billing_softwares(user: User = Depends(get_current_user), db: Asyn
     
     return db_billing_softwares
 
-@router.get("/{user_id}", response_model=Billing_softwaresRead)
-async def get_billing_software(user_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Billing_software).filter(Billing_software.user_id == user_id))
-    db_billing_software = result.scalars().first()
-    if db_billing_software is None:
-        raise HTTPException(status_code=404, detail="Billing Software not found")
-    return db_billing_software
-
 @router.put("/{billing_software_id}", response_model=Billing_softwaresRead)
 async def update_billing_software(billing_software_id: int, billing_software: Billing_softwaresUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Billing_software).where(Billing_software.id == billing_software_id, Billing_software.user_id == user.id))
