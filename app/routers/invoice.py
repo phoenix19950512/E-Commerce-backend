@@ -73,14 +73,14 @@ async def get_invoices(
     return db_invoices
 
 @router.get("/{invoice_id}", response_model=InvoicesRead)
-async def get_invoice(invoice_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id))
+async def get_invoice(invoice_id: int, user:User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
     db_invoice = result.scalars().first()
     return db_invoice
 
 @router.put("/{invoice_id}", response_model=InvoicesRead)
-async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id))
+async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
     db_invoice = result.scalars().first()
     if db_invoice is None:
         raise HTTPException(status_code=404, detail="invoice not found")
