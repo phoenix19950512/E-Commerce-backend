@@ -13,7 +13,7 @@ from app.schemas.damaged_good import Damaged_goodCreate, Damaged_goodRead, Damag
 router = APIRouter()
 
 @router.post("/", response_model=Damaged_goodRead)
-async def create_damaged_good(damaged_good: Damaged_goodCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession = Depends(get_db)):
     db_damaged_good = Damaged_good(**damaged_good.dict())
     result = await db.execute(select(Damaged_good).where(Damaged_good.return_id == db_damaged_good.return_id))
     damaged_good = result.scalars().first()
@@ -30,7 +30,11 @@ async def create_damaged_good(damaged_good: Damaged_goodCreate, user: User = Dep
             product.damaged_goods = product.damaged_goods + db_damaged_good.quantity[i]
         else:
             product.damaged_goods = db_damaged_good.quantity[i]
-    db_damaged_good.user_id = user.id
+    first_ean = product_ean_list[0]
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == first_ean))
+    db_internal_product = result.scalars().first()
+    user_id = db_internal_product.user_id
+    db_damaged_good.user_id = user_id
     db.add(db_damaged_good)
     await db.commit()
     await db.refresh(db_damaged_good)

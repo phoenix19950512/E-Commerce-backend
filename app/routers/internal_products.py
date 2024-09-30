@@ -65,10 +65,9 @@ async def get_products_count(
 
 @router.get("/all_products")
 async def get_all_products(
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Internal_Product).where(Internal_Product.user_id == user.id)
+    query = select(Internal_Product)
     result = await db.execute(query)
     db_products = result.scalars().all()
 
@@ -77,10 +76,10 @@ async def get_all_products(
     return db_products
 
 @router.get("/{ean}", response_model=Internal_ProductRead)
-async def read_product(ean: str, user: User = Depends(get_db), db: AsyncSession = Depends(get_db)):
+async def read_product(ean: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
-    if product is None or product.user_id != user.id:
+    if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
     return product
 
