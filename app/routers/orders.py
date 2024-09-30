@@ -30,8 +30,8 @@ async def get_order(db: AsyncSession, order_id: int):
 def get_orders(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Order).offset(skip).limit(limit).all()
 
-async def update_order(db: Session, order_id: int, order: OrderUpdate):
-    result = await db.execute(select(Order).filter(Order.id == order_id))
+async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate, user: User):
+    result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user.id))
     db_order = result.scalars().first()
     if db_order:
         for key, value in order.dict().items():
@@ -40,8 +40,9 @@ async def update_order(db: Session, order_id: int, order: OrderUpdate):
         db.refresh(db_order)
     return db_order
 
-async def delete_order(db: Session, order_id: int):
-    db_order = db.query(Order).filter(Order.id == order_id).first()
+async def delete_order(db: AsyncSession, order_id: int, user: User):
+    result = await db.execute(select(Order).filter(Order.id == order_id, Order.user_id == user.id))
+    db_order = result.scalars().first()
     if db_order:
         db.delete(db_order)
         db.commit()
@@ -50,8 +51,9 @@ async def delete_order(db: Session, order_id: int):
 
 router = APIRouter()
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
-async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
+async def create_order(order: OrderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     db_order = Order(**order.dict())
+    db_order.user_id == user.id
     db.add(db_order)
     await db.commit()
     await db.refresh(db_order)
@@ -63,6 +65,7 @@ async def read_new_orders(
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description='warehouse_id'),
     status: int = Query(-1, description="Status of the new order"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -107,7 +110,8 @@ async def read_new_orders(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
-        
+    query = query.where(Order.user_id == user.id)
+    
     result = await db.execute(query)
     db_orders = result.scalars().all()
     
@@ -178,6 +182,7 @@ async def count_new_orders(
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description="warehouse_id"),
     status: int = Query(-1, description="Status of the order"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -218,6 +223,8 @@ async def count_new_orders(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
+    query = query.where(Order.user_id == user.id)    
+    
     result = await db.execute(query)
     orders = result.scalars().all()   
     return len(orders)
@@ -231,6 +238,7 @@ async def read_orders(
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description="warehouse_id"),
     no_stock: bool = Query(False, description="No stock"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -255,6 +263,8 @@ async def read_orders(
         query = query.order_by(Order.date.desc())
     else:
         query = query.order_by(Order.date.asc())
+        
+    query = query.where(Order.user_id == user.id)
 
     query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
     query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
@@ -279,7 +289,6 @@ async def read_orders(
         )
     else:
         query = query.group_by(Order.id)
-            
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_orders = result.scalars().all()
@@ -360,6 +369,7 @@ async def get_orders_count(
     status: int = Query(-1, description="Status of the order"),
     search_text: str = Query('', description="Text for searching"),
     warehouse_id: int = Query('', description="warehoues_id"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     Internal_productAlias = aliased(Internal_Product)
@@ -377,7 +387,7 @@ async def get_orders_count(
     # Apply status filter if needed 
     if status != -1:
         query = query.where(Order.status == status)
-
+    query = query.where(Order.user_id == user.id)
     # Execute query
     if warehouse_id == -1:
         query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
@@ -402,18 +412,19 @@ async def get_orders_count(
                 func.max(Internal_productAlias.warehouse_id) == warehouse_id
             )
         )
+    
     result = await db.execute(query)
     orders = result.scalars().all()   
     return len(orders)
 
 @router.get("/{order_id}")
-async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
+async def read_order(order_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     AWBAlias = aliased(AWB)
     query = select(Order, AWBAlias).outerjoin(
         AWBAlias,
         AWBAlias.order_id == Order.id
     )
-    query = query.where(Order.id == order_id)
+    query = query.where(Order.id == order_id, Order.user_id == user.id)
     result = await db.execute(query)
 
     db_order_awb = result.all()
@@ -467,15 +478,15 @@ async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
     }
 
 @router.put("/{order_id}", response_model=OrderRead)
-async def get_update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
-    db_order = await update_order(db=db, order_id=order_id, order=order)
+async def get_update_order(order_id: int, order: OrderUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_order = await update_order(db=db, order_id=order_id, order=order, user=user)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
 
 @router.delete("/{order_id}", response_model=OrderRead)
-async def get_delete_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = await delete_order(db=db, order_id=order_id)
+async def get_delete_order(order_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_order = await delete_order(db=db, order_id=order_id, user=user)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
