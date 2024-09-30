@@ -23,7 +23,7 @@ from app.utils.altex_returns import refresh_altex_rmas
 from app.utils.altex_location import refresh_altex_locations
 from app.utils.stock_sync import calc_order_stock
 from app.utils.smart_api import get_stock
-from app.utils.sameday import tracking, auth
+from app.utils.sameday import tracking, auth_sameday
 from app.routers.reviews import *
 from app.models.awb import AWB
 from app.models.user import User
@@ -212,7 +212,7 @@ async def update_sameday(db: AsyncSession = Depends(get_db)):
             result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
             samedays = result.scalars().all()
             for sameday in samedays:
-                api_key = auth(sameday)
+                api_key = auth_sameday(sameday)
                 sameday.registration_number = api_key
             await session.commit()
 

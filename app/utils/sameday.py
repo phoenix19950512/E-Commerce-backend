@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 #     'https://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
 # }
 
-async def auth(sameday: Billing_software):
+async def auth_sameday(sameday: Billing_software):
     USERNAME = sameday.username
     PASSWORD = sameday.password
     auth_url = "https://api.sameday.ro/api/authenticate"
