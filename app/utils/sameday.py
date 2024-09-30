@@ -21,24 +21,25 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 #     'https://': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
 # }
 
-
-async def tracking(sameday: Billing_software, awb_barcode):
-    url = "https://api.sameday.ro/api/client/parcel"
-    
+async def auth(sameday: Billing_software):
     USERNAME = sameday.username
     PASSWORD = sameday.password
-    
     auth_url = "https://api.sameday.ro/api/authenticate"
     headers = {
         "X-Auth-Username": f"{USERNAME}",
         "X-Auth-Password": f"{PASSWORD}",
     }
-
+    
     async with httpx.AsyncClient(timeout=10) as client:
         auth_response = await client.post(auth_url, headers=headers)
         result = auth_response.json()
-        api_key = result.get('token')
-        
+        return result
+
+async def tracking(sameday: Billing_software, awb_barcode):
+    url = "https://api.sameday.ro/api/client/parcel"
+    api_key = sameday.registration_number
+    
+    async with httpx.AsyncClient(timeout=10) as client:
         tracking_headers = {
             "X-Auth-TOKEN": api_key,
         }

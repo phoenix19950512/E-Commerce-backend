@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.locality import Locality
+from app.models.user import User
+from app.routers.auth import get_current_user
 from app.database import get_db
 from app.schemas.locality import LocalityCreate, LocalityUpdate, LocalityRead
 from fastapi import APIRouter, Depends, HTTPException, status
