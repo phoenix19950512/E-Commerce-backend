@@ -52,6 +52,7 @@ async def get_product_info(
     shipment_type: int = Query(0),
     query_stock_days: int = Query(0),
     query_imports_stocks: int = Query(0),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -67,11 +68,10 @@ async def get_product_info(
             ProductAlias.product_marketplace == Order.order_market_place
         )
     )
-
+    query = query.where(Order.user_id == user.id)
     time = datetime.now()
     thirty_days_ago = time - timedelta(days=30)
     query1 = query.where(Order.date > thirty_days_ago)
-
     result = await db.execute(query1)
     orders_with_products = result.all()
 
@@ -106,7 +106,7 @@ async def get_product_info(
                 else:
                     cnt90[product.ean] += quantities[i]
 
-    product_result = await db.execute(select(Internal_Product))
+    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user.id))
     products = product_result.scalars().all()
 
     product_data = []
@@ -149,40 +149,6 @@ async def get_product_info(
 
         if ean not in cnt:
             continue
-            # if ean not in cnt90:
-            #     sales90 = 0
-            # else:
-            #     sales90 = cnt90[ean]
-
-            # product_data.append({
-            #     "id": product.id,
-            #     "type": type,
-            #     "product_name": product.product_name,
-            #     "ean": product.ean,
-            #     "sales_per_day": 0,
-            #     "quantity": query_imports_stocks,
-            #     "image_link":product.image_link,
-            #     "link_address_1688": product.link_address_1688,
-            #     "sale_price": product.price,
-            #     "wechat": product.supplier_id,
-            #     "stock_imports": [product.stock, 0, imports],
-            #     "day_stock": [0, 0],
-            #     "imports_data": imports_datas,
-            #     "pcs_ctn": product.pcs_ctn,
-            #     "masterbox_title": product.masterbox_title,
-            #     "barcode_title": product.barcode_title,
-            #     "price_1688": product.price_1688,
-            #     "link_address_1688": product.link_address_1688,
-            #     "variation_name_1688": product.variation_name_1688,
-            #     "dimensions": product.dimensions,
-            #     "weight": product.weight,
-            #     "volumetric_weight": volumetric_weight,
-            #     "model_name": product.model_name,
-            #     "short_product_name": product.short_product_name,
-            #     "observation": product.observation,
-            #     "sales": 0,
-            #     "sales90": sales90
-            # })
         else:
             days = (max_time[ean] - min_time[ean]).days + 1
             ave_sales = cnt[ean] / days
@@ -232,6 +198,7 @@ async def get_product_info(
     shipment_type: int = Query(0),
     query_stock_days: int = Query(0),
     query_imports_stocks: int = Query(0),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
 
@@ -247,6 +214,8 @@ async def get_product_info(
             ProductAlias.product_marketplace == Order.order_market_place
         )
     )
+    
+    query = query.where(Order.user_id == user.id)
 
     time = datetime.now()
     thirty_days_ago = time - timedelta(days=30)
@@ -269,7 +238,7 @@ async def get_product_info(
                     min_time[product.ean] = min(min_time[product.ean], order.date)
                     max_time[product.ean] = max(max_time[product.ean], order.date)
 
-    product_result = await db.execute(select(Internal_Product))
+    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user.id))
     products = product_result.scalars().all()
 
     product_data = []
@@ -384,13 +353,15 @@ async def get_product_advanced_info(
     weight_min: Decimal = Query(None),
     weight_max: Decimal = Query(None),
     volumetric_weight_min: Decimal = Query(None),
-    volumetric_weight_max: Decimal = Query(None) 
+    volumetric_weight_max: Decimal = Query(None),
+    user: User = Depends(get_current_user)
 ):
     query_ship = select(Shipment)
 
     if shipment_type is not None:
         query_ship = query_ship.where(Shipment.type == shipment_type)
     
+    query_ship = query_ship.where(Shipment.user_id == user.id)
     shipments_result = await db.execute(query_ship)
     shipments = shipments_result.scalars().all()
 
@@ -419,7 +390,7 @@ async def get_product_advanced_info(
     
     if shipment_type is not None:
         query = query.where(Internal_Product.product_name in product_type_list)
-
+    query = query.where(Internal_Product.user_id == user.id)
     result = await db.execute(query)
     products = result.scalars().all()
     product_data = []
@@ -441,6 +412,7 @@ async def get_product_advanced_info(
 
 @router.get('/shipment')
 async def  get_shipment_info(
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     type_str: str = Query(None),
     status_str: str = Query(None)
@@ -456,8 +428,8 @@ async def  get_shipment_info(
         status = []
 
     query = select(Shipment).where(Shipment.type.in_(type))
-    query = query.where(status == any_(Shipment.status))
-
+    query = query.where(Shipment.status == any_(status))
+    query = query.where(Shipment.user_id == user.id)
     result = await db.execute(query)
     shipments = result.scalars().all()
 
