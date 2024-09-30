@@ -13,28 +13,27 @@ from app.schemas.team_member import Team_memberCreate, Team_memberRead, Team_mem
 router = APIRouter()
 
 @router.post("/", response_model=Team_memberRead)
-async def create_team_member(team_member: Team_memberCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_team_member(team_member: Team_memberCreate,  db: AsyncSession = Depends(get_db)):
     db_team_member = Team_member(**team_member.dict())
-    db_team_member.user_id = user.id
+    # db_team_member.user_id = user.id
     db.add(db_team_member)
     await db.commit()
     await db.refresh(db_team_member)
     return db_team_member
 
 @router.get('/count')
-async def get_team_members_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Team_member).where(Team_member.user_id == user.id))
+async def get_team_members_count(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team_member))
     db_team_member = result.scalars().first()
     members = db_team_member.member_id
     return len(members)
 
 @router.get("/")
 async def get_team_members(
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     
-    result = await db.execute(select(Team_member).where(Team_member.user_id == user.id))
+    result = await db.execute(select(Team_member))
     db_team_members = result.scalars().first()
     if db_team_members is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
@@ -47,8 +46,8 @@ async def get_team_members(
     return user_data
 
 @router.put("/{team_member_id}")
-async def update_team_member(team_member_id: int, team_member: Team_memberUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Team_member).filter(Team_member.id == team_member_id, Team_member.user_id == user.id))
+async def update_team_member(team_member_id: int, team_member: Team_memberUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team_member).filter(Team_member.id == team_member_id))
     db_team_member = result.scalars().first()
     if db_team_member is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
@@ -69,8 +68,8 @@ async def update_team_member(team_member_id: int, team_member: Team_memberUpdate
     return db_team_member
 
 @router.delete("/{team_member_id}", response_model=Team_memberRead)
-async def delete_team_member(team_member_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Team_member).filter(Team_member.id == team_member_id, Team_member.user_id == user.id))
+async def delete_team_member(team_member_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team_member).filter(Team_member.id == team_member_id))
     team_member = result.scalars().first()
     if team_member is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
