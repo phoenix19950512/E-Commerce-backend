@@ -186,14 +186,6 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 # async def refresh_data(db: AsyncSession = Depends(get_db)): 
 #     async for db in get_db():
 #         async with db as session:
-#             logging.info("Starting update api_key in sameday")
-#             result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
-#             samedays = result.scalars().all()
-#             for sameday in samedays:
-#                 api_key = auth(sameday)
-#                 sameday.registration_number = api_key
-#             await session.commit()
-            
 #             logging.info("Starting product refresh")
 #             result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
 #             marketplaces = result.scalars().all()
@@ -224,82 +216,82 @@ async def update_sameday(db: AsyncSession = Depends(get_db)):
                 sameday.registration_number = api_key
             await session.commit()
 
-@app.on_event("startup")
-@repeat_every(seconds=14400)
-async def update_awb(db: AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
-                            68, 101, 147, 73, 126, 47, 145, 128, 19, 0, 5, 22, 62, 65, 140, 149, 153]
-            # awb_status_list = [93, 16, 15, 9]
-            logging.info("Start updating AWB status")
+# @app.on_event("startup")
+# @repeat_every(seconds=14400)
+# async def update_awb(db: AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
+#                             68, 101, 147, 73, 126, 47, 145, 128, 19, 0, 5, 22, 62, 65, 140, 149, 153]
+#             # awb_status_list = [93, 16, 15, 9]
+#             logging.info("Start updating AWB status")
 
-            batch_size = 100
-            offset = 0
-            while True:
-                try:
-                    result = await session.execute(
-                        select(AWB)
-                        .where(AWB.awb_status == any_(awb_status_list))
-                        .order_by(AWB.order_id.asc())
-                        .offset(offset)
-                        .limit(batch_size)
-                    )
-                    db_awbs = result.scalars().all()
+#             batch_size = 100
+#             offset = 0
+#             while True:
+#                 try:
+#                     result = await session.execute(
+#                         select(AWB)
+#                         .where(AWB.awb_status == any_(awb_status_list))
+#                         .order_by(AWB.order_id.asc())
+#                         .offset(offset)
+#                         .limit(batch_size)
+#                     )
+#                     db_awbs = result.scalars().all()
 
-                    if not db_awbs:
-                        break
+#                     if not db_awbs:
+#                         break
 
-                    for awb in db_awbs:
-                        awb_barcode = awb.awb_barcode
-                        awb_user_id = awb.user_id
-                        result = await session.execute(select(Billing_software).where(Billing_software.user_id == awb_user_id, Billing_software.site_domain == "sameday.ro"))
-                        sameday = result.scalars().first()
-                        try:
-                            # Track and update awb status
-                            awb_status_result = await tracking(sameday, awb_barcode)
-                            pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
-                            weight = awb_status_result.get('parcelSummary').get('parcelWeight')
-                            length = awb_status_result.get('parcelSummary').get('parcelLength')
-                            width = awb_status_result.get('parcelSummary').get('parcelWidth')
-                            height = awb_status_result.get('parcelSummary').get('parcelHeight')
-                            history_list = awb_status_result.get('parcelHistory')
-                            statusID = []
-                            statusDate = []
-                            for history in history_list:
-                                statusID.append(history.get('statusId'))
-                                statusDate.append(history.get('statusDate'))
-                            parsed_dates = [datetime.fromisoformat(date) for date in statusDate]
-                            latest_index = parsed_dates.index(max(parsed_dates))
-                            first_index = parsed_dates.index(min(parsed_dates))
-                            awb_status = statusID[latest_index]
-                            awb.awb_creation_date = statusDate[first_index]
-                            awb.awb_status = awb_status
-                            awb.pickedup = pickedup
-                            awb.weight = weight
-                            awb.height = height
-                            awb.width = width
-                            awb.length = length
-                        except Exception as track_ex:
-                            logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
-                            continue  # Continue to next AWB if tracking fails
+#                     for awb in db_awbs:
+#                         awb_barcode = awb.awb_barcode
+#                         awb_user_id = awb.user_id
+#                         result = await session.execute(select(Billing_software).where(Billing_software.user_id == awb_user_id, Billing_software.site_domain == "sameday.ro"))
+#                         sameday = result.scalars().first()
+#                         try:
+#                             # Track and update awb status
+#                             awb_status_result = await tracking(sameday, awb_barcode)
+#                             pickedup = awb_status_result.get('parcelSummary').get('isPickedUp')
+#                             weight = awb_status_result.get('parcelSummary').get('parcelWeight')
+#                             length = awb_status_result.get('parcelSummary').get('parcelLength')
+#                             width = awb_status_result.get('parcelSummary').get('parcelWidth')
+#                             height = awb_status_result.get('parcelSummary').get('parcelHeight')
+#                             history_list = awb_status_result.get('parcelHistory')
+#                             statusID = []
+#                             statusDate = []
+#                             for history in history_list:
+#                                 statusID.append(history.get('statusId'))
+#                                 statusDate.append(history.get('statusDate'))
+#                             parsed_dates = [datetime.fromisoformat(date) for date in statusDate]
+#                             latest_index = parsed_dates.index(max(parsed_dates))
+#                             first_index = parsed_dates.index(min(parsed_dates))
+#                             awb_status = statusID[latest_index]
+#                             awb.awb_creation_date = statusDate[first_index]
+#                             awb.awb_status = awb_status
+#                             awb.pickedup = pickedup
+#                             awb.weight = weight
+#                             awb.height = height
+#                             awb.width = width
+#                             awb.length = length
+#                         except Exception as track_ex:
+#                             logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
+#                             continue  # Continue to next AWB if tracking fails
 
-                    try:
-                        await session.commit()
-                        logging.info(f"Successfully committed batch starting from offset {offset}")
-                    except Exception as e:
-                        await session.rollback()
-                        logging.error(f"Failed to commit batch at offset {offset}: {str(e)}")
-                        break
+#                     try:
+#                         await session.commit()
+#                         logging.info(f"Successfully committed batch starting from offset {offset}")
+#                     except Exception as e:
+#                         await session.rollback()
+#                         logging.error(f"Failed to commit batch at offset {offset}: {str(e)}")
+#                         break
 
-                    offset += batch_size
+#                     offset += batch_size
 
-                except Exception as db_ex:
-                    logging.error(f"Database query failed at offset {offset}: {str(db_ex)}")
-                    await session.rollback()
-                    break
+#                 except Exception as db_ex:
+#                     logging.error(f"Database query failed at offset {offset}: {str(db_ex)}")
+#                     await session.rollback()
+#                     break
 
-            logging.info("AWB status update completed")
+#             logging.info("AWB status update completed")
 
 if __name__ == "__main__":
     import uvicorn
