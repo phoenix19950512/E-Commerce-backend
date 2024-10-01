@@ -40,6 +40,7 @@ class Shipment(Base):
     other_cost = Column(ARRAY(Numeric(12, 4)), nullable=True)
     target_day = Column(Integer, nullable=True, default=90)
     received = Column(ARRAY(Integer), nullable=True)
+    price = Column(ARRAY(Numeric(12, 4)), nullable=True)
     user_id = Column(Integer, index=True, nullable=True)
     
     
