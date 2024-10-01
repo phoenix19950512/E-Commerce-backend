@@ -30,20 +30,21 @@ async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_cur
     else:
         user_id = user.id
     db_shipment = Shipment(**shipment.dict())
+    db_shipment.user_id = user_id
     db.add(db_shipment)
     await db.commit()
     await db.refresh(db_shipment)
     return db_shipment
 
 @router.get('/count')
-async def get_shipments_count(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(func.count(Shipment.id))
-    count = result.scalar()
-    return count
+async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).where(Shipment.user_id == user.id))
+    db_shipments = result.scalars().all()
+    return len(db_shipments)
 
 @router.get("/new_count")
-async def get_new_shipments(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).where(Shipment.status == "New"))
+async def get_new_shipments(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user.id))
     db_new_shipments = result.scalars().all()
     return len(db_new_shipments)
 
@@ -62,11 +63,12 @@ async def get_shipments_agent(
 async def get_shipments(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Shipment).offset(offset).limit(items_per_page))
+    result = await db.execute(select(Shipment).where(Shipment.user_id == user.id).offset(offset).limit(items_per_page))
     db_shipments = result.scalars().all()
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
@@ -74,9 +76,10 @@ async def get_shipments(
 
 @router.get("/new", response_model=List[ShipmentRead])
 async def get_new_shipments(
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Shipment).where(Shipment.status == "New"))
+    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user.id))
     db_new_shipments = result.scalars().all()
     if db_new_shipments is None:
         raise HTTPException(status_code=400, detail="New shipment not found")
@@ -84,13 +87,17 @@ async def get_new_shipments(
 
 @router.get("/extra") 
 async def get_extra_info(
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    user_id = user.id
     query = text("""
-        SELECT id, title From shipments
+        SELECT id, title 
+        FROM shipments
+        WHERE user_id = :user_id
     """)
     
-    result = await db.execute(query)
+    result = await db.execute(query, {"user_id": user_id})
     extra_info = result.fetchall()
     
     extra_info_list = [{"id": row[0], "title": row[1]} for row in extra_info]
@@ -180,8 +187,8 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     return shipment_2
 
 @router.get("/product_info")
-async def get_info(ean: str, item_per_box: int, db:AsyncSession = Depends(get_db)):
-    query = select(Shipment).where(ean == any_(Shipment.ean))
+async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
+    query = select(Shipment).where(ean == any_(Shipment.ean), Shipment.user_id == user.id)
     result = await db.execute(query)
 
     shipments = result.scalars().all()
@@ -245,8 +252,8 @@ async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
     return db_shipment
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
-async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id))
+async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user.id))
     db_shipment = result.scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
@@ -258,8 +265,8 @@ async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, db: AsyncS
     return db_shipment
 
 @router.delete("/{shipment_id}", response_model=ShipmentRead)
-async def delete_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id))
+async def delete_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id, Shipment.user_id == user.id))
     shipment = result.scalars().first()
     if shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
