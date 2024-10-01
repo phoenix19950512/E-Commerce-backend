@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.shipment import Shipment
 from app.models.supplier import Supplier
 from app.models.internal_product import Internal_Product
+from app.models.team_member import Team_member
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 import logging
 import json
@@ -18,7 +19,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 router = APIRouter()
 
 @router.post("/", response_model=ShipmentRead)
-async def create_shipment(shipment: ShipmentCreate, db: AsyncSession = Depends(get_db)):
+async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4 and user.role != 2:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     db_shipment = Shipment(**shipment.dict())
     db.add(db_shipment)
     await db.commit()

@@ -41,6 +41,9 @@ async def get_team_members(
         raise HTTPException(status_code=404, detail="Team_member not found")
     
     user_data = []
+    result = await db.execute(select(User).where(User.id == admin.id))
+    db_admin = result.scalars().first()
+    user_data.append(db_admin)
     for member in db_team:
         result = await db.execute(select(User).where(User.id == member.user))
         db_user = result.scalars().first()
