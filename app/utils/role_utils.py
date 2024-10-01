@@ -5,7 +5,8 @@ ROLE_MAPPING = {
     2: "Order Agent",
     3: "Customer Support",
     4: "Administrator",
-    5: "Replacement Manager"
+    5: "Replacement Manager",
+    6: "Shipment Manager"
 }
 
 def convert_role_to_string(role: int) -> str:

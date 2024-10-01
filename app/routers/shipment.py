@@ -20,10 +20,10 @@ router = APIRouter()
 
 @router.post("/", response_model=ShipmentRead)
 async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2:
+    if user.role != 4 and user.role != 2 and user.role != 6:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2:
+    if user.role == 2 or user.role == 6:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -38,13 +38,31 @@ async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_cur
 
 @router.get('/count')
 async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).where(Shipment.user_id == user.id))
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.user_id == user_id))
     db_shipments = result.scalars().all()
     return len(db_shipments)
 
 @router.get("/new_count")
 async def get_new_shipments(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user.id))
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user_id))
     db_new_shipments = result.scalars().all()
     return len(db_new_shipments)
 
@@ -66,9 +84,17 @@ async def get_shipments(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
     
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Shipment).where(Shipment.user_id == user.id).offset(offset).limit(items_per_page))
+    result = await db.execute(select(Shipment).where(Shipment.user_id == user_id).offset(offset).limit(items_per_page))
     db_shipments = result.scalars().all()
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
@@ -79,7 +105,16 @@ async def get_new_shipments(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user.id))
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.status == "New", Shipment.user_id == user_id))
     db_new_shipments = result.scalars().all()
     if db_new_shipments is None:
         raise HTTPException(status_code=400, detail="New shipment not found")
@@ -90,7 +125,15 @@ async def get_extra_info(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    user_id = user.id
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     query = text("""
         SELECT id, title 
         FROM shipments
@@ -188,7 +231,16 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
 
 @router.get("/product_info")
 async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
-    query = select(Shipment).where(ean == any_(Shipment.ean), Shipment.user_id == user.id)
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    query = select(Shipment).where(ean == any_(Shipment.ean), Shipment.user_id == user_id)
     result = await db.execute(query)
 
     shipments = result.scalars().all()
@@ -253,7 +305,16 @@ async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user.id))
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user_id))
     db_shipment = result.scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
@@ -266,7 +327,16 @@ async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, user: User
 
 @router.delete("/{shipment_id}", response_model=ShipmentRead)
 async def delete_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id, Shipment.user_id == user.id))
+    if user.role != 4 and user.role != 2 and user.role != 6:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role == 2 or user.role == 6:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).filter(Shipment.id == shipment_id, Shipment.user_id == user_id))
     shipment = result.scalars().first()
     if shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
