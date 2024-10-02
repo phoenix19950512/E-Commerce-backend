@@ -46,9 +46,9 @@ async def get_db_connection():
 router = APIRouter()
 
 
-async def get_return(st_datetime, en_datetime, db:AsyncSession):
+async def get_return(st_datetime, en_datetime, user: User, db:AsyncSession):
     
-    query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime)
+    query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime, Returns.user_id == user.id)
     query = query.where(Returns.type == 3)
     result = await db.execute(query)
     refunds = result.scalars().all()
@@ -56,12 +56,12 @@ async def get_return(st_datetime, en_datetime, db:AsyncSession):
 
     return count
 
-async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
+async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, user: User, db:AsyncSession):
     vat_dict = await get_vat_dict(db)
     total_units = 0
     total_refund = 0
     total_net_profit = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    total_refund = await get_return(st_datetime, en_datetime, user, db)
 
     orders_with_products = []
 
@@ -74,7 +74,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
     ).join(
         ProductAlias,
         ProductAlias.id == any_(Order.product_id)
-    )
+    ).where(Order.user_id == user.id)
 
     if product_ids_list:
         query = query.where(
@@ -106,7 +106,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, db
         # "orders": orders
     }
 
-async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:AsyncSession):
+async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, user: User, db:AsyncSession):
     vat_dict = await get_vat_dict(db)
     
     total_units = 0
@@ -114,7 +114,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
     total_net_profit = 0
     total_sales = 0
     total_gross_profit = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    total_refund = await get_return(st_datetime, en_datetime, user, db)
 
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).where(
@@ -125,7 +125,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
     ).join(
         ProductAlias,
         ProductAlias.id == any_(Order.product_id)
-    )
+    ).where(Order.user_id == user.id)
 
     if product_ids_list:
         query = query.where(
@@ -161,7 +161,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, db:Asy
         # "orders": orders
     }   
     
-async def get_trend(date_string, product_id, st_datetime, en_datetime, db:AsyncSession):
+async def get_trend(date_string, product_id, st_datetime, en_datetime, user: User, db:AsyncSession):
     vat_dict = await get_vat_dict(db)
     
     total_units = 0
@@ -169,7 +169,7 @@ async def get_trend(date_string, product_id, st_datetime, en_datetime, db:AsyncS
     total_net_profit = 0
     total_sales = 0
     total_gross_profit = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    total_refund = await get_return(st_datetime, en_datetime, user, db)
 
     query = select(Product).where(Product.id == product_id)
     result = await db.execute(query)
@@ -247,11 +247,10 @@ async def get_value(st_date, en_date, user: User, db:AsyncSession):
         SELECT orders.*, products.*
         FROM orders AS orders
         JOIN products AS products ON products.id = ANY(orders.product_id)
-        WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime
-        
+        WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime AND orders.user_id = :user_id
     """)
 
-    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime})
+    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime, 'user_id': user.id})
     records = result.fetchall()
 
     for record in records:
@@ -267,7 +266,7 @@ async def get_value(st_date, en_date, user: User, db:AsyncSession):
     total_sales = 0
     total_orders = len(orders_with_products)
     total_units = 0
-    total_refund = await get_return(st_datetime, en_datetime, db)
+    total_refund = await get_return(st_datetime, en_datetime, user, db)
     total_gross_profit = 0
     total_net_profit = 0
     orders = []
@@ -306,11 +305,11 @@ async def get_value(st_date, en_date, user: User, db:AsyncSession):
         # "orders": orders
     }
     
-async def forecast(st_date, en_date, db: AsyncSession):
+async def forecast(st_date, en_date, user: User, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime))
+    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime, Order.user_id == user.id))
     orders = result.scalars().all()
     if not orders:
         return {
@@ -323,7 +322,7 @@ async def forecast(st_date, en_date, db: AsyncSession):
             "total_net_profit": 0,
         }
     
-    present_data = await get_value(st_datetime, en_datetime, db)
+    present_data = await get_value(st_datetime, en_datetime, user, db)
 
     total_sales = present_data.get("total_sales")
     total_orders = present_data.get("total_orders")
@@ -364,6 +363,7 @@ async def forecast(st_date, en_date, db: AsyncSession):
 async def get_chart_data(
     product_ids: str = Query(None),  # Make product_ids required
     type: int = Query(...),  # Make type required
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     
@@ -382,7 +382,7 @@ async def get_chart_data(
             month = month if month <= 12 else month - 12
             date = get_valid_date(year, month, today.day)
 
-            chart_data.append(await get_month_data(product_ids_list, date, db))
+            chart_data.append(await get_month_data(product_ids_list, date, user, db))
     elif type == 2:
         week_num_en = today.isocalendar()[1]
         en_date = today
@@ -393,18 +393,18 @@ async def get_chart_data(
             else:
                 week_string = f"week {week_num_en + 52 - i}"
 
-            chart_data.insert(0, await get_week_data(week_string, product_ids_list, st_date, en_date, db))
+            chart_data.insert(0, await get_week_data(week_string, product_ids_list, st_date, en_date, user, db))
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
     else:
         for i in range(30):
             date = today - datetime.timedelta(days=i)
-            chart_data.insert(0, await get_day_data(date, product_ids_list, db))
+            chart_data.insert(0, await get_day_data(date, product_ids_list, user, db))
     return {
         "chart_data": chart_data
     }
 
-async def get_month_data(product_ids_list, date, db: AsyncSession):
+async def get_month_data(product_ids_list, date, user: User, db: AsyncSession):
     date_string = f"{date.strftime('%b')} {date.year}"
     st_date = datetime.date(date.year, date.month, 1)
     if date.month == 12:
@@ -415,24 +415,26 @@ async def get_month_data(product_ids_list, date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    return await get_orders(date_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_orders(date_string, product_ids_list, st_datetime, en_datetime, user, db)
 
-async def get_week_data(week_string, product_ids_list, st_date, en_date, db: AsyncSession):
+async def get_week_data(week_string, product_ids_list, st_date, en_date, user: User, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    return await get_orders(week_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_orders(week_string, product_ids_list, st_datetime, en_datetime, user, db)
 
-async def get_day_data(date, product_ids_list, db: AsyncSession):
+async def get_day_data(date, product_ids_list, user: User, db: AsyncSession):
     st_datetime = datetime.datetime.combine(date, datetime.time.min)
     en_datetime = datetime.datetime.combine(date, datetime.time.max)
     date_string = f"{date.day} {date.strftime('%b')} {date.year}"
 
-    return await get_orders(date_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_orders(date_string, product_ids_list, st_datetime, en_datetime, user, db)
 
 @router.get('/P_L')
-async def get_PL_data(product_ids: str = Query(None),  # Make product_ids required
+async def get_PL_data(
+    product_ids: str = Query(None),  # Make product_ids required
     type: int = Query(...),  # Make type required
+    user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
     today = datetime.date.today()
@@ -450,7 +452,7 @@ async def get_PL_data(product_ids: str = Query(None),  # Make product_ids requir
             month = month if month <= 12 else month - 12
             date = get_valid_date(year, month, today.day)
 
-            PL_data.insert(0, await PL_month_data(product_ids_list, date, db))
+            PL_data.insert(0, await PL_month_data(product_ids_list, date, user, db))
     elif type == 2:
         week_num_en = today.isocalendar()[1]
         en_date = today
@@ -461,18 +463,18 @@ async def get_PL_data(product_ids: str = Query(None),  # Make product_ids requir
             else:
                 week_string = f"week {week_num_en + 52 - i}"
 
-            PL_data.append(await PL_week_data(week_string, product_ids_list, st_date, en_date, db))
+            PL_data.append(await PL_week_data(week_string, product_ids_list, st_date, en_date, user, db))
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
     else:
         for i in range(30):
             date = today - datetime.timedelta(days=i)
-            PL_data.append(await PL_day_data(date, product_ids_list, db))
+            PL_data.append(await PL_day_data(date, product_ids_list, user, db))
     return {
         "PL_data": PL_data
     }
 
-async def PL_month_data(product_ids_list, date, db: AsyncSession):
+async def PL_month_data(product_ids_list, date, user: User, db: AsyncSession):
     date_string = f"{date.strftime('%b')} {date.year}"
     st_date = datetime.date(date.year, date.month, 1)
     if date.month == 12:
@@ -483,20 +485,20 @@ async def PL_month_data(product_ids_list, date, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    return await get_PL(date_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_PL(date_string, product_ids_list, st_datetime, en_datetime, user, db)
 
-async def PL_week_data(week_string, product_ids_list, st_date, en_date, db: AsyncSession):
+async def PL_week_data(week_string, product_ids_list, st_date, en_date, user: User, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    return await get_PL(week_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_PL(week_string, product_ids_list, st_datetime, en_datetime, user, db)
 
-async def PL_day_data(date, product_ids_list, db: AsyncSession):
+async def PL_day_data(date, product_ids_list, user: User, db: AsyncSession):
     day_string = f"{date.day} {date.strftime('%b')} {date.year}"
     st_datetime = datetime.datetime.combine(date, datetime.time.min)
     en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
-    return await get_PL(day_string, product_ids_list, st_datetime, en_datetime, db)
+    return await get_PL(day_string, product_ids_list, st_datetime, en_datetime, user, db)
 
 @router.get('/trends')
 
@@ -504,6 +506,7 @@ async def get_trends_info(
     product_ids: str = Query(None),
     type: int = Query(...),
     field: str = Query(...),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     today = datetime.date.today()
@@ -528,7 +531,7 @@ async def get_trends_info(
             month = month if month <= 12 else month - 12
             date = get_valid_date(year, month, today.day)
 
-            trends_data.insert(0, await treand_month_data(product_ids_list, date, field, db))
+            trends_data.insert(0, await treand_month_data(product_ids_list, date, field, user, db))
     elif type == 2:
         week_num_en = today.isocalendar()[1]
         en_date = today
@@ -539,18 +542,18 @@ async def get_trends_info(
             else:
                 week_string = f"week {week_num_en + 52 - i}"
 
-            trends_data.append(await trend_week_data(week_string, product_ids_list, st_date, en_date, field, db))
+            trends_data.append(await trend_week_data(week_string, product_ids_list, st_date, en_date, field, user, db))
             en_date = st_date - datetime.timedelta(days=1)
             st_date = st_date - datetime.timedelta(days=7)
     else:
         for i in range(30):
             date = today - datetime.timedelta(days=i)
-            trends_data.append(await trend_day_data(date, product_ids_list, field, db))
+            trends_data.append(await trend_day_data(date, product_ids_list, field, user, db))
     return {
         "trends_data": trends_data
     }
 
-async def treand_month_data(product_ids_list, date, field, db: AsyncSession):
+async def treand_month_data(product_ids_list, date, field, user: User, db: AsyncSession):
     date_string = f"{date.strftime('%b')} {date.year}"
     st_date = datetime.date(date.year, date.month, 1)
     if date.month == 12:
@@ -565,31 +568,29 @@ async def treand_month_data(product_ids_list, date, field, db: AsyncSession):
     field = "total_" + field
 
     for product_id in product_ids_list:
-        result = await get_trend(date_string, product_id, st_datetime, en_datetime, db)
+        result = await get_trend(date_string, product_id, st_datetime, en_datetime, user, db)
         rlt.append(result.get(f"{field}"))
     return rlt
 
-async def trend_week_data(week_string, product_ids_list, st_date, en_date, field, db: AsyncSession):
+async def trend_week_data(week_string, product_ids_list, st_date, en_date, field, user: User, db: AsyncSession):
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
     rlt = []
-
     for product_id in product_ids_list:
-        result = await get_trend(week_string, product_id, st_datetime, en_datetime, db)
+        result = await get_trend(week_string, product_id, st_datetime, en_datetime, user, db)
         field = "total_" + field
         rlt.append(result.get(f"{field}"))
     return rlt
 
-async def trend_day_data(date, product_ids_list, field, db: AsyncSession):
+async def trend_day_data(date, product_ids_list, field, user: User, db: AsyncSession):
     day_string = f"{date.day} {date.strftime('%b')} {date.year}"
     st_datetime = datetime.datetime.combine(date, datetime.time.min)
     en_datetime = datetime.datetime.combine(date, datetime.time.max)
 
     rlt = []
-
     for product_id in product_ids_list:
-        result = await get_trend(day_string, product_id, st_datetime, en_datetime, db)
+        result = await get_trend(day_string, product_id, st_datetime, en_datetime, user, db)
         field = "total_" + field
         rlt.append(result.get(f"{field}"))
     return rlt
