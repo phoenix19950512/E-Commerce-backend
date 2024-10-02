@@ -40,11 +40,9 @@ def generate_initial(full_name: str):
     state = random.choice(["danger", "warning", "primary"])
     return {"label": label, "state": state}
 
-async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int = 10) -> List[UserProfileRead]:
+async def get_users_with_profiles(db: AsyncSession) -> List[UserProfileRead]:
     result = await db.execute(
         select(User)
-        .offset(offset)
-        .limit(limit)
         .options(selectinload(User.profile))
     )
     users = result.scalars().all()
@@ -74,6 +72,7 @@ async def get_users_with_profiles(db: AsyncSession, offset: int = 0, limit: int 
             updated_at=user.updated_at,
             last_login=humanize.naturaltime(datetime.utcnow() - user.last_logged_in) if user.last_logged_in else None,
             profile=profile,
+            access = user.access,
             avatar=avatar
         )
         
@@ -155,34 +154,11 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/", response_model=UserResponse)
 async def read_users(
-    db: AsyncSession = Depends(get_db),
-    page: int = Query(1, ge=1, description="Page number"),
-    items_per_page: int = Query(10, ge=1, le=100, description="Number of items per page")
+    db: AsyncSession = Depends(get_db)
 ):
-    offset = (page - 1) * items_per_page
-    users = await get_users_with_profiles(db, offset=offset, limit=items_per_page)
+    users = await get_users_with_profiles(db)
     
-    total_users = await db.execute(select(func.count(User.id)))
-    total = total_users.scalar()
-
-    last_page = (total + items_per_page - 1) // items_per_page
-    from_item = offset + 1
-    to_item = min(offset + items_per_page, total)
-
-    response = UserResponse(
-        data=users,
-        payload=ResponsePayload(
-            pagination=Pagination(
-                from_item=from_item,
-                last_page=last_page,
-                page=page,
-                total=total,
-                to=to_item
-            )
-        )
-    )
-    
-    return response
+    return users
 
 @router.put("/{user_id}", response_model=UserRead)
 async def update_user(user_id: int, user: UserUpdate, db: AsyncSession = Depends(get_db)):
