@@ -63,7 +63,7 @@ def count_all_localities(MARKETPLACE_API_URL, Localities_ENDPOINT, COUNT_ENGPOIN
         return response.json()
     else:
         logging.error(f"Failed to retrieve localities: {response.status_code}")
-        return None
+        return response.json()
 
 async def insert_localities_into_db(localities, place:str, user_id):
     try:
@@ -157,6 +157,7 @@ async def refresh_emag_localities(marketplace: Marketplace):
     count_endpoint = "/count"
 
     result = count_all_localities(baseAPIURL, endpoint, count_endpoint, API_KEY)
+    print(result)
     if result:
         pages = result['results']['noOfPages']
         items = result['results']['noOfItems']

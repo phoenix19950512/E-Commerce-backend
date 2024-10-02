@@ -455,30 +455,29 @@ async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
     endpoint = "/order"
     read_endpoint = "/read"
     count_endpoint = "/count"
+    
+    USERNAME = marketplace.credentials["firstKey"]
+    PASSWORD = marketplace.credentials["secondKey"]
+    API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
+    result = count_all_orders(marketplace.baseAPIURL, endpoint, count_endpoint, API_KEY)
+    if result:
+        pages = result['results']['noOfPages']
+        items = result['results']['noOfItems']
 
-    if marketplace.credentials["type"] == "user_pass":
-        USERNAME = marketplace.credentials["firstKey"]
-        PASSWORD = marketplace.credentials["secondKey"]
-        API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
-        result = count_all_orders(marketplace.baseAPIURL, endpoint, count_endpoint, API_KEY)
-        if result:
-            pages = result['results']['noOfPages']
-            items = result['results']['noOfItems']
+        logging.info(f"Number of Pages: {pages}")
+        logging.info(f"Number of Items: {items}")
 
-            logging.info(f"Number of Pages: {pages}")
-            logging.info(f"Number of Items: {items}")
-
-            # currentPage = int(pages)
-            currentPage = 1
-            baseAPIURL = marketplace.baseAPIURL
-            try:
-                while currentPage <= int(pages):
-                    orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
-                    print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
-                    if orders and orders['isError'] == False:
-                        # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
-                        await insert_orders(orders['results'], marketplace)
-                    currentPage += 1
-            except Exception as e:
-                print('++++++++++++++++++++++++++++++++++++++++++')
-                print(e)
+        # currentPage = int(pages)
+        currentPage = 1
+        baseAPIURL = marketplace.baseAPIURL
+        try:
+            while currentPage <= int(pages):
+                orders = get_all_orders(baseAPIURL, endpoint, read_endpoint, API_KEY, currentPage)
+                print(f">>>>>>> Current Page : {currentPage} <<<<<<<<")
+                if orders and orders['isError'] == False:
+                    # await insert_orders_into_db(orders['results'], customer_table, orders_table, marketplace.marketplaceDomain)
+                    await insert_orders(orders['results'], marketplace)
+                currentPage += 1
+        except Exception as e:
+            print('++++++++++++++++++++++++++++++++++++++++++')
+            print(e)
