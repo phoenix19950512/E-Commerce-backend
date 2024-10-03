@@ -58,7 +58,7 @@ async def get_users_with_profiles(db: AsyncSession) -> List[UserProfileRead]:
                 company=user.profile.company,
                 phone=user.profile.phone,
                 country=user.profile.country,
-                avatar=user.profile.avatar,  # Directly use the avatar from the profile if available
+                avatar=user.profile.avatar  # Directly use the avatar from the profile if available
             )
             
         user_profile = UserProfileRead(
