@@ -392,22 +392,21 @@ async def get_orders_count(
     query = query.where(Order.user_id == user.id)
     # Execute query
     if warehouse_id == -1:
-        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id != 0)
         query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
-        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.filter(Internal_productAlias.warehouse_id == 0)
         query = query.group_by(Order.id)
     elif warehouse_id and warehouse_id > 0:
-        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place))
+        query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
         query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
         query = query.group_by(Order.id)
-        query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) == 1)
         query = query.having(
             and_(
                 func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
