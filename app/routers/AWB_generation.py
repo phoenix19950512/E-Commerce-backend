@@ -28,10 +28,10 @@ router = APIRouter()
 
 @router.post("/manually")
 async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -47,10 +47,10 @@ async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_u
 
 @router.post("/")
 async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -173,6 +173,13 @@ async def count_awb(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
     warehouseAlias = aliased(Warehouse)
     query = select(AWB)
     if status_str:
@@ -187,7 +194,7 @@ async def count_awb(
         query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
     if warehouse_id:
         query = query.where(warehouseAlias.id == warehouse_id)
-    query = query.where(AWB.user_id == user.id)
+    query = query.where(AWB.user_id == user_id)
     result = await db.execute(query)
     db_awb = result.scalars().all()
     return len(db_awb)
@@ -197,11 +204,18 @@ async def count_awb_not_shipped(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
     status_list = [1, 18, 23, 73, 74]
     query = select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list))
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
     query = query.where(AWB.awb_date <= datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59))
-    query = query.where(AWB.user_id == user.id)
+    query = query.where(AWB.user_id == user_id)
     result = await db.execute(query)
     count = result.scalar()
 
@@ -259,6 +273,13 @@ async def get_awbs(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
     warehousealiased = aliased(Warehouse)
     orderaliased = aliased(Order)
     productaliased = aliased(Product)
@@ -292,7 +313,7 @@ async def get_awbs(
     if warehouse_id:
         query = query.where(warehousealiased.id == warehouse_id)
     
-    query = query.where(AWB.user_id == user.id)
+    query = query.where(AWB.user_id == user_id)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_awbs = result.all()
@@ -317,7 +338,14 @@ async def get_awbs(
 
 @router.put("/{awb_number}", response_model=AWBRead)
 async def update_awbs(awb_number: str, awb: AWBUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user_id))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="awbs not found")
@@ -330,7 +358,14 @@ async def update_awbs(awb_number: str, awb: AWBUpdate, user: User = Depends(get_
 
 @router.delete("/{awb_number}", response_model=AWBRead)
 async def delete_awbs(awb_number: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user_id))
     awb = result.scalars().first()
     if awb is None:
         raise HTTPException(status_code=404, detail="awbs not found")
