@@ -151,7 +151,7 @@ async def get_replacements(
         if order is not None:
             product_ids = order.product_id
             for product_id in product_ids:
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place))
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == order.order_market_place, Product.user_id == order.user_id))
                 product = result.scalars().first()
                 if product is None:
                     result = await db.execute(select(Product).where(Product.id == product_id))

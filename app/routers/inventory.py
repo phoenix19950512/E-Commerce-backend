@@ -65,7 +65,8 @@ async def get_product_info(
         ProductAlias,
         and_(
             ProductAlias.id == any_(Order.product_id),
-            ProductAlias.product_marketplace == Order.order_market_place
+            ProductAlias.product_marketplace == Order.order_market_place,
+            ProductAlias.user_id == Order.user_id
         )
     )
     query = query.where(Order.user_id == user.id)
@@ -211,7 +212,8 @@ async def get_product_info(
         ProductAlias,
         and_(
             ProductAlias.id == any_(Order.product_id),
-            ProductAlias.product_marketplace == Order.order_market_place
+            ProductAlias.product_marketplace == Order.order_market_place,
+            ProductAlias.user_id == Order.user_id
         )
     )
     

@@ -42,7 +42,7 @@ async def send_stock(
                 product_id = product_id_list[i]
                 quantity = quantity_list[i]
             
-                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace, Product.user_id == new_order.user_id))
                 db_product = result.scalars().first()
 
                 if db_product is None:

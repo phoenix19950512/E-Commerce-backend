@@ -257,7 +257,7 @@ async def get_order(
     marketplace = db_order.order_market_place
     ean = []
     for product_id in product_ids:
-        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace))
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace, Product.user_id == db_order.user_id))
         product = result.scalars().first()
         if product is None:
             result = await db.execute(select(Product).where(Product.id == product_id))
