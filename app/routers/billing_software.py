@@ -24,12 +24,16 @@ async def create_billing_software(billing_software: Billing_softwaresCreate, use
 
 @router.get('/count')
 async def get_billing_software_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     result = await db.execute(select(Billing_software).where(Billing_software.user_id == user.id))
     db_billing_softwares = result.scalars().all()
     return len(db_billing_softwares)
 
 @router.get("/", response_model=List[Billing_softwaresRead])
 async def get_billing_softwares(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     result = await db.execute(select(Billing_software).where(Billing_software.user_id == user.id))
     db_billing_softwares = result.scalars().all()
 
@@ -40,6 +44,8 @@ async def get_billing_softwares(user: User = Depends(get_current_user), db: Asyn
 
 @router.put("/{billing_software_id}", response_model=Billing_softwaresRead)
 async def update_billing_software(billing_software_id: int, billing_software: Billing_softwaresUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     result = await db.execute(select(Billing_software).where(Billing_software.id == billing_software_id, Billing_software.user_id == user.id))
     db_billing_software = result.scalars().first()
     if db_billing_software is None:
@@ -52,6 +58,8 @@ async def update_billing_software(billing_software_id: int, billing_software: Bi
 
 @router.delete("/{billing_software_id}", response_model=Billing_softwaresRead)
 async def delete_billing_software(billing_software_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
+        raise HTTPException(status_code=401, detail="Authentication error")
     result = await db.execute(select(Billing_software).where(Billing_software.id == billing_software_id, Billing_software.user_id == user.id))
     billing_software = result.scalars().first()
     if billing_software is None:

@@ -180,6 +180,9 @@ async def count_awb(
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     warehouseAlias = aliased(Warehouse)
     query = select(AWB)
     if status_str:
@@ -211,6 +214,9 @@ async def count_awb_not_shipped(
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     status_list = [1, 18, 23, 73, 74]
     query = select(func.count(AWB.awb_number)).where(AWB.awb_status == any_(status_list))
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
@@ -280,6 +286,9 @@ async def get_awbs(
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     warehousealiased = aliased(Warehouse)
     orderaliased = aliased(Order)
     productaliased = aliased(Product)
@@ -345,6 +354,9 @@ async def update_awbs(awb_number: str, awb: AWBUpdate, user: User = Depends(get_
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user_id))
     db_awb = result.scalars().first()
     if db_awb is None:
@@ -365,6 +377,9 @@ async def delete_awbs(awb_number: str, user: User = Depends(get_current_user), d
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     result = await db.execute(select(AWB).filter(AWB.awb_number == awb_number, AWB.user_id == user_id))
     awb = result.scalars().first()
     if awb is None:
