@@ -142,6 +142,7 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db)):
         id=user.id,
         full_name=user.full_name,
         email=user.email,
+        access=user.access,
         role=convert_role_to_string(user.role)
     )
     if user.profile.avatar == "":
