@@ -83,7 +83,7 @@ async def read_product(ean: str, user: User = Depends(get_current_user), db: Asy
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
-    if product.user_id == user.id:
+    if product.user_id != user.id:
         raise HTTPException(status_code=404, detail="You can't see this product")
     return product
 
