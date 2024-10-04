@@ -20,10 +20,10 @@ router = APIRouter()
 
 @router.post("/", response_model=ShipmentRead)
 async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -38,10 +38,10 @@ async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_cur
 
 @router.get('/count')
 async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -53,10 +53,10 @@ async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncS
 
 @router.get("/new_count")
 async def get_new_shipments(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -84,10 +84,10 @@ async def get_shipments(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -105,10 +105,10 @@ async def get_new_shipments(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
