@@ -8,6 +8,7 @@ from app.models.product import Product
 from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from app.models.user import User
+from app.models.team_member import Team_member
 from app.routers.auth import get_current_user
 from app.models.returns import Returns
 from typing import List, Optional
@@ -47,8 +48,17 @@ router = APIRouter()
 
 
 async def get_return(st_datetime, en_datetime, user: User, db:AsyncSession):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
     
-    query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime, Returns.user_id == user.id)
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    query = select(Returns).where(Returns.date <= en_datetime, Returns.date >= st_datetime, Returns.user_id == user_id)
     query = query.where(Returns.type == 3)
     result = await db.execute(query)
     refunds = result.scalars().all()
@@ -57,6 +67,16 @@ async def get_return(st_datetime, en_datetime, user: User, db:AsyncSession):
     return count
 
 async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, user: User, db:AsyncSession):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     vat_dict = await get_vat_dict(db)
     total_units = 0
     total_refund = 0
@@ -74,7 +94,7 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, us
     ).join(
         ProductAlias,
         ProductAlias.id == any_(Order.product_id)
-    ).where(Order.user_id == user.id)
+    ).where(Order.user_id == user_id)
 
     if product_ids_list:
         query = query.where(
@@ -107,6 +127,16 @@ async def get_orders(date_string, product_ids_list, st_datetime, en_datetime, us
     }
 
 async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, user: User, db:AsyncSession):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     vat_dict = await get_vat_dict(db)
     
     total_units = 0
@@ -125,7 +155,7 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, user: 
     ).join(
         ProductAlias,
         ProductAlias.id == any_(Order.product_id)
-    ).where(Order.user_id == user.id)
+    ).where(Order.user_id == user_id)
 
     if product_ids_list:
         query = query.where(
@@ -162,6 +192,16 @@ async def get_PL(date_string, product_ids_list, st_datetime, en_datetime, user: 
     }   
     
 async def get_trend(date_string, product_id, st_datetime, en_datetime, user: User, db:AsyncSession):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     vat_dict = await get_vat_dict(db)
     
     total_units = 0
@@ -171,7 +211,7 @@ async def get_trend(date_string, product_id, st_datetime, en_datetime, user: Use
     total_gross_profit = 0
     total_refund = await get_return(st_datetime, en_datetime, user, db)
 
-    query = select(Product).where(Product.id == product_id)
+    query = select(Product).where(Product.id == product_id, Product.user_id == user_id)
     result = await db.execute(query)
     product = result.scalars().first()
 
@@ -203,10 +243,10 @@ async def get_trend(date_string, product_id, st_datetime, en_datetime, user: Use
         "total_net_profit": total_net_profit,
         # "orders": orders
     }   
-    
 
 @router.get('/tiles')
 async def get_dashboard_info(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+        
     today = datetime.date.today()
     orders_today_data = await get_value(today, today, user, db)
 
@@ -235,7 +275,16 @@ async def get_dashboard_info(user: User = Depends(get_current_user), db: AsyncSe
     }
 
 async def get_value(st_date, en_date, user: User, db:AsyncSession):
-
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     vat_dict = await get_vat_dict(db)
 
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
@@ -250,7 +299,7 @@ async def get_value(st_date, en_date, user: User, db:AsyncSession):
         WHERE orders.date >= :st_datetime AND orders.date <= :en_datetime AND orders.user_id = :user_id
     """)
 
-    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime, 'user_id': user.id})
+    result = await db.execute(query, {'st_datetime': st_datetime, 'en_datetime': en_datetime, 'user_id': user_id})
     records = result.fetchall()
 
     for record in records:
@@ -306,10 +355,20 @@ async def get_value(st_date, en_date, user: User, db:AsyncSession):
     }
     
 async def forecast(st_date, en_date, user: User, db: AsyncSession):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     st_datetime = datetime.datetime.combine(st_date, datetime.time.min)
     en_datetime = datetime.datetime.combine(en_date, datetime.time.max)
 
-    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime, Order.user_id == user.id))
+    result = await db.execute(select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime, Order.user_id == user_id))
     orders = result.scalars().all()
     if not orders:
         return {

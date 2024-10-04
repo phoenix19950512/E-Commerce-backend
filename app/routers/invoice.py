@@ -17,15 +17,16 @@ router = APIRouter()
 
 @router.post("/")
 async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
     else:
         user_id = user.id
+        
     db_invoice = Invoice(**invoice.dict())
     order_id = db_invoice.order_id
 
@@ -67,7 +68,17 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
 
 @router.get('/count')
 async def get_invoice_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).where(Invoice.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Invoice).where(Invoice.user_id == user_id))
     db_invoices = result.scalars().all()
     return len(db_invoices)
 
@@ -76,7 +87,17 @@ async def get_invoices(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Invoice).where(Invoice.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Invoice).where(Invoice.user_id == user_id))
     db_invoices = result.scalars().all()
     if db_invoices is None:
         raise HTTPException(status_code=404, detail="invoice not found")
@@ -84,13 +105,33 @@ async def get_invoices(
 
 @router.get("/{invoice_id}", response_model=InvoicesRead)
 async def get_invoice(invoice_id: int, user:User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user_id))
     db_invoice = result.scalars().first()
     return db_invoice
 
 @router.put("/{invoice_id}", response_model=InvoicesRead)
 async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user_id))
     db_invoice = result.scalars().first()
     if db_invoice is None:
         raise HTTPException(status_code=404, detail="invoice not found")
@@ -102,7 +143,17 @@ async def update_invoice(invoice_id: int, invoice: InvoicesUpdate, user: User = 
 
 @router.delete("/{invoice_id}", response_model=InvoicesRead)
 async def delete_invoice(invoice_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user_id))
     invoice = result.scalars().first()
     if invoice is None:
         raise HTTPException(status_code=404, detail="invoice not found")

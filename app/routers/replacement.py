@@ -20,14 +20,16 @@ router = APIRouter()
 
 @router.post("/", response_model=ReplacementsRead)
 async def create_replacement(replacement: ReplacementsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
-    if user.role == 5:
+    
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
     else:
         user_id = user.id
+        
     db_replacement = Replacement(**replacement.dict())
     order_id = db_replacement.order_id
     result = await db.execute(select(Replacement).where(Replacement.order_id == order_id))
@@ -46,15 +48,16 @@ async def get_replacement_count(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
     else:
         user_id = user.id
+        
     result = await db.execute(select(Replacement).where(
         (cast(Replacement.order_id, String).ilike(f"%{search_text}%")) |
         (Replacement.awb.ilike(f"%{search_text}%")) |
@@ -65,10 +68,10 @@ async def get_replacement_count(
 
 @router.get('/count_without_awb')
 async def get_count_without_awb(user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -102,15 +105,16 @@ async def get_replacements(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
     else:
         user_id = user.id
+        
     AWBAlias = aliased(AWB)
     InvoiceAlias = aliased(Invoice)
     OrderAlias = aliased(Order)
@@ -175,10 +179,10 @@ async def get_replacement(replacement_id: int, db: AsyncSession = Depends(get_db
 
 @router.put("/{replacement_id}", response_model=ReplacementsRead)
 async def update_replacement(replacement_id: int, replacement: ReplacementsUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -197,10 +201,10 @@ async def update_replacement(replacement_id: int, replacement: ReplacementsUpdat
 
 @router.delete("/{replacement_id}", response_model=ReplacementsRead)
 async def delete_replacement(replacement_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin

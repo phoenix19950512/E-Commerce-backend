@@ -8,6 +8,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
 from app.models.damaged_good import Damaged_good
+from app.models.team_member import Team_member
 from app.schemas.damaged_good import Damaged_goodCreate, Damaged_goodRead, Damaged_goodUpdate
 
 router = APIRouter()
@@ -42,7 +43,17 @@ async def create_damaged_good(damaged_good: Damaged_goodCreate, db: AsyncSession
 
 @router.get('/count')
 async def get_damaged_good_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user_id))
     damaged_goods = result.scalars().all()
     return len(damaged_goods)
 
@@ -53,8 +64,18 @@ async def get_damaged_goods(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     offset = (page - 1) * itmes_per_page
-    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user.id).offset(offset).limit(itmes_per_page))
+    result = await db.execute(select(Damaged_good).where(Damaged_good.user_id == user_id).offset(offset).limit(itmes_per_page))
     db_damaged_goods = result.scalars().all()
     if db_damaged_goods is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
@@ -62,13 +83,33 @@ async def get_damaged_goods(
 
 @router.get("/{damaged_good_id}", response_model=Damaged_goodRead)
 async def get_damaged_good(damaged_good_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user_id))
     db_damaged_good = result.scalars().first()
     return db_damaged_good
 
 @router.put("/{damaged_good_id}", response_model=Damaged_goodRead)
 async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user_id))
     db_damaged_good = result.scalars().first()
     if db_damaged_good is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")
@@ -80,7 +121,17 @@ async def update_damaged_good(damaged_good_id: int, damaged_good: Damaged_goodUp
 
 @router.delete("/{damaged_good_id}", response_model=Damaged_goodRead)
 async def delete_damaged_good(damaged_good_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Damaged_good).where(Damaged_good.id == damaged_good_id, Damaged_good.user_id == user_id))
     damaged_good = result.scalars().first()
     if damaged_good is None:
         raise HTTPException(status_code=404, detail="damaged_good not found")

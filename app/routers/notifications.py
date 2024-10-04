@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy import text
 from app.models.notifications import Notification
 from app.models.user import User
+from app.models.team_member import Team_member
 from app.routers.auth import get_current_user
 from app.database import get_db
 from app.schemas.notifications import NotificationCreate, NotificationUpdate, NotificationRead
@@ -14,21 +15,49 @@ from pydantic import ValidationError
 from app.config import settings
 
 async def create_notification(db: AsyncSession, notifications: NotificationCreate, user: User):
-    if user.role != 4:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_notification = Notification(**notifications.dict())
-    db_notification.user_id = user.id
+    db_notification.user_id = user_id
     db.add(db_notification)
     await db.commit()
     await db.refresh(db_notification)
     return {"msg": "success"}
 
 async def get_notification(db: AsyncSession, notification_id: int, user: User):
-    result = await db.execute(select(Notification).filter(Notification.id == notification_id, Notification.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Notification).filter(Notification.id == notification_id, Notification.user_id == user_id))
     return result.scalars().first()
 
 async def get_notifications(db: AsyncSession, user: User):
-    result = await db.execute(select(Notification).where(Notification.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Notification).where(Notification.user_id == user_id))
     notifications = result.scalars().all()
     return notifications
 

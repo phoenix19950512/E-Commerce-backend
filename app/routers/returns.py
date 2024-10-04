@@ -8,16 +8,24 @@ from app.models.product import Product
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.returns import Returns
+from app.models.team_member import Team_member
 from app.schemas.returns import ReturnsCreate, ReturnsRead, ReturnsUpdate
 
 router = APIRouter()
 
 @router.post("/", response_model=ReturnsRead)
 async def create_return(returns: ReturnsCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
     db_return = Returns(**returns.dict())
-    db_return.user_id = user.id
+    db_return.user_id = user_id
     db.add(db_return)
     await db.commit()
     await db.refresh(db_return)
@@ -25,7 +33,17 @@ async def create_return(returns: ReturnsCreate, user: User = Depends(get_current
 
 @router.get('/count')
 async def get_return_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).where(Returns.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Returns).where(Returns.user_id == user_id))
     db_returns = result.scalars().all()
     return len(db_returns)
 
@@ -36,8 +54,18 @@ async def get_returns(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Returns).where(Returns.user_id == user.id).offset(offset).limit(items_per_page))
+    result = await db.execute(select(Returns).where(Returns.user_id == user_id).offset(offset).limit(items_per_page))
     db_returns = result.scalars().all()
     if db_returns is None:
         raise HTTPException(status_code=404, detail="return not found")
@@ -64,7 +92,17 @@ async def get_returns(
 
 @router.get("/return_id")
 async def get_return_info(return_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).where(cast(Returns.emag_id, Integer) == return_id, Returns.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Returns).where(cast(Returns.emag_id, Integer) == return_id, Returns.user_id == user_id))
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="awb not found")
@@ -99,7 +137,17 @@ async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{return_id}", response_model=ReturnsRead)
 async def update_return(return_id: int, returns: ReturnsUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user_id))
     db_return = result.scalars().first()
     if db_return is None:
         raise HTTPException(status_code=404, detail="return not found")
@@ -111,7 +159,17 @@ async def update_return(return_id: int, returns: ReturnsUpdate, user: User = Dep
 
 @router.delete("/{return_id}", response_model=ReturnsRead)
 async def delete_return(return_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Returns).filter(Returns.order_id == return_id, Returns.user_id == user_id))
     returns = result.scalars().first()
     if ReturnsCreate is None:
         raise HTTPException(status_code=404, detail="return not found")

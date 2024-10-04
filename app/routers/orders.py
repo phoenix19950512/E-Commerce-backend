@@ -11,6 +11,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.product import Product
 from app.models.invoice import Invoice
+from app.models.team_member import Team_member
 from app.models.internal_product import Internal_Product
 from app.models.awb import AWB
 from app.models.marketplace import Marketplace
@@ -31,7 +32,17 @@ def get_orders(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Order).offset(skip).limit(limit).all()
 
 async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate, user: User):
-    result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user_id))
     db_order = result.scalars().first()
     if db_order:
         for key, value in order.dict().items():
@@ -41,7 +52,17 @@ async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate, user
     return db_order
 
 async def delete_order(db: AsyncSession, order_id: int, user: User):
-    result = await db.execute(select(Order).filter(Order.id == order_id, Order.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Order).filter(Order.id == order_id, Order.user_id == user_id))
     db_order = result.scalars().first()
     if db_order:
         db.delete(db_order)
@@ -52,10 +73,18 @@ async def delete_order(db: AsyncSession, order_id: int, user: User):
 router = APIRouter()
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
 async def create_order(order: OrderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_order = Order(**order.dict())
-    db_order.user_id == user.id
+    db_order.user_id == user_id
     db.add(db_order)
     await db.commit()
     await db.refresh(db_order)
@@ -70,6 +99,16 @@ async def read_new_orders(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
     query = select(Order).filter(
@@ -89,7 +128,7 @@ async def read_new_orders(
     else:
         query = query.order_by(Order.date.asc())
 
-    query = query.where(Order.user_id == user.id)
+    query = query.where(Order.user_id == user_id)
     
     query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
     query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
@@ -186,6 +225,16 @@ async def count_new_orders(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
     query = select(Order).filter(
@@ -201,7 +250,7 @@ async def count_new_orders(
     else:
         query = query.filter(Order.status == status)
 
-    query = query.where(Order.user_id == user.id) 
+    query = query.where(Order.user_id == user_id) 
 
     query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
     query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
@@ -240,6 +289,16 @@ async def read_orders(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
     offset = (page - 1) * items_per_page
@@ -263,7 +322,7 @@ async def read_orders(
     else:
         query = query.order_by(Order.date.asc())
         
-    query = query.where(Order.user_id == user.id)
+    query = query.where(Order.user_id == user_id)
 
     query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))
     query = query.join(Internal_productAlias, Internal_productAlias.ean == ProductAlias.ean)
@@ -371,6 +430,16 @@ async def get_orders_count(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     Internal_productAlias = aliased(Internal_Product)
     ProductAlias = aliased(Product)
 
@@ -386,7 +455,7 @@ async def get_orders_count(
     # Apply status filter if needed 
     if status != -1:
         query = query.where(Order.status == status)
-    query = query.where(Order.user_id == user.id)
+    query = query.where(Order.user_id == user_id)
     # Execute query
     
     query = query.join(ProductAlias, and_(ProductAlias.id == any_(Order.product_id), ProductAlias.product_marketplace == Order.order_market_place, ProductAlias.user_id == Order.user_id))

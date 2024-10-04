@@ -14,6 +14,7 @@ from app.models.returns import Returns
 from app.models.internal_product import Internal_Product
 from app.schemas.internal_product import Internal_ProductCreate, Internal_ProductRead, Internal_ProductUpdate
 from app.models.shipment import Shipment
+from app.models.team_member import Team_member
 from sqlalchemy import cast, String
 from app.models.marketplace import Marketplace
 import json
@@ -33,10 +34,18 @@ router = APIRouter()
 
 @router.post("/", response_model=Internal_ProductRead)
 async def create_product(product: Internal_ProductCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_product = Internal_Product(**product.dict())
-    db_product.user_id = user.id
+    db_product.user_id = user_id
     db.add(db_product)
     await db.commit()
     await db.refresh(db_product)
@@ -49,6 +58,16 @@ async def get_products_count(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     query = select(Internal_Product)
     if supplier_ids:
         supplier_id_list = [int(id.strip()) for id in supplier_ids.split(",")]
@@ -59,7 +78,7 @@ async def get_products_count(
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
         (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id)
-    query = query.where(Internal_Product.user_id == user.id)
+    query = query.where(Internal_Product.user_id == user_id)
     
     result = await db.execute(query)
     db_products = result.scalars().all()
@@ -79,11 +98,21 @@ async def get_all_products(
 
 @router.get("/{ean}", response_model=Internal_ProductRead)
 async def read_product(ean: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
-    if product.user_id != user.id:
+    if product.user_id != user_id:
         raise HTTPException(status_code=404, detail="You can't see this product")
     return product
 
@@ -94,8 +123,17 @@ async def get_info(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
     
-    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean, Internal_Product.user_id == user_id))
     db_product = result.scalars().first()
     if db_product is None:
         raise HTTPException(status_code=404, detail="You can't see this product")
@@ -293,7 +331,16 @@ async def get_products(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
     
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     offset = (page - 1) * items_per_page
     query = select(Internal_Product)
     if supplier_ids:
@@ -305,7 +352,7 @@ async def get_products(
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
         (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
-    query = query.where(Internal_Product.user_id == user.id)
+    query = query.where(Internal_Product.user_id == user_id)
     result = await db.execute(query)
     db_products = result.scalars().all()
 
@@ -315,7 +362,17 @@ async def get_products(
 
 @router.put("/{ean}", response_model=Internal_ProductRead)
 async def update_product(ean: str, product: Internal_ProductUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user_id))
     db_product = result.scalars().first()
 
     if db_product is None:
@@ -330,7 +387,17 @@ async def update_product(ean: str, product: Internal_ProductUpdate, user: User =
 
 @router.delete("/{ean}", response_model=Internal_ProductRead)
 async def delete_product(ean: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Internal_Product).filter(Internal_Product.ean == ean, Internal_Product.user_id == user_id))
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")

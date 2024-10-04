@@ -14,8 +14,18 @@ router = APIRouter()
 
 @router.post("/", response_model=WarehouseRead)
 async def create_warehouse(warehouse: WarehouseCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     db_warehouse = Warehouse(**warehouse.dict())
-    db_warehouse.user_id = user.id
+    db_warehouse.user_id = user_id
     db.add(db_warehouse)
     await db.commit()
     await db.refresh(db_warehouse)
@@ -23,7 +33,17 @@ async def create_warehouse(warehouse: WarehouseCreate, user: User = Depends(get_
 
 @router.get('/count')
 async def get_warehouses_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Warehouse).where(Warehouse.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Warehouse).where(Warehouse.user_id == user_id))
     db_warehouses = result.scalars().all()
     return len(db_warehouses)
 
@@ -32,10 +52,10 @@ async def get_warehouses(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 5:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 5:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -50,7 +70,17 @@ async def get_warehouses(
 
 @router.put("/{warehouse_id}", response_model=WarehouseRead)
 async def update_warehouse(warehouse_id: int, warehouse: WarehouseUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Warehouse).filter(Warehouse.id == warehouse_id, Warehouse.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Warehouse).filter(Warehouse.id == warehouse_id, Warehouse.user_id == user_id))
     db_warehouse = result.scalars().first()
     if db_warehouse is None:
         raise HTTPException(status_code=404, detail="Warehouse not found")
@@ -63,7 +93,17 @@ async def update_warehouse(warehouse_id: int, warehouse: WarehouseUpdate, user: 
 
 @router.delete("/{warehouse_id}", response_model=WarehouseRead)
 async def delete_warehouse(warehouse_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Warehouse).filter(Warehouse.id == warehouse_id, Warehouse.user_id == user.id))
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Warehouse).filter(Warehouse.id == warehouse_id, Warehouse.user_id == user_id))
     warehouse = result.scalars().first()
     if warehouse is None:
         raise HTTPException(status_code=404, detail="Warehouse not found")

@@ -17,6 +17,11 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+PROXIES = {
+    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+}
+
 def get_attachments(API_KEY):
     url = 'https://marketplace-api.emag.ro/api-3/product_offer/save'
     api_key = str(API_KEY).replace("b'", '').replace("'", "")
@@ -30,7 +35,7 @@ def get_attachments(API_KEY):
         "currentPage": 1
     })
 
-    response = requests.post(url, data=data, headers=headers)
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         get_attachments = response.json()
         return get_attachments
@@ -57,7 +62,7 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "itmesPerPage": 100,
         "currentPage": currentPage
     })
-    response = requests.post(url, data=data, headers=headers)
+    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         rmas = response.json()
         return rmas
@@ -75,7 +80,7 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
         "Content-Type": "application/json"
     }
 
-    response = requests.post(url, headers=headers)
+    response = requests.post(url, headers=headers, proxies=PROXIES)
     if response.status_code == 200:
         logging.info("success rmas count")
         return response.json()
@@ -125,24 +130,24 @@ async def insert_rmas_into_db(rmas, place:str, user_id):
         """).format(sql.Identifier("returns"))
 
         for rma in rmas:
-            emag_id = rma.get('emag_id')
-            order_id = rma.get('order_id')
-            type = rma.get('type')
-            customer_name = rma.get('customer_name')
-            customer_company = rma.get('customer_company')
-            customer_phone = rma.get('customer_phone')
-            products = [str(product.get('product_id')) for product in rma.get('products')]
-            quantity = [int(product.get('quantity')) for product in rma.get('products')]
-            observations = [str(product.get('observations')) for product in rma.get('products')]
-            pickup_address = rma.get('pickup_address')
-            return_reason = str(rma.get('return_reason'))
-            return_type = rma.get('return_type')
-            replacement_product_emag_id = rma.get('replacement_product_emag_id')
-            replacement_product_id = rma.get('replacement_product_id')
-            replacement_product_name = rma.get('replacement_product_name')
-            replacement_product_quantity = rma.get('replacement_product_quantity')
-            date = rma.get('date')
-            request_status = rma.get('request_status')
+            emag_id = rma.get('emag_id') if rma.get('emag_id') else 0
+            order_id = rma.get('order_id') if rma.get('order_id') else 0
+            type = rma.get('type') if rma.get('type') else 0
+            customer_name = rma.get('customer_name') if rma.get('customer_name') else ""
+            customer_company = rma.get('customer_company') if rma.get('customer_company') else ""
+            customer_phone = rma.get('customer_phone') if rma.get('customer_phone') else ""
+            products = [str(product.get('product_id')) if rma.get('product_id') else 0 for product in rma.get('products')]
+            quantity = [int(product.get('quantity')) if rma.get('quantity') else 0 for product in rma.get('products')]
+            observations = [str(product.get('observations')) if rma.get('observations') else "" for product in rma.get('products')]
+            pickup_address = rma.get('pickup_address') if rma.get('pickup_address') else ""
+            return_reason = str(rma.get('return_reason')) if rma.get('return_reason') else ""
+            return_type = rma.get('return_type') if rma.get('return_type') else 0
+            replacement_product_emag_id = rma.get('replacement_product_emag_id') if rma.get('replacement_product_emag_id') else 0
+            replacement_product_id = rma.get('replacement_product_id') if rma.get('replacement_product_id') else 0
+            replacement_product_name = rma.get('replacement_product_name') if rma.get('replacement_product_name') else ""
+            replacement_product_quantity = rma.get('replacement_product_quantity') if rma.get('replacement_product_quantity') else 0
+            date = rma.get('date') if rma.get('date') else ""
+            request_status = rma.get('request_status') if rma.get('request_status') else 0
             return_market_place = place
             awb = ""
             user_id = user_id

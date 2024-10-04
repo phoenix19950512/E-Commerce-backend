@@ -9,6 +9,7 @@ from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
 from app.models.orders import Order
 from app.models.shipment import Shipment 
+from app.models.team_member import Team_member
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 from app.database import get_db
 from app.utils.emag_products import *
@@ -55,7 +56,16 @@ async def get_product_info(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     cnt = {}
     min_time = {}
     max_time = {}
@@ -69,7 +79,7 @@ async def get_product_info(
             ProductAlias.user_id == Order.user_id
         )
     )
-    query = query.where(Order.user_id == user.id)
+    query = query.where(Order.user_id == user_id)
     time = datetime.now()
     thirty_days_ago = time - timedelta(days=30)
     query1 = query.where(Order.date > thirty_days_ago)
@@ -202,6 +212,15 @@ async def get_product_info(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
 
     cnt = {}
     min_time = {}
@@ -217,7 +236,7 @@ async def get_product_info(
         )
     )
     
-    query = query.where(Order.user_id == user.id)
+    query = query.where(Order.user_id == user_id)
 
     time = datetime.now()
     thirty_days_ago = time - timedelta(days=30)
@@ -358,12 +377,22 @@ async def get_product_advanced_info(
     volumetric_weight_max: Decimal = Query(None),
     user: User = Depends(get_current_user)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     query_ship = select(Shipment)
 
     if shipment_type is not None:
         query_ship = query_ship.where(Shipment.type == shipment_type)
     
-    query_ship = query_ship.where(Shipment.user_id == user.id)
+    query_ship = query_ship.where(Shipment.user_id == user_id)
     shipments_result = await db.execute(query_ship)
     shipments = shipments_result.scalars().all()
 
@@ -419,6 +448,16 @@ async def  get_shipment_info(
     type_str: str = Query(None),
     status_str: str = Query(None)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     if type_str:
         type = [str(id.strip()) for id in type_str.split(",")]
     else:
@@ -431,7 +470,7 @@ async def  get_shipment_info(
 
     query = select(Shipment).where(Shipment.type.in_(type))
     query = query.where(Shipment.status == any_(status))
-    query = query.where(Shipment.user_id == user.id)
+    query = query.where(Shipment.user_id == user_id)
     result = await db.execute(query)
     shipments = result.scalars().all()
 
