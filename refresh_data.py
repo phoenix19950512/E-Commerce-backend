@@ -200,8 +200,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                     await refresh_emag_returns(marketplace)
                     # logging.info("Refresh reviews from emag")
                     # await refresh_emag_reviews(marketplace, session)
-                    logging.info("Check hijacker and review")
-                    await check_hijacker_and_bad_reviews(marketplace, session)
+                    # logging.info("Check hijacker and review")
+                    # await check_hijacker_and_bad_reviews(marketplace, session)
 
 @app.on_event("startup")
 @repeat_every(seconds=14400)  # Run daily for deleting video last 30 days
