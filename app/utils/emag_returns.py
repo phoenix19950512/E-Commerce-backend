@@ -72,6 +72,26 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         logging.info(f"Failed to retrieve refunds: {response.status_code}")
         return None
 
+def get_awb(reservation_id, API_KEY):
+    url = 'https://marketplace-api.emag.ro/api-3/awb/read'
+
+    api_key = str(API_KEY).replace("b'", '').replace("'", "")
+    headers = {
+        "Authorization": f"Basic {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    data = json.dumps({
+        "reservation_id": reservation_id
+    })
+    response = requests.post(url, data=data, headers=headers)
+    if response.status_code == 200:
+        awb = response.json()
+        return awb
+    else:
+        logging.info(f"Failed to retrieve refunds: {response.status_code}")
+        return None
+
 def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
     logging.info("counting start")
     url = f"{MARKETPLACE_API_URL}{RMAS_ENDPOINT}{COUNT_ENGPOINT}"
@@ -91,7 +111,7 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
         logging.error(f"Failed to retrieve rmas: {response.status_code}")
         return None
 
-async def insert_rmas_into_db(rmas, place:str, user_id):
+async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
     try:
         conn = psycopg2.connect(
             dbname=settings.DB_NAME,
@@ -129,6 +149,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id):
             ) ON CONFLICT (emag_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status,
+                awb = EXCLUDED.awb,
                 user_id = EXCLUDED.user_id         
         """).format(sql.Identifier("returns"))
 
@@ -152,7 +173,12 @@ async def insert_rmas_into_db(rmas, place:str, user_id):
             date = rma.get('date') if rma.get('date') else ""
             request_status = rma.get('request_status') if rma.get('request_status') else 0
             return_market_place = place
-            awb = ""
+            reservation_id = rma.get('awbs')[0].get('reservation_id')
+            if reservation_id:
+                response = get_awb(reservation_id, api_key)
+                awb = response.get('results').get('awb')[0].get('awb_number')
+            else:
+                awb = ""
             user_id = user_id
 
             value = (
@@ -212,7 +238,7 @@ async def refresh_emag_returns(marketplace: Marketplace):
         while current_page <= int(pages):
             rmas = get_all_rmas(baseAPIURL, endpoint, read_endpoint, API_KEY, current_page)
             logging.info(f">>>>>>> Current Page : {current_page} <<<<<<<<")
-            await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain, user_id)
+            await insert_rmas_into_db(rmas['results'], marketplace.marketplaceDomain, user_id, API_KEY)
             current_page += 1
     except Exception as e:
         print('++++++++++++++++++++++++++++++++++++++++++')
