@@ -173,13 +173,17 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
             date = rma.get('date') if rma.get('date') else ""
             request_status = rma.get('request_status') if rma.get('request_status') else 0
             return_market_place = place
-            reservation_id = rma.get('awbs')[0].get('reservation_id') if rma.get('awbs')[0] else ''
-            if reservation_id:
-                response = get_awb(reservation_id, api_key)
-                if response is None:
-                    awb = ""
+            awbs = rma.get('awbs')
+            if awbs and len(awbs) > 0:
+                reservation_id = awbs[0].get('reservation_id') if awbs[0] else ''
+                if reservation_id:
+                    response = get_awb(reservation_id, api_key)
+                    if response is None:
+                        awb = ""
+                    else:
+                        awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
                 else:
-                    awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb')[0].get('awb_number') else ""
+                    awb = ""
             else:
                 awb = ""
             user_id = user_id
