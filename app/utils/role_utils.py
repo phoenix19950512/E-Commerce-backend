@@ -1,7 +1,7 @@
 ROLE_MAPPING = {
     -1: "UnAllowed",
     0: "Warehouse Staff",
-    1: "Product Manager",
+    1: "Allowed",
     2: "Site Manager",
     3: "Customer Support",
     4: "Administrator",
