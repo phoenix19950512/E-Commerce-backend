@@ -125,10 +125,10 @@ async def get_extra_info(
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -148,6 +148,9 @@ async def get_extra_info(
 
 @router.get("/move", response_model=ShipmentRead)
 async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: int, db:AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
     result = await db.execute(select(Shipment).where(Shipment.id == shipment_id1))
     shipment_1 = result.scalars().first()
 
@@ -231,10 +234,10 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
 
 @router.get("/product_info")
 async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -296,8 +299,17 @@ async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current
         }
 
 @router.get("/{shipment_id}")
-async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id))
+async def get_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user_id))
     db_shipment = result.scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
@@ -305,10 +317,10 @@ async def get_shipment(shipment_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
 async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
@@ -327,10 +339,10 @@ async def update_shipment(shipment_id: int, shipment: ShipmentUpdate, user: User
 
 @router.delete("/{shipment_id}", response_model=ShipmentRead)
 async def delete_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role != 4 and user.role != 2 and user.role != 6:
+    if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
-    if user.role == 2 or user.role == 6:
+    if user.role != 4:
         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
         db_team = result.scalars().first()
         user_id = db_team.admin
