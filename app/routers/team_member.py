@@ -18,6 +18,10 @@ async def create_team_member(team_member: Team_memberCreate, admin: User = Depen
         raise HTTPException(status_code=401, detail="Authentication error")
     db_team_member = Team_member(**team_member.dict())
     db_team_member.admin = admin.id
+    user_id = db_team_member.user
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalars().first()
+    db_user.role = 1
     db.add(db_team_member)
     await db.commit()
     await db.refresh(db_team_member)
