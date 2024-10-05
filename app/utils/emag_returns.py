@@ -176,7 +176,10 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
             reservation_id = rma.get('awbs')[0].get('reservation_id') if rma.get('awbs')[0] else ''
             if reservation_id:
                 response = get_awb(reservation_id, api_key)
-                awb = response.get('results').get('awb')[0].get('awb_number')
+                if response is None:
+                    awb = ""
+                else:
+                    awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb')[0].get('awb_number') else ""
             else:
                 awb = ""
             user_id = user_id
