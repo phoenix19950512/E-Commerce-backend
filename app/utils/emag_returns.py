@@ -17,10 +17,10 @@ from decimal import Decimal
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-    'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
-}
+# PROXIES = {
+#     'http': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+#     'https': 'http://p2p_user:jDkAx4EkAyKw@65.109.7.74:54021',
+# }
 
 def get_attachments(API_KEY):
     url = 'https://marketplace-api.emag.ro/api-3/product_offer/save'
@@ -35,7 +35,8 @@ def get_attachments(API_KEY):
         "currentPage": 1
     })
 
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    # response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         get_attachments = response.json()
         return get_attachments
@@ -62,7 +63,8 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "itmesPerPage": 100,
         "currentPage": currentPage
     })
-    response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    # response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
+    response = requests.post(url, data=data, headers=headers)
     if response.status_code == 200:
         rmas = response.json()
         return rmas
@@ -80,7 +82,8 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
         "Content-Type": "application/json"
     }
 
-    response = requests.post(url, headers=headers, proxies=PROXIES)
+    # response = requests.post(url, headers=headers, proxies=PROXIES)
+    response = requests.post(url, headers=headers)
     if response.status_code == 200:
         logging.info("success rmas count")
         return response.json()
@@ -123,7 +126,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id):
                 user_id
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON CONFLICT (order_id, return_market_place) DO UPDATE SET
+            ) ON CONFLICT (emag_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status,
                 user_id = EXCLUDED.user_id         

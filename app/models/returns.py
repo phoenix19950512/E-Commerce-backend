@@ -4,7 +4,7 @@ from app.database import Base
 class Returns(Base):
     __tablename__ = "returns"
     emag_id = Column(BigInteger, nullable=True)
-    order_id = Column(BigInteger, primary_key=True)
+    order_id = Column(BigInteger, index=True)
     type = Column(Integer, nullable=True)
     customer_name = Column(String, nullable=True)
     customer_company = Column(String, nullable=True)
@@ -26,5 +26,5 @@ class Returns(Base):
     user_id = Column(Integer, index=True, nullable=True)
 
     __table_args__ = (
-        PrimaryKeyConstraint('order_id', 'return_market_place', name='pk_order_id_return_market_place'),
+        PrimaryKeyConstraint('emag_id', 'return_market_place', name='pk_emag_id_return_market_place'),
     )
