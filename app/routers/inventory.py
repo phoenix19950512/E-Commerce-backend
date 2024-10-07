@@ -259,7 +259,7 @@ async def get_product_info(
                     min_time[product.ean] = min(min_time[product.ean], order.date)
                     max_time[product.ean] = max(max_time[product.ean], order.date)
 
-    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user.id))
+    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user_id))
     products = product_result.scalars().all()
 
     product_data = []
