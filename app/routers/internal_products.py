@@ -340,19 +340,43 @@ async def get_products(
         user_id = db_team.admin
     else:
         user_id = user.id
-        
+    
+    result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user_id))
+    db_internal_products = result.scalars().all()
+    for internal_product in db_internal_products:
+        internal_product.orders_stock = 0
+    
+    result = await db.execute(select(Order).where(Order.status == any_([1,2,3], Order.user_id == user_id)))
+    db_new_orders = result.scalars().all()
+    
+    for order in db_new_orders:
+        product_id_list = order.product_id
+        quantity_list = order.quantity
+        for i in range(len(product_id_list)):
+            product_id = product_id_list[i]
+            quantity = quantity_list[i]
+            result = await db.execute(select(Product).where(Product.id == product_id, Product.user_id == user_id, Product.product_marketplace == order.order_market_place))
+            db_product = result.scalars().first()
+            ean = db_product.ean
+
+            result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
+            db_internal_product = result.scalars().first()
+            db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
+    
+    await db.commit() 
+    
     offset = (page - 1) * items_per_page
     query = select(Internal_Product)
     if supplier_ids:
         supplier_id_list = [int(id.strip()) for id  in supplier_ids.split(",")]
         query = query.filter(Internal_Product.supplier_id == any_(supplier_id_list))
-        
+    
     query = query.filter(
         (cast(Internal_Product.id, String).ilike(f"%{search_text}")) |
         (Internal_Product.product_name.ilike(f"%{search_text}%")) |
         (Internal_Product.model_name.ilike(f"%{search_text}%")) |
-        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id).offset(offset).limit(items_per_page)
-    query = query.where(Internal_Product.user_id == user_id)
+        (Internal_Product.ean.ilike(f"%{search_text}%"))).order_by(Internal_Product.id)
+    query = query.where(Internal_Product.user_id == user_id).offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_products = result.scalars().all()
 
