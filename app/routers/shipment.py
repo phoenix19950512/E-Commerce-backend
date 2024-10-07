@@ -77,7 +77,7 @@ async def get_shipments_agent(
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
 
-@router.get("supplier")
+@router.get("/supplier")
 async def get_shipments_supplier(
     supplier_id: str,
     db: AsyncSession = Depends(get_db)
