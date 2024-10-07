@@ -15,10 +15,6 @@ from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROXIES = {
-    'http': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-    'https': 'http://14a20bb3efda4:d69e723f2d@168.158.127.74:12323',
-}
 
 def get_stock(smartbill: Billing_software):
     today = datetime.today()
@@ -39,7 +35,7 @@ def get_stock(smartbill: Billing_software):
     }
 
     # Replace 'username' and 'password' with the actual credentials
-    response = requests.get(url, headers=headers, params=params, proxies=PROXIES)
+    response = requests.get(url, headers=headers, params=params)
     # Replace 'username' and 'password' with the actual credentials
     if response.status_code == 200:
         result = response.json()
@@ -70,6 +66,6 @@ def generate_invoice(data):
     }
     data = json.dumps(data)
     logging.info(data)
-    response = requests.post(url, headers=headers, data=data, proxies=PROXIES)
+    response = requests.post(url, headers=headers, data=data)
     logging.info(response.json())
     return response.json()
