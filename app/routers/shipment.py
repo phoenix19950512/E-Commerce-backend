@@ -77,6 +77,21 @@ async def get_shipments_agent(
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
 
+@router.get("/admin_supplier")
+async def get_admin_supplier(
+    shipment_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id))
+    db_shipement = result.scalars().first()
+    user_id = db_shipement.user_id
+    
+    result = await db.execute(select(Supplier).where(Supplier.user_id == user_id))
+    db_suppliers = result.scalars().all()
+    if db_suppliers is None:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return db_suppliers
+
 @router.get("/supplier")
 async def get_shipments_supplier(
     supplier_id: str,
