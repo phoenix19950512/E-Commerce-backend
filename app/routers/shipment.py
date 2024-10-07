@@ -77,6 +77,17 @@ async def get_shipments_agent(
         raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipments
 
+@router.get("supplier")
+async def get_shipments_supplier(
+    supplier_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Shipment).where(Shipment.status == "New", supplier_id == any_(Shipment.wechat_group)))
+    db_shipments = result.scalars().all()
+    if db_shipments is None:
+        raise HTTPException(status_code=404, detail="shipment not found")
+    return db_shipments
+
 @router.get("/", response_model=List[ShipmentRead])
 async def get_shipments(
     page: int = Query(1, ge=1, description="Page number"),
