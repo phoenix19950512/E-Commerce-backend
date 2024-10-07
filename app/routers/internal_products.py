@@ -346,7 +346,7 @@ async def get_products(
     for internal_product in db_internal_products:
         internal_product.orders_stock = 0
     
-    result = await db.execute(select(Order).where(Order.status == any_([1,2,3], Order.user_id == user_id)))
+    result = await db.execute(select(Order).where(Order.status == any_([1,2,3]), Order.user_id == user_id))
     db_new_orders = result.scalars().all()
     
     for order in db_new_orders:
