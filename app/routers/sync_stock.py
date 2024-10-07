@@ -59,9 +59,8 @@ async def send_stock(
                     continue
                 db_internal_product.orders_stock = db_internal_product.orders_stock + quantity
                 # logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
-                await db.commit()
-                await db.refresh(db_internal_product)
-                logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
+        await db.commit()
+        logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
         logging.info("Sync stock")
         result = await db.execute(select(Internal_Product))
         products = result.scalars().all()
