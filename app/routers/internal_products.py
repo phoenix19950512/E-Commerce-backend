@@ -357,6 +357,9 @@ async def get_products(
             quantity = quantity_list[i]
             result = await db.execute(select(Product).where(Product.id == product_id, Product.user_id == user_id, Product.product_marketplace == order.order_market_place))
             db_product = result.scalars().first()
+            if db_product is None:
+                result = await db.execute(select(Product).where(Product.id == product_id, Product.user_id == user_id))
+                db_product = result.scalars().first()
             ean = db_product.ean
 
             result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean))
