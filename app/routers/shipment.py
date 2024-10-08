@@ -37,7 +37,12 @@ async def create_shipment(shipment: ShipmentCreate, user: User = Depends(get_cur
     return db_shipment
 
 @router.get('/count')
-async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_shipments_count(
+    type: str = Query('', description="Shipping type"),
+    status: str = Query('', description="Shipping status"),
+    user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
     if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
@@ -47,7 +52,13 @@ async def get_shipments_count(user: User = Depends(get_current_user), db: AsyncS
         user_id = db_team.admin
     else:
         user_id = user.id
-    result = await db.execute(select(Shipment).where(Shipment.user_id == user_id))
+    
+    query = select(Shipment).where(Shipment.user_id == user_id)
+    if type:
+        query = query.where(Shipment.type == type)
+    if status:
+        query = query.where(Shipment.status == status)
+    result = await db.execute(query)
     db_shipments = result.scalars().all()
     return len(db_shipments)
 
