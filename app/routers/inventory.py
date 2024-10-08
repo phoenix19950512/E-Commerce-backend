@@ -67,8 +67,6 @@ async def get_product_info(
         user_id = user.id
         
     cnt = {}
-    min_time = {}
-    max_time = {}
 
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).join(
@@ -93,12 +91,8 @@ async def get_product_info(
             if product.id == product_ids[i]:
                 if product.ean not in cnt:
                     cnt[product.ean] = quantities[i]
-                    min_time[product.ean] = order.date
-                    max_time[product.ean] = order.date
                 else:
                     cnt[product.ean] += quantities[i]
-                    min_time[product.ean] = min(min_time[product.ean], order.date)
-                    max_time[product.ean] = max(max_time[product.ean], order.date)
 
     ninety_days_ago = time - timedelta(days=90)
     query2 = query.where(Order.date > ninety_days_ago)
@@ -161,7 +155,7 @@ async def get_product_info(
         if ean not in cnt:
             continue
         else:
-            days = (max_time[ean] - min_time[ean]).days + 1
+            days = 30
             ave_sales = cnt[ean] / days
             logging.info(f" sales per day is {ave_sales}")
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
@@ -223,8 +217,6 @@ async def get_product_info(
         user_id = user.id
 
     cnt = {}
-    min_time = {}
-    max_time = {}
 
     ProductAlias = aliased(Product)
     query = select(Order, ProductAlias).join(
@@ -252,12 +244,8 @@ async def get_product_info(
             if product.id == product_ids[i]:
                 if product.ean not in cnt:
                     cnt[product.ean] = quantities[i]
-                    min_time[product.ean] = order.date
-                    max_time[product.ean] = order.date
                 else:
                     cnt[product.ean] += quantities[i]
-                    min_time[product.ean] = min(min_time[product.ean], order.date)
-                    max_time[product.ean] = max(max_time[product.ean], order.date)
 
     product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user_id))
     products = product_result.scalars().all()
@@ -328,7 +316,7 @@ async def get_product_info(
                 "short_product_name": product.short_product_name
             })
         else:
-            days = (max_time[ean] - min_time[ean]).days + 1
+            days = 30
             ave_sales = cnt[ean] / days
             logging.info(f" sales per day is {ave_sales}")
             stock_days = int(stock / ave_sales) if ave_sales > 0 else -1
