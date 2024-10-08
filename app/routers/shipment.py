@@ -109,6 +109,8 @@ async def get_shipments_supplier(
 async def get_shipments(
     page: int = Query(1, ge=1, description="Page number"),
     items_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
+    type: str = Query('', description="Shipping type"),
+    status: str = Query('', description="Shipping status"),
     user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
@@ -122,7 +124,12 @@ async def get_shipments(
     else:
         user_id = user.id
     offset = (page - 1) * items_per_page
-    result = await db.execute(select(Shipment).where(Shipment.user_id == user_id).offset(offset).limit(items_per_page))
+    query = select(Shipment).where(Shipment.user_id == user_id)
+    if type:
+        query = query.where(Shipment.type == type)
+    if status:
+        query = query.where(Shipment.status == status)
+    result = await db.execute(query.offset(offset).limit(items_per_page))
     db_shipments = result.scalars().all()
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
