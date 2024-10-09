@@ -531,7 +531,7 @@ async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
 
     for i in range(len(product_id_list)):
         product_id = product_id_list[i]
-        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place))
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place, Product.user_id == db_order.user_id))
         db_product = result.scalars().first()
         ean.append(db_product.ean)
 
