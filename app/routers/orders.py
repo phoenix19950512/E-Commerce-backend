@@ -407,7 +407,7 @@ async def read_orders(
 
         for i in range(len(product_list)):
             product_id = product_list[i]
-            result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place))
+            result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place, Product.user_id == db_order.user_id))
             db_product = result.scalars().first()
             ean.append(db_product.ean)
 
