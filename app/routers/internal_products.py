@@ -212,7 +212,7 @@ async def get_date_info(ean: str, st_datetime, en_datetime, db: AsyncSession):
         product_id = product.id
         marketplace = product.product_marketplace
 
-        query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime, Order.order_market_place == marketplace)
+        query = select(Order).where(Order.date >= st_datetime, Order.date <= en_datetime, Order.order_market_place == marketplace, Order.user_id == product.user_id)
         query = query.where(product_id == any_(Order.product_id))
         result = await db.execute(query)
         orders = result.scalars().all()
