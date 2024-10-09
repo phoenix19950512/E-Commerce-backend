@@ -234,6 +234,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
 
     before = shipment_1.before[index]
     if before:
+        before = before.replace("'", '"')
         before = json.loads(before)
         before = before + [f"{ship_id}_{shipment_1.title}"]
         before = str(before)
