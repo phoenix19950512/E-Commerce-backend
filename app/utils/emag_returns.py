@@ -290,88 +290,88 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 logging.info(f"Processing RMA: {rma}")
 
                 emag_id = rma.get('emag_id') if rma.get('emag_id') else 0
-                logging.debug(f"emag_id: {emag_id}")
+                logging.info(f"emag_id: {emag_id}")
 
                 order_id = rma.get('order_id') if rma.get('order_id') else 0
-                logging.debug(f"order_id: {order_id}")
+                logging.info(f"order_id: {order_id}")
 
                 type = rma.get('type') if rma.get('type') else 0
-                logging.debug(f"type: {type}")
+                logging.info(f"type: {type}")
 
                 customer_name = rma.get('customer_name') if rma.get('customer_name') else ""
-                logging.debug(f"customer_name: {customer_name}")
+                logging.info(f"customer_name: {customer_name}")
 
                 customer_company = rma.get('customer_company') if rma.get('customer_company') else ""
-                logging.debug(f"customer_company: {customer_company}")
+                logging.info(f"customer_company: {customer_company}")
 
                 customer_phone = rma.get('customer_phone') if rma.get('customer_phone') else ""
-                logging.debug(f"customer_phone: {customer_phone}")
+                logging.info(f"customer_phone: {customer_phone}")
 
                 products = [str(product.get('product_id')) if product.get('product_id') else 0 for product in rma.get('products')]
-                logging.debug(f"products: {products}")
+                logging.info(f"products: {products}")
 
                 quantity = [int(product.get('quantity')) if product.get('quantity') else 0 for product in rma.get('products')]
-                logging.debug(f"quantity: {quantity}")
+                logging.info(f"quantity: {quantity}")
 
                 observations = [str(product.get('observations')) if product.get('observations') else "" for product in rma.get('products')]
-                logging.debug(f"observations: {observations}")
+                logging.info(f"observations: {observations}")
 
                 pickup_address = rma.get('pickup_address') if rma.get('pickup_address') else ""
-                logging.debug(f"pickup_address: {pickup_address}")
+                logging.info(f"pickup_address: {pickup_address}")
 
                 return_reason = str(rma.get('return_reason')) if rma.get('return_reason') else ""
-                logging.debug(f"return_reason: {return_reason}")
+                logging.info(f"return_reason: {return_reason}")
 
                 return_type = rma.get('return_type') if rma.get('return_type') else 0
-                logging.debug(f"return_type: {return_type}")
+                logging.info(f"return_type: {return_type}")
 
                 replacement_product_emag_id = rma.get('replacement_product_emag_id') if rma.get('replacement_product_emag_id') else 0
-                logging.debug(f"replacement_product_emag_id: {replacement_product_emag_id}")
+                logging.info(f"replacement_product_emag_id: {replacement_product_emag_id}")
 
                 replacement_product_id = rma.get('replacement_product_id') if rma.get('replacement_product_id') else 0
-                logging.debug(f"replacement_product_id: {replacement_product_id}")
+                logging.info(f"replacement_product_id: {replacement_product_id}")
 
                 replacement_product_name = rma.get('replacement_product_name') if rma.get('replacement_product_name') else ""
-                logging.debug(f"replacement_product_name: {replacement_product_name}")
+                logging.info(f"replacement_product_name: {replacement_product_name}")
 
                 replacement_product_quantity = rma.get('replacement_product_quantity') if rma.get('replacement_product_quantity') else 0
-                logging.debug(f"replacement_product_quantity: {replacement_product_quantity}")
+                logging.info(f"replacement_product_quantity: {replacement_product_quantity}")
 
                 date = rma.get('date') if rma.get('date') else ""
-                logging.debug(f"date: {date}")
+                logging.info(f"date: {date}")
 
                 request_status = rma.get('request_status') if rma.get('request_status') else 0
-                logging.debug(f"request_status: {request_status}")
+                logging.info(f"request_status: {request_status}")
 
                 return_market_place = place
-                logging.debug(f"return_market_place: {return_market_place}")
+                logging.info(f"return_market_place: {return_market_place}")
 
                 awbs = rma.get('awbs')
                 if awbs and len(awbs) > 0:
                     reservation_id = awbs[0].get('reservation_id') if awbs[0] else ''
-                    logging.debug(f"reservation_id: {reservation_id}")
+                    logging.info(f"reservation_id: {reservation_id}")
 
                     if reservation_id:
                         response = get_awb(reservation_id, api_key)
-                        logging.debug(f"AWB response: {response}")
+                        logging.info(f"AWB response: {response}")
 
                         if response is None:
                             awb = ""
                         else:
                             awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
-                            logging.debug(f"awb: {awb}")
+                            logging.info(f"awb: {awb}")
 
                             awb_status = str(response.get('results').get('status')) if response.get('results').get('status') else ""
-                            logging.debug(f"awb_status: {awb_status}")
+                            logging.info(f"awb_status: {awb_status}")
                     else:
                         awb = ""
-                        logging.debug("No reservation_id found, setting awb to empty.")
+                        logging.info("No reservation_id found, setting awb to empty.")
                 else:
                     awb = ""
-                    logging.debug("No AWBs found, setting awb to empty.")
+                    logging.info("No AWBs found, setting awb to empty.")
 
                 user_id = user_id  # Assuming user_id is defined somewhere earlier
-                logging.debug(f"user_id: {user_id}")
+                logging.info(f"user_id: {user_id}")
 
                 value = (
                     emag_id,
@@ -397,7 +397,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                     awb_status,
                     user_id
                 )
-                logging.debug(f"Inserting value: {value}")
+                logging.info(f"Inserting value: {value}")
 
                 cursor.execute(insert_query, value)
                 conn.commit()
