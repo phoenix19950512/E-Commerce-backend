@@ -120,127 +120,6 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
         logging.error(f"Failed to retrieve rmas: {response.status_code}")
         return None
 
-# async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
-#     try:
-#         conn = psycopg2.connect(
-#             dbname=settings.DB_NAME,
-#             user=settings.DB_USERNAME,
-#             password=settings.DB_PASSOWRD,
-#             host=settings.DB_URL,
-#             port=settings.DB_PORT
-#         )
-#         cursor = conn.cursor()
-#         insert_query = sql.SQL("""
-#             INSERT INTO {} (
-#                 emag_id,
-#                 order_id,
-#                 type,
-#                 customer_name,
-#                 customer_company,
-#                 customer_phone,
-#                 products,
-#                 quantity,
-#                 observations,
-#                 pickup_address,
-#                 return_reason,
-#                 return_type,
-#                 replacement_product_emag_id,
-#                 replacement_product_id,
-#                 replacement_product_name,
-#                 replacement_product_quantity,
-#                 date,
-#                 request_status,
-#                 return_market_place,
-#                 awb,
-#                 awb_status,
-#                 user_id
-#             ) VALUES (
-#                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-#             ) ON CONFLICT (emag_id, return_market_place) DO UPDATE SET
-#                 return_reason = EXCLUDED.return_reason,
-#                 request_status = EXCLUDED.request_status,
-#                 awb = EXCLUDED.awb,
-#                 products = EXCLUDED.products,
-#                 quantity = EXCLUDED.quantity,
-#                 observations = EXCLUDED.observations,
-#                 awb_status = EXCLUDED.awb_status,
-#                 user_id = EXCLUDED.user_id         
-#         """).format(sql.Identifier("returns"))
-
-#         for rma in rmas:
-#             try:
-#                 emag_id = rma.get('emag_id') if rma.get('emag_id') else 0
-#                 order_id = rma.get('order_id') if rma.get('order_id') else 0
-#                 type = rma.get('type') if rma.get('type') else 0
-#                 customer_name = rma.get('customer_name') if rma.get('customer_name') else ""
-#                 customer_company = rma.get('customer_company') if rma.get('customer_company') else ""
-#                 customer_phone = rma.get('customer_phone') if rma.get('customer_phone') else ""
-#                 products = [str(product.get('product_id')) if product.get('product_id') else 0 for product in rma.get('products')]
-#                 quantity = [int(product.get('quantity')) if product.get('quantity') else 0 for product in rma.get('products')]
-#                 observations = [str(product.get('observations')) if product.get('observations') else "" for product in rma.get('products')]
-#                 pickup_address = rma.get('pickup_address') if rma.get('pickup_address') else ""
-#                 return_reason = str(rma.get('return_reason')) if rma.get('return_reason') else ""
-#                 return_type = rma.get('return_type') if rma.get('return_type') else 0
-#                 replacement_product_emag_id = rma.get('replacement_product_emag_id') if rma.get('replacement_product_emag_id') else 0
-#                 replacement_product_id = rma.get('replacement_product_id') if rma.get('replacement_product_id') else 0
-#                 replacement_product_name = rma.get('replacement_product_name') if rma.get('replacement_product_name') else ""
-#                 replacement_product_quantity = rma.get('replacement_product_quantity') if rma.get('replacement_product_quantity') else 0
-#                 date = rma.get('date') if rma.get('date') else ""
-#                 request_status = rma.get('request_status') if rma.get('request_status') else 0
-#                 return_market_place = place
-#                 awbs = rma.get('awbs')
-#                 if awbs and len(awbs) > 0:
-#                     reservation_id = awbs[0].get('reservation_id') if awbs[0] else ''
-#                     if reservation_id:
-#                         response = get_awb(reservation_id, api_key)
-#                         if response is None:
-#                             awb = ""
-#                         else:
-#                             awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
-#                             awb_status = str(response.get('results').get('status')) if response.get('results').get('status') else ""
-#                     else:
-#                         awb = ""
-#                 else:
-#                     awb = ""
-#                 user_id = user_id
-
-#                 value = (
-#                     emag_id,
-#                     order_id,
-#                     type,
-#                     customer_name,
-#                     customer_company,
-#                     customer_phone,
-#                     products,
-#                     quantity,
-#                     observations,
-#                     pickup_address,
-#                     return_reason,
-#                     return_type,
-#                     replacement_product_emag_id,
-#                     replacement_product_id,
-#                     replacement_product_name,
-#                     replacement_product_quantity,
-#                     date,
-#                     request_status,
-#                     return_market_place,
-#                     awb,
-#                     awb_status,
-#                     user_id
-#                 )
-#                 cursor.execute(insert_query, value)
-#                 conn.commit()
-                
-#             except Exception as inner_error:
-#                 logging.error(f"Failed to insert RMA with emag_id {rma}: {inner_error}")
-#                 continue
-        
-#         cursor.close()
-#         conn.close()
-#         logging.info("Refunds inserted successfully")
-#     except Exception as e:
-        # logging.info(f"Failed to insert refunds into database: {e}")
-
 async def insert_rmas_into_db(rmas, marketplace: Marketplace):
     try:
         conn = psycopg2.connect(
@@ -290,92 +169,40 @@ async def insert_rmas_into_db(rmas, marketplace: Marketplace):
 
         for rma in rmas:
             try:
-                # Logging the start of the RMA processing
-                logging.info(f"Processing RMA: {rma}")
-
                 emag_id = rma.get('emag_id') if rma.get('emag_id') else 0
-                logging.info(f"emag_id: {emag_id}")
-
                 order_id = rma.get('order_id') if rma.get('order_id') else 0
-                logging.info(f"order_id: {order_id}")
-
                 type = rma.get('type') if rma.get('type') else 0
-                logging.info(f"type: {type}")
-
                 customer_name = rma.get('customer_name') if rma.get('customer_name') else ""
-                logging.info(f"customer_name: {customer_name}")
-
                 customer_company = rma.get('customer_company') if rma.get('customer_company') else ""
-                logging.info(f"customer_company: {customer_company}")
-
                 customer_phone = rma.get('customer_phone') if rma.get('customer_phone') else ""
-                logging.info(f"customer_phone: {customer_phone}")
-
                 products = [str(product.get('product_id')) if product.get('product_id') else 0 for product in rma.get('products')]
-                logging.info(f"products: {products}")
-
                 quantity = [int(product.get('quantity')) if product.get('quantity') else 0 for product in rma.get('products')]
-                logging.info(f"quantity: {quantity}")
-
                 observations = [str(product.get('observations')) if product.get('observations') else "" for product in rma.get('products')]
-                logging.info(f"observations: {observations}")
-
                 pickup_address = rma.get('pickup_address') if rma.get('pickup_address') else ""
-                logging.info(f"pickup_address: {pickup_address}")
-
                 return_reason = str(rma.get('return_reason')) if rma.get('return_reason') else ""
-                logging.info(f"return_reason: {return_reason}")
-
                 return_type = rma.get('return_type') if rma.get('return_type') else 0
-                logging.info(f"return_type: {return_type}")
-
                 replacement_product_emag_id = rma.get('replacement_product_emag_id') if rma.get('replacement_product_emag_id') else 0
-                logging.info(f"replacement_product_emag_id: {replacement_product_emag_id}")
-
                 replacement_product_id = rma.get('replacement_product_id') if rma.get('replacement_product_id') else 0
-                logging.info(f"replacement_product_id: {replacement_product_id}")
-
                 replacement_product_name = rma.get('replacement_product_name') if rma.get('replacement_product_name') else ""
-                logging.info(f"replacement_product_name: {replacement_product_name}")
-
                 replacement_product_quantity = rma.get('replacement_product_quantity') if rma.get('replacement_product_quantity') else 0
-                logging.info(f"replacement_product_quantity: {replacement_product_quantity}")
-
                 date = rma.get('date') if rma.get('date') else ""
-                logging.info(f"date: {date}")
-
                 request_status = rma.get('request_status') if rma.get('request_status') else 0
-                logging.info(f"request_status: {request_status}")
-
                 return_market_place = marketplace.marketplaceDomain
-                logging.info(f"return_market_place: {return_market_place}")
-
                 awbs = rma.get('awbs')
                 if awbs and len(awbs) > 0:
                     reservation_id = awbs[0].get('reservation_id') if awbs[0] else ''
-                    logging.info(f"reservation_id: {reservation_id}")
-
                     if reservation_id:
                         response = get_awb(reservation_id, marketplace)
-                        logging.info(f"AWB response: {response}")
-
                         if response is None:
                             awb = ""
                         else:
                             awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
-                            logging.info(f"awb: {awb}")
-
                             awb_status = str(response.get('results').get('status')) if response.get('results').get('status') else ""
-                            logging.info(f"awb_status: {awb_status}")
                     else:
                         awb = ""
-                        logging.info("No reservation_id found, setting awb to empty.")
                 else:
                     awb = ""
-                    logging.info("No AWBs found, setting awb to empty.")
-
-                user_id = marketplace.user_id  # Assuming user_id is defined somewhere earlier
-                logging.info(f"user_id: {user_id}")
+                user_id = marketplace.user_id
 
                 value = (
                     emag_id,
@@ -401,12 +228,9 @@ async def insert_rmas_into_db(rmas, marketplace: Marketplace):
                     awb_status,
                     user_id
                 )
-                logging.info(f"Inserting value: {value}")
-
                 cursor.execute(insert_query, value)
                 conn.commit()
-                logging.info(f"Successfully inserted RMA with emag_id {emag_id}")
-
+                
             except Exception as inner_error:
                 logging.error(f"Failed to insert RMA with emag_id {rma}: {inner_error}")
                 continue
