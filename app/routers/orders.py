@@ -173,6 +173,7 @@ async def read_new_orders(
     for db_order in db_orders:
         ean = []
         stock = []
+        product_name = []
         marketplace = db_order.order_market_place
         product_list = db_order.product_id
         quantity_list = db_order.quantity
@@ -206,11 +207,13 @@ async def read_new_orders(
             result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place, Product.user_id == db_order.user_id))
             db_product = result.scalars().first()
             ean.append(db_product.ean)
+            product_name.append(db_product.product_name)
 
         orders_data.append({
             **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
             "total_price": total,
             "ean": ean,
+            "product_name": product_name,
             "stock": stock,
             "awb": awb_dict[db_order.id]
         })
@@ -377,6 +380,7 @@ async def read_orders(
     for db_order in db_orders:
         ean = []
         stock = []
+        product_name = []
         marketplace = db_order.order_market_place
         product_list = db_order.product_id
         quantity_list = db_order.quantity
@@ -410,11 +414,13 @@ async def read_orders(
             result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place, Product.user_id == db_order.user_id))
             db_product = result.scalars().first()
             ean.append(db_product.ean)
+            product_name.append(db_product.product_name)
 
         orders_data.append({
             **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
             "total_price": total,
             "ean": ean,
+            "product_name": product_name,
             "stock": stock,
             "awb": awb_dict[db_order.id],
             "invoice": invoice_dict[db_order.id]
@@ -501,6 +507,7 @@ async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
     product_id_list = db_order.product_id
     ean = []
     stock = []
+    product_name = []
     marketplace = db_order.order_market_place
     product_list = db_order.product_id
     quantity_list = db_order.quantity
@@ -534,13 +541,15 @@ async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
         result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == db_order.order_market_place, Product.user_id == db_order.user_id))
         db_product = result.scalars().first()
         ean.append(db_product.ean)
+        product_name.append(db_product.product_name)
 
     return {
         **{column.name: getattr(db_order, column.name) for column in Order.__table__.columns},
         "total_price": total,
         "ean": ean,
         "stock": stock,
-        "awb": awb
+        "awb": awb,
+        "product_name": product_name
     }
 
 @router.put("/{order_id}", response_model=OrderRead)
