@@ -143,9 +143,10 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 request_status,
                 return_market_place,
                 awb,
+                awb_status
                 user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (emag_id, return_market_place) DO UPDATE SET
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status,
@@ -185,6 +186,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                         awb = ""
                     else:
                         awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
+                        awb_status = response.get('results').get('status') if response.get('results').get('status') else ""
                 else:
                     awb = ""
             else:
@@ -212,6 +214,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 request_status,
                 return_market_place,
                 awb,
+                awb_status,
                 user_id
             )
             cursor.execute(insert_query, value)

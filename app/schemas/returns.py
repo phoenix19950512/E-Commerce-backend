@@ -23,6 +23,7 @@ class ReturnsBase(BaseModel):
     request_status: Optional[int] = None
     return_market_place: Optional[str] = None
     awb: Optional[str] = None
+    awb_status: Optional[str] = None
     user_id: Optional[int] = None
 
 class ReturnsCreate(ReturnsBase):

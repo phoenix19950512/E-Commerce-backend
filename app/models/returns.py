@@ -23,6 +23,7 @@ class Returns(Base):
     request_status = Column(Integer, nullable=True)
     return_market_place = Column(String, nullable=True)
     awb = Column(String, nullable=True)
+    awb_status = Column(String, nullable=True)
     user_id = Column(Integer, index=True, nullable=True)
 
     __table_args__ = (
