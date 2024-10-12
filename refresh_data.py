@@ -282,6 +282,8 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
                     logging.info("Refresh rmas from altex")
                     await refresh_altex_rmas(marketplace)
                     continue
+                elif marketplace.marketplaceDomain == "eMAG.ro":
+                    continue
                 else:
                     logging.info("Refresh refunds from marketplace")
                     await refresh_emag_returns(marketplace)
