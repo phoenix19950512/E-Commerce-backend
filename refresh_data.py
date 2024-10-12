@@ -98,13 +98,9 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
                 if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh products from marketplace")
-                    await refresh_altex_products(marketplace)
                     logging.info("Refresh orders from marketplace")
                     await refresh_altex_orders(marketplace)
                 else:
-                    logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace)
                     logging.info("Refresh orders from marketplace")
                     await refresh_emag_orders(marketplace)
 
@@ -192,12 +188,16 @@ async def refresh_data(db: AsyncSession = Depends(get_db)):
             logging.info(f"Success getting {len(marketplaces)} marketplaces")
             for marketplace in marketplaces:
                 if marketplace.marketplaceDomain == "altex.ro":
+                    logging.info("Refresh products from marketplace")
+                    await refresh_altex_products(marketplace)
                     logging.info("Refresh rmas from altex")
                     await refresh_altex_rmas(marketplace)
                     continue
                 else:
                     logging.info("Refresh refunds from marketplace")
                     await refresh_emag_returns(marketplace)
+                    logging.info("Refresh products from marketplace")
+                    await refresh_emag_products(marketplace)
                     # logging.info("Refresh reviews from emag")
                     # await refresh_emag_reviews(marketplace, session)
                     # logging.info("Check hijacker and review")
