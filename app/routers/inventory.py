@@ -121,7 +121,8 @@ async def get_product_info(
             numbers = dimension.split('*')
             # Ensure all parts are valid before conversion
             if len(numbers) == 3 and all(num.strip() for num in numbers):
-                w, h, d = map(float, numbers)
+                # Replace commas with dots to handle different decimal notations
+                w, h, d = map(lambda x: float(x.replace(',', '.')), numbers)
             else:
                 w, h, d = (0.0, 0.0, 0.0)
         else:
@@ -257,7 +258,8 @@ async def get_product_info(
             numbers = dimension.split('*')
             # Ensure all parts are valid before conversion
             if len(numbers) == 3 and all(num.strip() for num in numbers):
-                w, h, d = map(float, numbers)
+                # Replace commas with dots to handle different decimal notations
+                w, h, d = map(lambda x: float(x.replace(',', '.')), numbers)
             else:
                 w, h, d = (0.0, 0.0, 0.0)
         else:
