@@ -89,7 +89,7 @@ def get_awb(reservation_id, API_KEY):
         awb = response.json()
         return awb
     else:
-        logging.info(f"Failed to retrieve refunds: {response.status_code}")
+        logging.info(f"Failed to retrieve refunds: {response.status_code} {reservation_id}")
         return None
 
 def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
