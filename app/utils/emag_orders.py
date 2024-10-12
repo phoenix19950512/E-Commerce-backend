@@ -246,6 +246,7 @@ async def insert_orders(orders, marketplace: Marketplace):
                 cancellation_reason = EXCLUDED.cancellation_reason,
                 is_complete = EXCLUDED.is_complete,
                 refund_status = EXCLUDED.refund_status,
+                attachments = EXCLUDED.attachments,
                 emag_club = EXCLUDED.emag_club,
                 finalization_date = EXCLUDED.finalization_date,
                 details = EXCLUDED.details,
