@@ -154,6 +154,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 product_id = EXCLUDED.product_id,
                 quantity = EXCLUDED.quantity,
                 observations = EXCLUDED.observations,
+                awb_status = EXCLUDED.awb_status,
                 user_id = EXCLUDED.user_id         
         """).format(sql.Identifier("returns"))
 
