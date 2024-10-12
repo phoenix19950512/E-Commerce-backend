@@ -143,7 +143,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 request_status,
                 return_market_place,
                 awb,
-                awb_status
+                awb_status,
                 user_id
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
