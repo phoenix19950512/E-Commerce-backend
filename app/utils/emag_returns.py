@@ -96,7 +96,7 @@ def get_awb(reservation_id, marketplace: Marketplace):
         retry_after = int(response.headers.get("Retry-After", 60))  # Default to 60 seconds if not provided
         logging.info(f"Rate limit exceeded. Retrying after {retry_after} seconds.")
         time.sleep(retry_after)
-        return get_awb(reservation_id, API_KEY)  # Retry the request
+        return get_awb(reservation_id, marketplace)  # Retry the request
     else:
         logging.info(f"Failed to retrieve refunds: {response.status_code} {reservation_id}")
         return None
