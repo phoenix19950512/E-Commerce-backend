@@ -370,7 +370,7 @@ async def insert_products_into_db(products, place, user_id):
 
 async def refresh_emag_products(marketplace: Marketplace):
     # create_database()
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
 
     endpoint = "/product_offer"
     count_point = "/count"

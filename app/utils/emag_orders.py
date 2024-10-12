@@ -410,7 +410,7 @@ async def insert_orders(orders, marketplace: Marketplace):
 async def refresh_emag_orders(marketplace: Marketplace):
     # create_database()
 
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
     orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
     
     settings.orders_table_name.append(orders_table)
@@ -447,7 +447,7 @@ async def refresh_emag_orders(marketplace: Marketplace):
 async def refresh_emag_all_orders(marketplace: Marketplace, db:AsyncSession):
     # create_database()
 
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
     orders_table = f"{marketplace.marketplaceDomain.replace('.', '_')}_orders".lower()
     
     settings.orders_table_name.append(orders_table)

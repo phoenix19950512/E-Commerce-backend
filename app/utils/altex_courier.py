@@ -114,8 +114,7 @@ def get_couriers(url, public_key, private_key, page_nr):
 
 async def refresh_altex_couriers(marketplace: Marketplace):
     # create_database()
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
-
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
     user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
     PRIVATE_KEY = marketplace.credentials["secondKey"]

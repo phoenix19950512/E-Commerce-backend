@@ -228,7 +228,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
 
 async def refresh_emag_returns(marketplace: Marketplace):
     # create_database()
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
 
     user_id = marketplace.user_id
     USERNAME = marketplace.credentials["firstKey"]

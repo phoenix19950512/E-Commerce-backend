@@ -157,7 +157,7 @@ async def insert_rmas(rmas, place:str, user_id):
 
 async def refresh_altex_rmas(marketplace: Marketplace):
     # create_database()
-    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} <<<<<<<<")
+    logging.info(f">>>>>>> Refreshing Marketplace : {marketplace.title} user is {marketplace.user_id} <<<<<<<<")
 
     user_id = marketplace.user_id
     PUBLIC_KEY = marketplace.credentials["firstKey"]
