@@ -186,7 +186,7 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                         awb = ""
                     else:
                         awb = response.get('results').get('awb')[0].get('awb_number') if response.get('results').get('awb') and len(response.get('results').get('awb')) > 0 else ""
-                        awb_status = response.get('results').get('status') if response.get('results').get('status') else ""
+                        awb_status = str(response.get('results').get('status')) if response.get('results').get('status') else ""
                 else:
                     awb = ""
             else:
