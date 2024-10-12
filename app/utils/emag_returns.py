@@ -150,6 +150,9 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
                 return_reason = EXCLUDED.return_reason,
                 request_status = EXCLUDED.request_status,
                 awb = EXCLUDED.awb,
+                product_id = EXCLUDED.product_id,
+                quantity = EXCLUDED.quantity,
+                observations = EXCLUDED.observations,
                 user_id = EXCLUDED.user_id         
         """).format(sql.Identifier("returns"))
 
@@ -160,9 +163,9 @@ async def insert_rmas_into_db(rmas, place:str, user_id, api_key):
             customer_name = rma.get('customer_name') if rma.get('customer_name') else ""
             customer_company = rma.get('customer_company') if rma.get('customer_company') else ""
             customer_phone = rma.get('customer_phone') if rma.get('customer_phone') else ""
-            products = [str(product.get('product_id')) if rma.get('product_id') else 0 for product in rma.get('products')]
-            quantity = [int(product.get('quantity')) if rma.get('quantity') else 0 for product in rma.get('products')]
-            observations = [str(product.get('observations')) if rma.get('observations') else "" for product in rma.get('products')]
+            products = [str(product.get('product_id')) if product.get('product_id') else 0 for product in rma.get('products')]
+            quantity = [int(product.get('quantity')) if product.get('quantity') else 0 for product in rma.get('products')]
+            observations = [str(product.get('observations')) if product.get('observations') else "" for product in rma.get('products')]
             pickup_address = rma.get('pickup_address') if rma.get('pickup_address') else ""
             return_reason = str(rma.get('return_reason')) if rma.get('return_reason') else ""
             return_type = rma.get('return_type') if rma.get('return_type') else 0
