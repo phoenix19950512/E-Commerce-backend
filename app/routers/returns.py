@@ -122,10 +122,11 @@ async def get_return_awb(awb: str, db: AsyncSession = Depends(get_db)):
     
     product_ids = db_return.products
     marketplace = db_return.return_market_place
+    user_id = db_return.user_id
     ean = []
 
     for product_id in product_ids:
-        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace, Product.user_id == db_return.user_id))
+        result = await db.execute(select(Product).where(Product.id == product_id, Product.product_marketplace == marketplace, Product.user_id == user_id))
         product = result.scalars().first()
         # if product is None:
         #     result = await db.execute(select(Product).where(Product.id == product_id, Product.user_id == db_return.user_id))
