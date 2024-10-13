@@ -8,7 +8,7 @@ from app.models.courier import Courier
 from app.models.user import User
 from app.models.team_member import Team_member
 from app.routers.auth import get_current_user
-from app.schemas.courier import CouriersCreate, CouriersRead, CouriersUpdate
+from app.schemas.courier import CouriersRead
 
 router = APIRouter()
 

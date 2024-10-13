@@ -13,12 +13,6 @@ class CouriersBase(BaseModel):
     market_place: str
     user_id: Optional[int] = None
 
-class CouriersCreate(CouriersBase):
-    pass
-
-class CouriersUpdate(CouriersBase):
-    pass
-
 class CouriersRead(CouriersBase):
     account_id: int
     market_place: str
