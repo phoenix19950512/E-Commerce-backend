@@ -193,7 +193,7 @@ async def get_extra_info(
     return extra_info_list
 
 @router.get("/move", response_model=ShipmentRead)
-async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: int, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
+async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id: str, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
     if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
