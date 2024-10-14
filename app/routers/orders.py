@@ -135,15 +135,15 @@ async def read_new_orders(
     
     if warehouse_id == -1:
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id, Order.user_id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
         query = query.filter(Internal_productAlias.warehouse_id == 0)
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
         
     elif warehouse_id and warehouse_id > 0:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
         query = query.having(
             and_(
                 func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
@@ -151,7 +151,7 @@ async def read_new_orders(
             )
         )
     else:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     result = await db.execute(query)
     db_orders = result.scalars().all()
     
@@ -260,14 +260,14 @@ async def count_new_orders(
     
     if warehouse_id == -1:
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id, Order.user_id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
         query = query.filter(Internal_productAlias.warehouse_id == 0)
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     elif warehouse_id and warehouse_id > 0:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
         query = query.having(
             and_(
                 func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
@@ -275,7 +275,7 @@ async def count_new_orders(
             )
         )   
     else:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     result = await db.execute(query)
     orders = result.scalars().all()   
     return len(orders)
@@ -334,14 +334,14 @@ async def read_orders(
         
     if warehouse_id == -1:
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id, Order.user_id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
         query = query.filter(Internal_productAlias.warehouse_id == 0)
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     elif warehouse_id and warehouse_id > 0:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
         query = query.having(
             and_(
                 func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
@@ -349,7 +349,7 @@ async def read_orders(
             )
         )
     else:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     query = query.offset(offset).limit(items_per_page)
     result = await db.execute(query)
     db_orders = result.scalars().all()
@@ -469,13 +469,13 @@ async def get_orders_count(
     
     if warehouse_id == -1:
         query = query.filter(Internal_productAlias.warehouse_id != 0)
-        query = query.group_by(Order.id)  # Group by Order.id or other relevant columns
+        query = query.group_by(Order.id, Order.user_id)  # Group by Order.id or other relevant columns
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     elif warehouse_id and warehouse_id > 0:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
         query = query.having(
             and_(
                 func.count(distinct(Internal_productAlias.warehouse_id)) == 1,
@@ -483,7 +483,7 @@ async def get_orders_count(
             )
         )
     else:
-        query = query.group_by(Order.id)
+        query = query.group_by(Order.id, Order.user_id)
     
     result = await db.execute(query)
     orders = result.scalars().all()   
