@@ -66,7 +66,7 @@ class Order(Base):
     email = Column(String, nullable=True)
     product_voucher_split = Column(ARRAY(String), nullable=True)
     registration_number = Column(String, nullable=True)
-    user_id = Column(Integer, index=True, nullable=True)
+    user_id = Column(Integer, index=True)
     
     __table_args__ = {
         PrimaryKeyConstraint('id', 'user_id', name = 'pk_id_user_id'),
