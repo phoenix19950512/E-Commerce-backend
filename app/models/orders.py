@@ -68,6 +68,6 @@ class Order(Base):
     registration_number = Column(String, nullable=True)
     user_id = Column(Integer, index=True)
     
-    __table_args__ = {
+    __table_args__ = (
         PrimaryKeyConstraint('id', 'user_id', name = 'pk_id_user_id'),
-    }
+    )
