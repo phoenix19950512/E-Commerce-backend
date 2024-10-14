@@ -41,6 +41,7 @@ class ShipmentBase(BaseModel):
     received: Optional[List[int]] = None
     price: Optional[List[Decimal]] = None
     each_note: Optional[List[str]] = None
+    arrive_date: Optional[List[str]] = None
     user_id: Optional[int] = None
 
 class ShipmentCreate(ShipmentBase):
