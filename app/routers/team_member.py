@@ -10,6 +10,8 @@ from app.routers.auth import get_current_user
 from app.models.team_member import Team_member
 from app.schemas.team_member import Team_memberCreate, Team_memberRead, Team_memberUpdate
 
+import logging
+
 router = APIRouter()
 
 @router.post("/", response_model=Team_memberRead)
@@ -47,7 +49,8 @@ async def get_team_members(
         user_id = db_team.admin
     else:
         user_id = user.id
-        
+    
+    logging.info(f"!!!!!!!!!!!!!!!!!   {user_id}       !!!!!!!!!!!!")
     result = await db.execute(select(Team_member).where(Team_member.user == user_id))
     db_team = result.scalars().all()
     if db_team is None:
