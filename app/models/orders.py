@@ -3,7 +3,7 @@ from app.database import Base
 
 class Order(Base):
     __tablename__ = "orders"
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(BigInteger, index=True)
     vendor_name = Column(String, nullable=True)
     type = Column(Integer, nullable=True)
     date = Column(DateTime, nullable=True)
@@ -67,3 +67,7 @@ class Order(Base):
     product_voucher_split = Column(ARRAY(String), nullable=True)
     registration_number = Column(String, nullable=True)
     user_id = Column(Integer, index=True, nullable=True)
+    
+    __table_args__ = {
+        PrimaryKeyConstraint('id', 'user_id', name = 'pk_id_user_id'),
+    }
