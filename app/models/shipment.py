@@ -42,7 +42,7 @@ class Shipment(Base):
     received = Column(ARRAY(Integer), nullable=True)
     price = Column(ARRAY(Numeric(12, 4)), nullable=True)
     each_note = Column(ARRAY(Text), nullable=True)
-    updated_at = Column(ARRAY(Text), nullable=True)
+    updated_at = Column(DateTime, nullable=True)
     user_id = Column(Integer, index=True, nullable=True)
     
     
