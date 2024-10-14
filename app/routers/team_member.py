@@ -51,7 +51,7 @@ async def get_team_members(
         user_id = user.id
     
     logging.info(f"!!!!!!!!!!!!!!!!!   {user_id}       !!!!!!!!!!!!")
-    result = await db.execute(select(Team_member).where(Team_member.user == user_id))
+    result = await db.execute(select(Team_member).where(Team_member.admin == user_id))
     db_team = result.scalars().all()
     if db_team is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
