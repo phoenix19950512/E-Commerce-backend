@@ -19,7 +19,7 @@ async def create_team_member(team_member: Team_memberCreate, user: User = Depend
     if user.role != 4:
         raise HTTPException(status_code=401, detail="Authentication error")
     db_team_member = Team_member(**team_member.dict())
-    db_team_member.user = user.id
+    db_team_member.admin = user.id
     user_id = db_team_member.user
     result = await db.execute(select(User).where(User.id == user_id))
     db_user = result.scalars().first()
