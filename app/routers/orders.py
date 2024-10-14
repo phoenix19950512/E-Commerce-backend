@@ -491,13 +491,23 @@ async def get_orders_count(
     return len(orders)
 
 @router.get("/{order_id}")
-async def read_order(order_id: int, db: AsyncSession = Depends(get_db)):
+async def read_order(order_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
     AWBAlias = aliased(AWB)
     query = select(Order, AWBAlias).outerjoin(
         AWBAlias,
         AWBAlias.order_id == Order.id
     )
-    query = query.where(Order.id == order_id)
+    query = query.where(Order.id == order_id, Order.user_id == user_id)
     result = await db.execute(query)
 
     db_order_awb = result.all()

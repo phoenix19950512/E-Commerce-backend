@@ -50,7 +50,6 @@ async def get_team_members(
     else:
         user_id = user.id
     
-    logging.info(f"!!!!!!!!!!!!!!!!!   {user_id}       !!!!!!!!!!!!")
     result = await db.execute(select(Team_member).where(Team_member.admin == user_id))
     db_team = result.scalars().all()
     if db_team is None:
