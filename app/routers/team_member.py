@@ -13,11 +13,11 @@ from app.schemas.team_member import Team_memberCreate, Team_memberRead, Team_mem
 router = APIRouter()
 
 @router.post("/", response_model=Team_memberRead)
-async def create_team_member(team_member: Team_memberCreate, admin: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if admin.role != 4:
+async def create_team_member(team_member: Team_memberCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role != 4:
         raise HTTPException(status_code=401, detail="Authentication error")
     db_team_member = Team_member(**team_member.dict())
-    db_team_member.admin = admin.id
+    db_team_member.user = user.id
     user_id = db_team_member.user
     result = await db.execute(select(User).where(User.id == user_id))
     db_user = result.scalars().first()
@@ -28,26 +28,35 @@ async def create_team_member(team_member: Team_memberCreate, admin: User = Depen
     return db_team_member
 
 @router.get('/count')
-async def get_team_members_count(admin: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Team_member).where(Team_member.admin == admin.id))
+async def get_team_members_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team_member).where(Team_member.user == user.id))
     db_members = result.scalars().all()
     return len(db_members)
 
 @router.get("/")
 async def get_team_members(
-    admin: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
     
-    result = await db.execute(select(Team_member).where(Team_member.admin == admin.id))
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Team_member).where(Team_member.user == user_id))
     db_team = result.scalars().all()
     if db_team is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
     
     user_data = []
-    result = await db.execute(select(User).where(User.id == admin.id))
-    db_admin = result.scalars().first()
-    user_data.append(db_admin)
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalars().first()
+    user_data.append(db_user)
     for member in db_team:
         result = await db.execute(select(User).where(User.id == member.user))
         db_user = result.scalars().first()
@@ -55,10 +64,10 @@ async def get_team_members(
     return user_data
 
 @router.put("/")
-async def update_team_member(team_member: Team_memberUpdate, admin: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def update_team_member(team_member: Team_memberUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     user = team_member.user
     role = team_member.role
-    result = await db.execute(select(Team_member).where(Team_member.user == user, Team_member.admin == admin.id))
+    result = await db.execute(select(Team_member).where(Team_member.user == user, Team_member.user == user.id))
     db_team_member = result.scalars().first()
     if db_team_member is None:
         raise HTTPException(status_code=404, detail="Team_member not found")
