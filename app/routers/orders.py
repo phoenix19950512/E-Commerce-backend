@@ -473,6 +473,7 @@ async def get_orders_count(
         query = query.having(func.count(distinct(Internal_productAlias.warehouse_id)) > 1)
 
     elif warehouse_id == -2:
+        query = query.filter(Internal_productAlias.warehouse_id == 0)
         query = query.group_by(Order.id, Order.user_id)
     elif warehouse_id and warehouse_id > 0:
         query = query.group_by(Order.id, Order.user_id)
