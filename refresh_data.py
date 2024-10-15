@@ -208,7 +208,7 @@ async def send_stock():
     async with AsyncSession() as db:  # Use manual session management
         try:
             logging.info("Init orders_stock")
-            await db.execute(update(Internal_Product).values(orders_stock=0))
+            await db.run_sync(lambda s: s.execute(update(Internal_Product).values(orders_stock=0)))
             await db.commit()
             
             logging.info("Calculate orders_stock")
