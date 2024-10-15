@@ -446,7 +446,7 @@ async def post_stock_emag(marketplace: Marketplace, product_id: int, stock: int)
         "Content-Type": "application/json"
     }
     data = json.dumps({
-        "value": stock
+        "stock": stock
     })
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.patch(f"{url}/{product_id}", data=data, headers=headers)
