@@ -253,7 +253,7 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
 
                         result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                         db_product = result.scalars().first()
-                        product_id = db_product.id
+                        product_id = int(db_product.id)
                         product.smartbill_stock
                         if product.smartbill_stock is None:
                             continue
