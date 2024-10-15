@@ -446,11 +446,10 @@ async def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
         "Content-Type": "application/json"
     }
     data = json.dumps({
-        "resourceId": product_id,
         "value": stock
     })
     async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.patch(url, data=data, headers=headers)
+        response = await client.patch(f"{url}/{product_id}", data=data, headers=headers)
         if response.status_code == 200:
             return response.json()
         else:
