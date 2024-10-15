@@ -58,6 +58,14 @@ app = FastAPI()
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 
+async def init_models():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+@app.on_event("startup")
+async def on_startup():
+    await init_models()
+
 # @app.on_event("startup")
 # async def on_startup(db: AsyncSession = Depends(get_db)):
 #     async for db in get_db():
