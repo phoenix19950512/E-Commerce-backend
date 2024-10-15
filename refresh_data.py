@@ -30,6 +30,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.marketplace import Marketplace
 from app.models.internal_product import Internal_Product
+from app.models.product import Product
 from app.models.billing_software import Billing_software
 from app.models.orders import Order
 from sqlalchemy.orm import Session
