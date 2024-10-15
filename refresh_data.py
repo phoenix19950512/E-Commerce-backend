@@ -9,7 +9,6 @@ from app.database import Base, engine
 from app.backup import export_to_csv, upload_to_google_sheets
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.internal_product import Internal_Product
 from app.utils.emag_products import refresh_emag_products, post_stock_emag
 from app.utils.emag_orders import refresh_emag_orders, refresh_emag_all_orders
 from app.utils.emag_returns import refresh_emag_returns
@@ -30,6 +29,7 @@ from app.models.awb import AWB
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.marketplace import Marketplace
+from app.models.internal_product import Internal_Product
 from app.models.billing_software import Billing_software
 from app.models.orders import Order
 from sqlalchemy.orm import Session
@@ -37,6 +37,7 @@ import ssl
 import logging
 from sqlalchemy import update
 from datetime import datetime
+
 
 
 # member
@@ -57,14 +58,6 @@ app = FastAPI()
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
-
-async def init_models():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-@app.on_event("startup")
-async def on_startup():
-    await init_models()
 
 # @app.on_event("startup")
 # async def on_startup(db: AsyncSession = Depends(get_db)):
@@ -201,47 +194,44 @@ async def on_startup():
 #                     logging.info("Refresh orders from marketplace")
 #                     await refresh_emag_orders(marketplace)
 
-
-@app.on_event("startup") 
+@app.on_event("startup")
 @repeat_every(seconds=900)
-async def send_stock():
-    async with get_db() as db:  # Use manual session management
-        async with db.begin():
-            try:
+async def send_stock(db:AsyncSession = Depends(get_db)):
+    async for db in get_db():
+        try:
+            async with db as session:
                 logging.info("Init orders_stock")
-                await db.execute(update(Internal_Product).values(orders_stock=0))
-                await db.commit()
-                
+                await session.execute(update(Internal_Product).values(orders_stock=0))
+                await session.commit()
                 logging.info("Calculate orders_stock")
-                await calc_order_stock(db)
-                
+                await calc_order_stock(session)
                 logging.info("Sync stock")
-                result = await db.execute(select(Internal_Product))
+                result = await session.execute(select(Internal_Product))
                 db_products = result.scalars().all()
-                
                 for product in db_products:
                     ean = product.ean
                     marketplaces = product.market_place
-                    
                     for domain in marketplaces:
-                        result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+                        result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
                         marketplace = result.scalars().first()
 
-                        result = await db.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
+                        result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                         db_product = result.scalars().first()
                         product_id = db_product.id
                         stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
-
+                        
                         if marketplace.marketplaceDomain == "altex.ro":
                             continue
+                            # if db_product.barcode_title == "":
+                            #     continue
+                            # post_stock_altex(marketplace, db_product.barcode_title, stock)
+                            # logging.info("post stock success in altex")
                         else:
-                            await post_stock_emag(marketplace, product_id, stock)
-                            logging.info("Post stock success in emag")
-
-            except Exception as e:
-                logging.error(f"An error occurred: {e}", exc_info=True)
-                await db.rollback()
-          
+                            await post_stock_emag(marketplace, product_id, stock)      
+                            logging.info("post stock success in emag") 
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+            await session.rollback()                
 
 # @app.on_event("startup")
 # @repeat_every(seconds=7200)
