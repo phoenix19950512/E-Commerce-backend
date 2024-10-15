@@ -452,5 +452,12 @@ async def post_stock_emag(marketplace: Marketplace, product_id: int, stock: int)
         response = await client.patch(f"{url}/{product_id}", json=data, headers=headers)
         if response.status_code == 200:
             return response.json()
+        elif response.status_code == 204:
+            return "Stock updated successfully, no content returned."
+        elif response.status_code == 404:
+            return f"Product not found: {response.status_code} {response.text}"
         else:
-            return f"Failed to retrieve products: {response.status_code} {response.json()}"
+            try:
+                return f"Failed to update stock: {response.status_code} {response.json()}"
+            except Exception:
+                return f"Failed to update stock: {response.status_code} {response.text}"
