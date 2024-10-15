@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.routers.auth import get_current_user
 from decimal import Decimal
+import httpx
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -434,7 +435,7 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
 
     return result
 
-def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
+async def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
@@ -448,8 +449,9 @@ def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
         "resourceId": product_id,
         "value": stock
     })
-    response = requests.post(url, data=data, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return f"Failed to retrieve products: {response.status_code}"
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await requests.post(url, data=data, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return f"Failed to retrieve products: {response.status_code}"

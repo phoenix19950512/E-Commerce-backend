@@ -79,12 +79,13 @@ async def send_stock(
                 stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
 
                 if marketplace.marketplaceDomain == "altex.ro":
-                    if db_product.barcode_title == "":
-                        continue
-                    post_stock_altex(marketplace, db_product.barcode_title, stock)
-                    logging.info("post stock success in altex")
+                    continue
+                    # if db_product.barcode_title == "":
+                    #     continue
+                    # post_stock_altex(marketplace, db_product.barcode_title, stock)
+                    # logging.info("post stock success in altex")
                 else:
-                    post_stock_emag(marketplace, product_id, stock)
+                    await post_stock_emag(marketplace, product_id, stock)
                     logging.info("post stock success in emag")
 
     except Exception as e:

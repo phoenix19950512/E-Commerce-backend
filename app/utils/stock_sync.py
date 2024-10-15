@@ -49,4 +49,4 @@ async def calc_order_stock(db: AsyncSession):
                 logging.info(f"#$$$#$#$#$#$ Orders_stock is {db_internal_product.orders_stock}")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-        # await db.rollback() 
+        await db.rollback() 
