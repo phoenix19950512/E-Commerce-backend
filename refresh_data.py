@@ -209,7 +209,7 @@ async def send_stock():
         async with db.begin():
             try:
                 logging.info("Init orders_stock")
-                await db.run_sync(lambda s: s.execute(update(Internal_Product).values(orders_stock=0)))
+                await db.execute(update(Internal_Product).values(orders_stock=0))
                 await db.commit()
                 
                 logging.info("Calculate orders_stock")
@@ -239,7 +239,7 @@ async def send_stock():
                             logging.info("Post stock success in emag")
 
             except Exception as e:
-                logging.error(f"An error occurred: {e}")
+                logging.error(f"An error occurred: {e}", exc_info=True)
                 await db.rollback()
           
 
