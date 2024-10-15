@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from decimal import Decimal
+from datetime import datetime
 
 class Internal_ProductBase(BaseModel):
     id: Optional[int] = None
@@ -42,6 +43,7 @@ class Internal_ProductBase(BaseModel):
     observation: Optional[str] = None
     short_product_name: Optional[str] = None
     market_place: Optional[List[str]] = None
+    sync_stock_time: Optional[datetime] = None
     user_id: Optional[int] = None
 
 class Internal_ProductCreate(Internal_ProductBase):

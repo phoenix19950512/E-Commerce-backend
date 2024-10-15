@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, ARRAY, BigInteger
+from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, ARRAY, BigInteger, DateTime
 from app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -43,5 +43,6 @@ class Internal_Product(Base):
     observation = Column(Text, nullable=True)
     short_product_name = Column(Text, nullable=True)
     market_place = Column(ARRAY(Text), nullable=True)
+    sync_stock_time = Column(DateTime, nullable=True)
     user_id = Column(Integer, index=True, nullable=True)
     
