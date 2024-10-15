@@ -245,6 +245,14 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                 result = await session.execute(select(Internal_Product))
                 db_products = result.scalars().all()
                 for product in db_products:
+                    if product.smartbill_stock is None:
+                        continue
+                    stock = product.smartbill_stock
+                        
+                    if product.orders_stock:
+                        stock = stock - product.orders_stock
+                    if product.damaged_goods:
+                        stock = stock - product.damaged_goods
                     ean = product.ean
                     marketplaces = product.market_place
                     for domain in marketplaces:
@@ -254,33 +262,21 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                                 #     continue
                                 # post_stock_altex(marketplace, db_product.barcode_title, stock)
                                 # logging.info("post stock success in altex")
-                        result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
-                        marketplace = result.scalars().first()
 
                         result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                         db_product = result.scalars().first()
                         product_id = db_product.id
-                        product.smartbill_stock
-                        if product.smartbill_stock is None:
-                            continue
-                        
-                        stock = product.smartbill_stock
-                        
-                        if product.orders_stock:
-                            stock = stock - product.orders_stock
-                        if product.damaged_goods:
-                            stock = stock - product.damaged_goods
                                           
-                        if marketplace.marketplaceDomain == "altex.ro":
-                            continue
-                            # if db_product.barcode_title == "":
-                            #     continue
-                            # post_stock_altex(marketplace, db_product.barcode_title, stock)
-                            # logging.info("post stock success in altex")
-                        else:
-                            product_id = int(product_id)
-                            response = await post_stock_emag(marketplace, product_id, stock)      
-                            logging.info(f"{response}") 
+                        # if marketplace.marketplaceDomain == "altex.ro":
+                        #     continue
+                        #     # if db_product.barcode_title == "":
+                        #     #     continue
+                        #     # post_stock_altex(marketplace, db_product.barcode_title, stock)
+                        #     # logging.info("post stock success in altex")
+                        
+                        product_id = int(product_id)
+                        response = await post_stock_emag(marketplace, product_id, stock)      
+                        logging.info(f"{response}") 
         except Exception as e:
             logging.error(f"An error occurred: {e}")
             await session.rollback()                
