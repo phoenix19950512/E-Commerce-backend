@@ -12,7 +12,7 @@ import psycopg2
 from app.config import settings
 from psycopg2 import sql
 
-async def calc_order_stock(db):
+async def calc_order_stock(db: AsyncSession):
     result = await db.execute(select(Order).where(Order.status == any_([1,2,3])))
     db_new_orders = result.scalars().all()
     if db_new_orders is None:
