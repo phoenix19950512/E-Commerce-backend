@@ -435,7 +435,7 @@ async def save_product(data, marketplace:Marketplace, db: AsyncSession):
 
     return result
 
-async def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
+async def post_stock_emag(marketplace: Marketplace, product_id: int, stock: int):
     USERNAME = marketplace.credentials["firstKey"]
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
@@ -445,9 +445,9 @@ async def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
         "Authorization": f"Basic {api_key}",
         "Content-Type": "application/json"
     }
-    data = {
+    data = json.dumps({
         "value": stock
-    }
+    })
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.patch(f"{url}/{product_id}", json=data, headers=headers)
         if response.status_code == 200:
