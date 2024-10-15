@@ -263,8 +263,8 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                             # post_stock_altex(marketplace, db_product.barcode_title, stock)
                             # logging.info("post stock success in altex")
                         else:
-                            await post_stock_emag(marketplace, product_id, stock)      
-                            logging.info("post stock success in emag") 
+                            response = await post_stock_emag(marketplace, product_id, stock)      
+                            logging.info(f"{response}") 
         except Exception as e:
             logging.error(f"An error occurred: {e}")
             await session.rollback()                
