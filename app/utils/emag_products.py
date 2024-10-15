@@ -454,4 +454,4 @@ async def post_stock_emag(marketplace:Marketplace, product_id:int, stock:int):
         if response.status_code == 200:
             return response.json()
         else:
-            return f"Failed to retrieve products: {response.status_code}"
+            return f"Failed to retrieve products: {response.status_code} {response.json()}"
