@@ -116,7 +116,7 @@ async def get_shipments_supplier(
     query = query.outerjoin(
         internal_productaliased,
         internal_productaliased.supplier_id == supplier_id
-    )
+    ).group_by(Shipment.id)
     result = await db.execute(query)
     db_shipments = result.scalars().all()
     if db_shipments is None:
