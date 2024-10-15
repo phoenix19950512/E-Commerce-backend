@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import aliased
 from sqlalchemy import func
 from sqlalchemy import any_, text
 from typing import List
@@ -110,7 +111,13 @@ async def get_shipments_supplier(
     supplier_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Shipment).where(Shipment.status == "New", supplier_id == any_(Shipment.wechat_group)))
+    internal_productaliased = aliased(Internal_Product)
+    query = select(Shipment).where(Shipment.status == any_(["New", "Pending"]))
+    query = query.outerjoin(
+        internal_productaliased,
+        internal_productaliased.supplier_id == supplier_id
+    )
+    result = await db.execute(query)
     db_shipments = result.scalars().all()
     if db_shipments is None:
         raise HTTPException(status_code=404, detail="shipment not found")
