@@ -126,9 +126,10 @@ async def insert_products(products, mp_name: str, user_id):
                 warehouse_id,
                 internal_shipping_price,
                 market_place,
+                sync_stock_time,
                 user_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) ON CONFLICT (ean) DO UPDATE SET
                 id = EXCLUDED.id,
                 buy_button_rank = EXCLUDED.buy_button_rank,
@@ -178,6 +179,7 @@ async def insert_products(products, mp_name: str, user_id):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
+            sync_stock_time = ""
             user_id = user_id
 
             values = (
@@ -217,6 +219,7 @@ async def insert_products(products, mp_name: str, user_id):
                 warehouse_id,
                 internal_shipping_price,
                 market_place,
+                sync_stock_time,
                 user_id
             )
 
