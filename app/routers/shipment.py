@@ -160,7 +160,7 @@ async def get_new_shipments(
         user_id = db_team.admin
     else:
         user_id = user.id
-    result = await db.execute(select(Shipment).where(Shipment.status == any_["New", "Pending"], Shipment.user_id == user_id))
+    result = await db.execute(select(Shipment).where(Shipment.status == any_(["New", "Pending"]), Shipment.user_id == user_id))
     db_new_shipments = result.scalars().all()
     if db_new_shipments is None:
         raise HTTPException(status_code=400, detail="New shipment not found")
