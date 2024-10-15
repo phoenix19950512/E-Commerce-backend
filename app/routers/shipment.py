@@ -108,7 +108,7 @@ async def get_admin_supplier(
 
 @router.get("/supplier")
 async def get_shipments_supplier(
-    supplier_id: str,
+    supplier_id: int,
     db: AsyncSession = Depends(get_db)
 ):
     internal_productaliased = aliased(Internal_Product)
