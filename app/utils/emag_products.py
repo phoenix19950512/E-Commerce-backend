@@ -179,7 +179,7 @@ async def insert_products(products, mp_name: str, user_id):
             warehouse_id = 0
             internal_shipping_price = Decimal('0')
             market_place = [mp_name]  # Ensure this is an array to use array_cat
-            sync_stock_time = ""
+            sync_stock_time = None
             user_id = user_id
 
             values = (
