@@ -195,36 +195,54 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 
 @app.on_event("startup")
 @repeat_every(seconds=900)
-async def send_stock(db:AsyncSession = Depends(get_db)):
-    logging.info("Init orders_stock")
-    await db.execute(update(Internal_Product).values(orders_stock=0))
-    await db.commit()
-    logging.info("Calculate orders_stock")
-    await calc_order_stock(db)
-    logging.info("Sync stock")
-    result = await db.execute(select(Internal_Product))
-    db_products = result.scalars().all()
-    for product in db_products:
-        ean = product.ean
-        marketplaces = product.market_place
-        for domain in marketplaces:
-            result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
-            marketplace = result.scalars().first()
+async def send_stock():
+    async with get_db() as session:
+        try:
+            logging.info("Init orders_stock")
+            await session.execute(update(Internal_Product).values(orders_stock=0))
+            await session.commit()
 
-            result = await db.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
-            db_product = result.scalars().first()
-            product_id = db_product.id
-            stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
-            
-            if marketplace.marketplaceDomain == "altex.ro":
-                continue
-                # if db_product.barcode_title == "":
-                #     continue
-                # post_stock_altex(marketplace, db_product.barcode_title, stock)
-                # logging.info("post stock success in altex")
-            else:
-                await post_stock_emag(marketplace, product_id, stock)      
-                logging.info("post stock success in emag")             
+            logging.info("Calculate orders_stock")
+            await calc_order_stock(session)
+
+            logging.info("Sync stock")
+            result = await session.execute(select(Internal_Product))
+            db_products = result.scalars().all()
+
+            for product in db_products:
+                ean = product.ean
+                marketplaces = product.market_place
+
+                for domain in marketplaces:
+                    # Fetch the marketplace
+                    marketplace_result = await session.execute(
+                        select(Marketplace).where(Marketplace.marketplaceDomain == domain)
+                    )
+                    marketplace = marketplace_result.scalars().first()
+
+                    # Fetch the product
+                    product_result = await session.execute(
+                        select(Product).where(Product.ean == ean, Product.product_marketplace == domain)
+                    )
+                    db_product = product_result.scalars().first()
+
+                    if not db_product:
+                        logging.warning(f"No product found for EAN {ean} in marketplace {domain}")
+                        continue
+
+                    product_id = db_product.id
+                    stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+
+                    if marketplace.marketplaceDomain == "altex.ro":
+                        continue  # Placeholder for future integration
+                    else:
+                        await post_stock_emag(marketplace, product_id, stock)
+                        logging.info(f"Stock posted successfully for {ean} on emag")
+
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+            await session.rollback()
+         
 
 # @app.on_event("startup")
 # @repeat_every(seconds=7200)
