@@ -196,41 +196,35 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 @app.on_event("startup")
 @repeat_every(seconds=900)
 async def send_stock(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        try:
-            async with db as session:
-                logging.info("Init orders_stock")
-                await session.execute(update(Internal_Product).values(orders_stock=0))
-                await session.commit()
-                logging.info("Calculate orders_stock")
-                await calc_order_stock(session)
-                logging.info("Sync stock")
-                result = await session.execute(select(Internal_Product))
-                db_products = result.scalars().all()
-                for product in db_products:
-                    ean = product.ean
-                    marketplaces = product.market_place
-                    for domain in marketplaces:
-                        result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
-                        marketplace = result.scalars().first()
+    logging.info("Init orders_stock")
+    await db.execute(update(Internal_Product).values(orders_stock=0))
+    await db.commit()
+    logging.info("Calculate orders_stock")
+    await calc_order_stock(db)
+    logging.info("Sync stock")
+    result = await db.execute(select(Internal_Product))
+    db_products = result.scalars().all()
+    for product in db_products:
+        ean = product.ean
+        marketplaces = product.market_place
+        for domain in marketplaces:
+            result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+            marketplace = result.scalars().first()
 
-                        result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
-                        db_product = result.scalars().first()
-                        product_id = db_product.id
-                        stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
-                        
-                        if marketplace.marketplaceDomain == "altex.ro":
-                            continue
-                            # if db_product.barcode_title == "":
-                            #     continue
-                            # post_stock_altex(marketplace, db_product.barcode_title, stock)
-                            # logging.info("post stock success in altex")
-                        else:
-                            await post_stock_emag(marketplace, product_id, stock)      
-                            logging.info("post stock success in emag") 
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            await session.rollback()                
+            result = await db.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
+            db_product = result.scalars().first()
+            product_id = db_product.id
+            stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+            
+            if marketplace.marketplaceDomain == "altex.ro":
+                continue
+                # if db_product.barcode_title == "":
+                #     continue
+                # post_stock_altex(marketplace, db_product.barcode_title, stock)
+                # logging.info("post stock success in altex")
+            else:
+                await post_stock_emag(marketplace, product_id, stock)      
+                logging.info("post stock success in emag")             
 
 # @app.on_event("startup")
 # @repeat_every(seconds=7200)
