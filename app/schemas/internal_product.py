@@ -4,6 +4,7 @@ from decimal import Decimal
 
 class Internal_ProductBase(BaseModel):
     id: Optional[int] = None
+    ean: Optional[str] = None
     part_number_key: Optional[str] = None
     product_code: Optional[str] = None
     product_name: Optional[str] = None
@@ -47,10 +48,7 @@ class Internal_ProductCreate(Internal_ProductBase):
     pass
 
 class Internal_ProductRead(Internal_ProductBase):
-    ean: str
-
-    class Config:
-        orm_mode = True
+    pass
 
 class Internal_ProductUpdate(Internal_ProductBase):
     pass
