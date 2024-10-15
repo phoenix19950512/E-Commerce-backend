@@ -254,8 +254,10 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                         result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                         db_product = result.scalars().first()
                         product_id = db_product.id
-                        stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
-                        
+                        if product.damaged_goods:
+                            stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
+                        else:
+                            stock = product.smartbill_stock - product.orders_stock                    
                         if marketplace.marketplaceDomain == "altex.ro":
                             continue
                             # if db_product.barcode_title == "":
