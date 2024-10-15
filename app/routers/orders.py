@@ -490,6 +490,20 @@ async def get_orders_count(
     orders = result.scalars().all()   
     return len(orders)
 
+# @router.get("/awb_download")
+# async def awb_download(order_id: int, number: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+#     if user.role == -1:
+#         raise HTTPException(status_code=401, detail="Authentication error")
+#     if user.role != 4:
+#         result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+#         db_team = result.scalars().first()
+#         user_id = db_team.admin
+#     else:
+#         user_id = user.id
+#     result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.user_id == user_id, AWB.number == number))
+#     db_awb = result.scalars().first()
+#     awb_number = db_awb.awb_number
+
 @router.get("/{order_id}")
 async def read_order(order_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if user.role == -1:

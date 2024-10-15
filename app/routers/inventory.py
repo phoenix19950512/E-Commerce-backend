@@ -111,7 +111,7 @@ async def get_product_info(
                 else:
                     cnt90[product.ean] += quantities[i]
 
-    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user.id))
+    product_result = await db.execute(select(Internal_Product).where(Internal_Product.user_id == user_id))
     products = product_result.scalars().all()
 
     product_data = []
@@ -289,7 +289,6 @@ async def get_product_info(
         imports = sum(imports_data.get("quantity") for imports_data in imports_datas)
 
         if ean not in cnt:
-
             product_data.append({
                 "id": product.id,
                 "type": type,
@@ -409,7 +408,7 @@ async def get_product_advanced_info(
     
     if shipment_type is not None:
         query = query.where(Internal_Product.product_name in product_type_list)
-    query = query.where(Internal_Product.user_id == user.id)
+    query = query.where(Internal_Product.user_id == user_id)
     result = await db.execute(query)
     products = result.scalars().all()
     product_data = []

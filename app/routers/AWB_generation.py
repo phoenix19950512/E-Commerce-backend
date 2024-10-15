@@ -60,7 +60,7 @@ async def create_awbs(awb: AWBCreate, marketplace: str, user: User = Depends(get
     db_awb = AWB(**awb.dict())
     order_id = db_awb.order_id
     number = db_awb.number
-    result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.number == number))
+    result = await db.execute(select(AWB).where(AWB.order_id == order_id, AWB.number == number, AWB.user_id == user_id))
     awb = result.scalars().first()
 
     if awb:
