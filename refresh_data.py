@@ -248,7 +248,7 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                     ean = product.ean
                     marketplaces = product.market_place
                     for domain in marketplaces:
-                        if marketplace.marketplaceDomain == "altex.ro":
+                        if domain == "altex.ro":
                             continue
                             # if db_product.barcode_title == "":
                                 #     continue
