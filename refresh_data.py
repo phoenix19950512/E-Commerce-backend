@@ -9,6 +9,7 @@ from app.database import Base, engine
 from app.backup import export_to_csv, upload_to_google_sheets
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.internal_product import Internal_Product
 from app.utils.emag_products import refresh_emag_products, post_stock_emag
 from app.utils.emag_orders import refresh_emag_orders, refresh_emag_all_orders
 from app.utils.emag_returns import refresh_emag_returns
