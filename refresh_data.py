@@ -262,6 +262,8 @@ async def send_stock(db:AsyncSession = Depends(get_db)):
                                 #     continue
                                 # post_stock_altex(marketplace, db_product.barcode_title, stock)
                                 # logging.info("post stock success in altex")
+                        result = await session.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+                        marketplace = result.scalars().first()
 
                         result = await session.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
                         db_product = result.scalars().first()
