@@ -38,7 +38,6 @@ from sqlalchemy import update
 from datetime import datetime
 
 
-
 # member
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -193,56 +192,46 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 #                     logging.info("Refresh orders from marketplace")
 #                     await refresh_emag_orders(marketplace)
 
-@app.on_event("startup")
+
+@app.on_event("startup") 
 @repeat_every(seconds=900)
 async def send_stock():
-    async with get_db() as session:
+    async with AsyncSession() as db:  # Use manual session management
         try:
             logging.info("Init orders_stock")
-            await session.execute(update(Internal_Product).values(orders_stock=0))
-            await session.commit()
-
+            await db.execute(update(Internal_Product).values(orders_stock=0))
+            await db.commit()
+            
             logging.info("Calculate orders_stock")
-            await calc_order_stock(session)
-
+            await calc_order_stock(db)
+            
             logging.info("Sync stock")
-            result = await session.execute(select(Internal_Product))
+            result = await db.execute(select(Internal_Product))
             db_products = result.scalars().all()
-
+            
             for product in db_products:
                 ean = product.ean
                 marketplaces = product.market_place
-
+                
                 for domain in marketplaces:
-                    # Fetch the marketplace
-                    marketplace_result = await session.execute(
-                        select(Marketplace).where(Marketplace.marketplaceDomain == domain)
-                    )
-                    marketplace = marketplace_result.scalars().first()
+                    result = await db.execute(select(Marketplace).where(Marketplace.marketplaceDomain == domain))
+                    marketplace = result.scalars().first()
 
-                    # Fetch the product
-                    product_result = await session.execute(
-                        select(Product).where(Product.ean == ean, Product.product_marketplace == domain)
-                    )
-                    db_product = product_result.scalars().first()
-
-                    if not db_product:
-                        logging.warning(f"No product found for EAN {ean} in marketplace {domain}")
-                        continue
-
+                    result = await db.execute(select(Product).where(Product.ean == ean, Product.product_marketplace == domain))
+                    db_product = result.scalars().first()
                     product_id = db_product.id
                     stock = product.smartbill_stock - product.orders_stock - product.damaged_goods
 
                     if marketplace.marketplaceDomain == "altex.ro":
-                        continue  # Placeholder for future integration
+                        continue
                     else:
                         await post_stock_emag(marketplace, product_id, stock)
-                        logging.info(f"Stock posted successfully for {ean} on emag")
+                        logging.info("Post stock success in emag")
 
         except Exception as e:
             logging.error(f"An error occurred: {e}")
-            await session.rollback()
-         
+            await db.rollback()
+          
 
 # @app.on_event("startup")
 # @repeat_every(seconds=7200)
