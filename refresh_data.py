@@ -205,7 +205,7 @@ async def on_startup():
 @app.on_event("startup") 
 @repeat_every(seconds=900)
 async def send_stock():
-    async with AsyncSession() as db:  # Use manual session management
+    async with get_db() as db:  # Use manual session management
         async with db.begin():
             try:
                 logging.info("Init orders_stock")
