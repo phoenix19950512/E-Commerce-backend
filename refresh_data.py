@@ -107,6 +107,8 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
             # awb_status_list = [93, 16, 15, 9]
             logging.info("Start updating AWB status")
 
+            error_barcode = []
+            
             batch_size = 100
             offset = 0
             while True:
@@ -153,6 +155,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                             awb.width = width
                             awb.length = length
                         except Exception as track_ex:
+                            error_barcode.append(awb_barcode)
                             logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                             continue  # Continue to next AWB if tracking fails
 
@@ -170,7 +173,8 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                     logging.error(f"Database query failed at offset {offset}: {str(db_ex)}")
                     await session.rollback()
                     break
-
+            
+            logging.info(f"Getting awb status error barcodes {error_barcode}")
             logging.info("AWB status update completed")
             
 # @app.on_event("startup")
