@@ -102,13 +102,13 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 async def update_awb(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
-            logging.info("Starting update api_key in sameday")
-            result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
-            samedays = result.scalars().all()
-            for sameday in samedays:
-                api_key = await auth_sameday(sameday)
-                sameday.registration_number = api_key
-            await session.commit()
+            # logging.info("Starting update api_key in sameday")
+            # result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
+            # samedays = result.scalars().all()
+            # for sameday in samedays:
+            #     api_key = await auth_sameday(sameday)
+            #     sameday.registration_number = api_key
+            # await session.commit()
             
             awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
                             68, 101, 147, 73, 126, 47, 145, 128, 19, 0, 5, 22, 62, 65, 140, 149, 153]
