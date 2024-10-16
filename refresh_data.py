@@ -171,6 +171,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         while retries < MAX_RETRIES:
                             try:
                                 await session.commit()
+                                await asyncio.sleep(1)
                                 logging.info(f"Successfully committed {count} AWBs so far")
                                 break  # Break out of the retry loop if commit succeeds
                             except Exception as e:
