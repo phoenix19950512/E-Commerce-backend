@@ -42,6 +42,8 @@ class ShipmentBase(BaseModel):
     price: Optional[List[Decimal]] = None
     each_note: Optional[List[str]] = None
     updated_at: Optional[datetime] = None
+    arrived_date: Optional[datetime] = None
+    ship_date: Optional[datetime] = None
     user_id: Optional[int] = None
 
 class ShipmentCreate(ShipmentBase):

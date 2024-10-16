@@ -8,7 +8,7 @@ class AWB(Base):
     __tablename__ = "awbs"
     
     order_id = Column(Integer, nullable=True)
-    number = Column(Integer, default_value=0)
+    number = Column(Integer, default=0)
     sender_name = Column(String, nullable=True)
     sender_phone1 = Column(String, nullable=True)
     sender_phone2 = Column(String, nullable=True)
@@ -42,7 +42,7 @@ class AWB(Base):
     awb_number = Column(String, nullable=True, index=True)
     awb_barcode = Column(String, nullable=True)
     awb_marketplace = Column(String, nullable=True)
-    awb_status = Column(Integer, default_value=0)
+    awb_status = Column(Integer, default=0)
     pickedup = Column(Boolean, defaulf_value=False)
     awb_date = Column(DateTime, nullable=True)
     awb_trigger = Column(String, nullable=True)
