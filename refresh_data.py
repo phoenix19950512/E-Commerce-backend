@@ -84,9 +84,22 @@ ssl_context.load_cert_chain('ssl/cert.pem', keyfile='ssl/key.pem')
 #                     # await refresh_emag_all_orders(marketplace, session)
 #                     continue
 
+# @app.on_event("startup")
+# @repeat_every(seconds=14400)  # Run daily for deleting video last 30 days
+# async def update_sameday(db: AsyncSession = Depends(get_db)): 
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting update api_key in sameday")
+#             result = await session.execute(select(Billing_software).where(Billing_software.site_domain == "sameday.ro"))
+#             samedays = result.scalars().all()
+#             for sameday in samedays:
+#                 api_key = await auth_sameday(sameday)
+#                 sameday.registration_number = api_key
+#             await session.commit()
+
 @app.on_event("startup")
-@repeat_every(seconds=14400)  # Run daily for deleting video last 30 days
-async def update_sameday(db: AsyncSession = Depends(get_db)): 
+@repeat_every(seconds=14400)
+async def update_awb(db: AsyncSession = Depends(get_db)):
     async for db in get_db():
         async with db as session:
             logging.info("Starting update api_key in sameday")
@@ -96,12 +109,7 @@ async def update_sameday(db: AsyncSession = Depends(get_db)):
                 api_key = await auth_sameday(sameday)
                 sameday.registration_number = api_key
             await session.commit()
-
-@app.on_event("startup")
-@repeat_every(seconds=14400)
-async def update_awb(db: AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
+            
             awb_status_list = [56, 85, 84, 37, 63, 1, 2, 25, 33, 7, 78, 6, 26, 14, 23, 35, 79, 112, 81, 10, 113, 27, 87, 4, 99, 74, 116, 18, 61, 111, 57, 137, 82, 3, 11, 28, 127, 17,
                             68, 101, 147, 73, 126, 47, 145, 128, 19, 0, 5, 22, 62, 65, 140, 149, 153]
             # awb_status_list = [93, 16, 15, 9]
