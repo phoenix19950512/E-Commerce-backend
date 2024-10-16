@@ -116,6 +116,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                     result = await session.execute(
                         select(AWB)
                         .where(AWB.awb_status == any_(awb_status_list))
+                        .where(AWB.awb_number == '4EMGLN82975232')
                         .offset(offset)
                         .limit(batch_size)
                     )
@@ -182,22 +183,22 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
 # def backup_db():
 #     export_to_csv()
 
-@app.on_event("startup")
-@repeat_every(seconds=900)
-async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting orders refresh")
-            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_altex_orders(marketplace)
-                else:
-                    logging.info("Refresh orders from marketplace")
-                    await refresh_emag_orders(marketplace)
+# @app.on_event("startup")
+# @repeat_every(seconds=900)
+# async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting orders refresh")
+#             result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
+#             marketplaces = result.scalars().all()
+#             logging.info(f"Success getting {len(marketplaces)} marketplaces")
+#             for marketplace in marketplaces:
+#                 if marketplace.marketplaceDomain == "altex.ro":
+#                     logging.info("Refresh orders from marketplace")
+#                     await refresh_altex_orders(marketplace)
+#                 else:
+#                     logging.info("Refresh orders from marketplace")
+#                     await refresh_emag_orders(marketplace)
 
 # @app.on_event("startup")
 # @repeat_every(seconds=900)
@@ -326,27 +327,27 @@ async def refresh_orders_data(db:AsyncSession = Depends(get_db)):
 #                 logging.info(f"product_code_list: {product_code_list}")
 #                 logging.info("Finish sync stock")
 
-@app.on_event("startup")
-@repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
-async def refresh_data(db: AsyncSession = Depends(get_db)): 
-    async for db in get_db():
-        async with db as session:
-            logging.info("Starting product refresh")
-            result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
-            marketplaces = result.scalars().all()
-            logging.info(f"Success getting {len(marketplaces)} marketplaces")
-            for marketplace in marketplaces:
-                if marketplace.marketplaceDomain == "altex.ro":
-                    logging.info("Refresh products from marketplace")
-                    await refresh_altex_products(marketplace)
-                    logging.info("Refresh rmas from altex")
-                    await refresh_altex_rmas(marketplace)
-                    continue
-                else:
-                    logging.info("Refresh refunds from marketplace")
-                    await refresh_emag_returns(marketplace)
-                    logging.info("Refresh products from marketplace")
-                    await refresh_emag_products(marketplace)
+# @app.on_event("startup")
+# @repeat_every(seconds=86400)  # Run daily for deleting video last 30 days
+# async def refresh_data(db: AsyncSession = Depends(get_db)): 
+#     async for db in get_db():
+#         async with db as session:
+#             logging.info("Starting product refresh")
+#             result = await session.execute(select(Marketplace).order_by(Marketplace.id.asc()))
+#             marketplaces = result.scalars().all()
+#             logging.info(f"Success getting {len(marketplaces)} marketplaces")
+#             for marketplace in marketplaces:
+#                 if marketplace.marketplaceDomain == "altex.ro":
+#                     logging.info("Refresh products from marketplace")
+#                     await refresh_altex_products(marketplace)
+#                     logging.info("Refresh rmas from altex")
+#                     await refresh_altex_rmas(marketplace)
+#                     continue
+#                 else:
+#                     logging.info("Refresh refunds from marketplace")
+#                     await refresh_emag_returns(marketplace)
+#                     logging.info("Refresh products from marketplace")
+#                     await refresh_emag_products(marketplace)
                     # logging.info("Refresh reviews from emag")
                     # await refresh_emag_reviews(marketplace, session)
                     # logging.info("Check hijacker and review")
