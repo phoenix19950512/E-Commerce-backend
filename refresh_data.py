@@ -163,34 +163,35 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         error_barcode.append(awb_barcode)
                         logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                         continue  # Continue to next AWB if tracking fails
-                    count += 1
-                    MAX_RETRIES = 3
+                #     count += 1
+                #     MAX_RETRIES = 3
                     
-                    if count % batch_size == 0:
-                        retries = 0
-                        while retries < MAX_RETRIES:
-                            try:
-                                await session.commit()
-                                await asyncio.sleep(1)
-                                logging.info(f"Successfully committed {count} AWBs so far")
-                                break  # Break out of the retry loop if commit succeeds
-                            except Exception as e:
-                                await session.rollback()
-                                retries += 1
-                                logging.error(f"Failed to commit batch, attempt {retries}/{MAX_RETRIES}: {str(e)}")
-                                if retries == MAX_RETRIES:
-                                    logging.error(f"Max retries reached. Aborting commit.")
-                                    break
-                                else:
-                                    logging.info(f"Retrying commit...")
-                                    await asyncio.sleep(2)  # Optional: Add a short delay before retrying
-                if count % batch_size != 0:
-                        try:
-                            await session.commit()
-                            logging.info(f"Successfully committed remaining {count % batch_size} AWBs")
-                        except Exception as e:
-                            await session.rollback()
-                            logging.error(f"Failed to commit remaining batch: {str(e)}")
+                #     if count % batch_size == 0:
+                #         retries = 0
+                #         while retries < MAX_RETRIES:
+                #             try:
+                #                 await session.commit()
+                #                 await asyncio.sleep(1)
+                #                 logging.info(f"Successfully committed {count} AWBs so far")
+                #                 break  # Break out of the retry loop if commit succeeds
+                #             except Exception as e:
+                #                 await session.rollback()
+                #                 retries += 1
+                #                 logging.error(f"Failed to commit batch, attempt {retries}/{MAX_RETRIES}: {str(e)}")
+                #                 if retries == MAX_RETRIES:
+                #                     logging.error(f"Max retries reached. Aborting commit.")
+                #                     break
+                #                 else:
+                #                     logging.info(f"Retrying commit...")
+                #                     await asyncio.sleep(2)  # Optional: Add a short delay before retrying
+                # if count % batch_size != 0:
+                #         try:
+                #             await session.commit()
+                #             logging.info(f"Successfully committed remaining {count % batch_size} AWBs")
+                #         except Exception as e:
+                #             await session.rollback()
+                #             logging.error(f"Failed to commit remaining batch: {str(e)}")
+                await session.commit()
             except Exception as db_ex:
                 logging.error(f"Database query failed: {str(db_ex)}")
                 await session.rollback()
