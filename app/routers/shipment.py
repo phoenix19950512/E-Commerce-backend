@@ -230,6 +230,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     pdf_sent = shipment_1.pdf_sent[index]
     pay_url = shipment_1.pay_url[index]
     tracking = shipment_1.tracking[index]
+    inland_cost = shipment_1.inland_cost[index]
     arrive_agent = shipment_1.arrive_agent[index]
     wechat_group = shipment_1.wechat_group[index]
     pp = shipment_1.pp[index]
@@ -238,9 +239,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     document = shipment_1.document[index]
     date_added = shipment_1.date_added[index]
     date_agent = shipment_1.date_agent[index]
-    each_note = shipment_1.each_note[index]
     ship_id = shipment_1.ship_id[index]
-
     before = shipment_1.before[index]
     if before:
         before = before.replace("'", '"')
@@ -250,13 +249,18 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     else:
         before = str([f"{ship_id}_{shipment_1.title}"])
     user = shipment_1.user[index]
-
+    other_cost = shipment_1.other_cost[index]
+    received = shipment_1.received[index]
+    price = shipment_1.price[index]
+    each_note = shipment_1.each_note[index]
+    
     shipment_1.ean = shipment_1.ean[:index] + shipment_1.ean[index+1:]
     shipment_1.quantity = shipment_1.quantity[:index] + shipment_1.quantity[index+1:]
     shipment_1.item_per_box = shipment_1.item_per_box[:index] + shipment_1.item_per_box[index+1:]
     shipment_1.pdf_sent = shipment_1.pdf_sent[:index] + shipment_1.pdf_sent[index+1:]
     shipment_1.pay_url = shipment_1.pay_url[:index] + shipment_1.pay_url[index+1:]
     shipment_1.tracking = shipment_1.tracking[:index] + shipment_1.tracking[index+1:]
+    shipment_1.inland_cost = shipment_1.inland_cost[:index] + shipment_1.inland_cost[index+1:]
     shipment_1.arrive_agent = shipment_1.arrive_agent[:index] + shipment_1.arrive_agent[index+1:]
     shipment_1.wechat_group = shipment_1.wechat_group[:index] + shipment_1.wechat_group[index+1:]
     shipment_1.pp = shipment_1.pp[:index] + shipment_1.pp[index+1:]
@@ -265,11 +269,13 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_1.document = shipment_1.document[:index] + shipment_1.document[index+1:]
     shipment_1.date_added = shipment_1.date_added[:index] + shipment_1.date_added[index+1:]
     shipment_1.date_agent = shipment_1.date_agent[:index] + shipment_1.date_agent[index+1:]
+    shipment_1.ship_id = shipment_1.ship_id[:index] + shipment_1.ship_id[index+1:]
     shipment_1.before = shipment_1.before[:index] + shipment_1.before[index+1:]
     shipment_1.user = shipment_1.user[:index] + shipment_1.user[index+1:]
+    shipment_1.other_cost = shipment_1.other_cost[:index] + shipment_1.other_cost[index+1:]
+    shipment_1.received = shipment_1.received[:index] + shipment_1.received[index+1:]
+    shipment_1.price = shipment_1.price[:index] + shipment_1.price[index+1:]
     shipment_1.each_note = shipment_1.each_note[:index] + shipment_1.each_note[index+1:]
-    shipment_1.ship_id = shipment_1.ship_id[:index] + shipment_1.ship_id[index+1:]
-
     
     # await db.refresh(shipment_1)
 
@@ -279,6 +285,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_2.pdf_sent = shipment_2.pdf_sent + [pdf_sent]
     shipment_2.pay_url = shipment_2.pay_url + [pay_url]
     shipment_2.tracking = shipment_2.tracking + [tracking]
+    shipment_2.inland_cost = shipment_2.inland_cost + [inland_cost]
     shipment_2.arrive_agent = shipment_2.arrive_agent + [arrive_agent]
     shipment_2.wechat_group = shipment_2.wechat_group + [wechat_group]
     shipment_2.pp = shipment_2.pp + [""]
@@ -287,18 +294,20 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_2.document = shipment_2.document + [document]
     shipment_2.date_added = shipment_2.date_added + [date_added]
     shipment_2.date_agent = shipment_2.date_agent + [date_agent]
+    shipment_2.ship_id = shipment_2.ship_id + [ship_id]
     shipment_2.before = shipment_2.before + [before]
     shipment_2.user = shipment_2.user + [user]
+    shipment_2.other_cost = shipment_2.other_cost + [other_cost]
+    shipment_2.received = shipment_2.received + [received]
+    shipment_2.price = shipment_2.price + [price]
     shipment_2.each_note = shipment_2.each_note + [each_note]
-    shipment_2.ship_id = shipment_2.ship_id + [ship_id]
-    shipment_2.cnt = shipment_2.cnt
 
     await db.commit()
-    await db.refresh(shipment_2)
+    await db.refresh(shipment_1)
 
-    logging.info(f"@@@@@After update: {shipment_2}")
+    logging.info(f"@@@@@After update: {shipment_1}")
 
-    return shipment_2
+    return shipment_1
 
 @router.get("/product_info")
 async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current_user), db:AsyncSession = Depends(get_db)):
