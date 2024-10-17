@@ -68,12 +68,12 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
     modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
     modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
 
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -107,12 +107,12 @@ def get_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "currentPage": currentPage,
         "modifiedAfter": modifiedAfter_date
     })
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(url, data=data, headers=headers, timeout=10)
+            response = requests.post(url, data=data, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:

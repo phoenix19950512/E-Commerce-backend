@@ -164,7 +164,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
                         continue  # Continue to next AWB if tracking fails
                 #     count += 1
-                MAX_RETRIES = 3
+                MAX_RETRIES = 5
                     
                 #     if count % batch_size == 0:
                 #         retries = 0

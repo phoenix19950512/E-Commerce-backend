@@ -64,12 +64,12 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "currentPage": currentPage
     })
     # response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(url, data=data, headers=headers, timeout=10)
+            response = requests.post(url, data=data, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -121,12 +121,12 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
     }
 
     # response = requests.post(url, headers=headers, proxies=PROXIES)
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:

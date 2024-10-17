@@ -30,7 +30,7 @@ async def auth_sameday(sameday: Billing_software):
         "X-Auth-Password": f"{PASSWORD}",
     }
     
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         auth_response = await client.post(auth_url, headers=headers)
         result = auth_response.json()
         return result.get('token')
@@ -39,7 +39,7 @@ async def tracking(sameday: Billing_software, awb_barcode):
     url = "https://api.sameday.ro/api/client/parcel"
     api_key = sameday.registration_number
     
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         tracking_headers = {
             "X-Auth-TOKEN": api_key,
         }

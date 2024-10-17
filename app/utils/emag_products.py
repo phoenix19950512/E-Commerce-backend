@@ -46,12 +46,12 @@ def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, A
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -80,12 +80,12 @@ def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API
         "itemsPerPage": 100,
         "currentPage": currentPage,
     })
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5
     retry_delay = 5  # seconds
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(url, data=data, headers=headers, timeout=10)
+            response = requests.post(url, data=data, headers=headers, timeout=20)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -470,7 +470,7 @@ async def post_stock_emag(marketplace: Marketplace, product_id: int, stock: int)
     data = {
         "stock": stock
     }
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         response = await client.patch(f"{url}/{product_id}", json=data, headers=headers)
         if response.status_code == 200:
             return response.json()
