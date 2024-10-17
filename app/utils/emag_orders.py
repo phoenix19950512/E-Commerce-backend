@@ -10,7 +10,7 @@ from app.models.marketplace import Marketplace
 from app.models.orders import Order
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any
-
+import time
 from sqlalchemy.exc import IntegrityError
 import logging
 from sqlalchemy import insert
@@ -68,13 +68,22 @@ def count_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, COUNT_ENGPOINT, API_K
     modifiedAfter_date = datetime.datetime.today() - datetime.timedelta(days=3)
     modifiedAfter_date = modifiedAfter_date.strftime('%Y-%m-%d')
 
-    response = requests.post(url, headers=headers)
-    if response.status_code == 200:
-        logging.info("success to count orders")
-        return response.json()
-    else:
-        logging.info(f"Failed to retrieve orders: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve orders: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve orders.")
+    return None
     
 def get_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{READ_ENDPOINT}"
@@ -98,13 +107,22 @@ def get_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "currentPage": currentPage,
         "modifiedAfter": modifiedAfter_date
     })
-    response = requests.post(url, data=data, headers=headers)
-    if response.status_code == 200:
-        orders = response.json()
-        return orders
-    else:
-        print(f"Failed to retrieve orders: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve orders: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve orders.")
+    return None
 
 def get_all_orders(MARKETPLACE_API_URL, ORDERS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{ORDERS_ENDPOINT}/{READ_ENDPOINT}"

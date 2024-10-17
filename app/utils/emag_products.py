@@ -21,6 +21,7 @@ from app.database import get_db
 from app.routers.auth import get_current_user
 from decimal import Decimal
 import httpx
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -45,13 +46,22 @@ def count_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, COUNT_ENGPOINT, A
             "X-Request-Signature": f"{API_KEY}"
         }
 
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        logging.info("success count")
-        return response.json()
-    else:
-        logging.error(f"Failed to retrieve products: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve products: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve products.")
+    return None
     
 def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API_KEY, currentPage, PUBLIC_KEY=None, usePublicKey=False):
     url = f"{MARKETPLACE_API_URL}{PRODUCTS_ENDPOINT}/{READ_ENDPOINT}"
@@ -70,13 +80,22 @@ def get_all_products(MARKETPLACE_API_URL, PRODUCTS_ENDPOINT, READ_ENDPOINT,  API
         "itemsPerPage": 100,
         "currentPage": currentPage,
     })
-    response = requests.post(url, data=data, headers=headers)
-    if response.status_code == 200:
-        products = response.json()
-        return products
-    else:
-        logging.info(f"Failed to retrieve products: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve products: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve products.")
+    return None
 
 async def insert_products(products, mp_name: str, user_id):
     try:

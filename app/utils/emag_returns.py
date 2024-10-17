@@ -64,13 +64,22 @@ def get_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, READ_ENDPOINT,  API_KEY, cu
         "currentPage": currentPage
     })
     # response = requests.post(url, data=data, headers=headers, proxies=PROXIES)
-    response = requests.post(url, data=data, headers=headers)
-    if response.status_code == 200:
-        rmas = response.json()
-        return rmas
-    else:
-        logging.info(f"Failed to retrieve refunds: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve refunds: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve refunds.")
+    return None
 
 def get_awb(reservation_id, marketplace: Marketplace):
     baseurl = marketplace.baseAPIURL
@@ -112,13 +121,21 @@ def count_all_rmas(MARKETPLACE_API_URL, RMAS_ENDPOINT, COUNT_ENGPOINT, API_KEY):
     }
 
     # response = requests.post(url, headers=headers, proxies=PROXIES)
-    response = requests.post(url, headers=headers)
-    if response.status_code == 200:
-        logging.info("success rmas count")
-        return response.json()
-    else:
-        logging.error(f"Failed to retrieve rmas: {response.status_code}")
-        return None
+    MAX_RETRIES = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.info(f"Failed to retrieve refunds: {response.status_code}")
+                return None
+        except requests.Timeout:
+            logging.warning(f"Request timed out. Attempt {attempt + 1} of {MAX_RETRIES}. Retrying...")
+            time.sleep(retry_delay)
+    logging.error("All attempts failed. Could not retrieve refunds.")
 
 async def insert_rmas_into_db(rmas, marketplace: Marketplace):
     try:
