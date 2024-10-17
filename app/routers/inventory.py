@@ -312,7 +312,8 @@ async def get_product_info(
                 "weight": product.weight,
                 "volumetric_weight": volumetric_weight,
                 "model_name": product.model_name,
-                "short_product_name": product.short_product_name
+                "short_product_name": product.short_product_name,
+                "battery": product.battery
             })
         else:
             days = 30
