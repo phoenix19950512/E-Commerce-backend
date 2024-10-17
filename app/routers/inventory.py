@@ -269,12 +269,15 @@ async def get_product_info(
         
         if w == 0.0 or h == 0.0 or d == 0.0:
             type = -1
-        elif product.weight < 0.35 and volumetric_weight < 0.35:
-            type = 1
-        elif product.battery:
-            type = 2
         else:
-            type = 3
+            if product.weight < 0.35 and volumetric_weight < 0.35:
+                type = 1
+            else:
+                volumetric_weight = w * h * d / 6000 / int(product.pcs_ctn)
+                if product.battery:
+                    type = 2
+                else:
+                    type = 3
         
         if type != shipment_type and shipment_type != 0:
             continue

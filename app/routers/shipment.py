@@ -358,12 +358,15 @@ async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current
         volumetric_weight = w * h * d / 5000 / item_per_box
         if w == 0.0 or h == 0.0 or d == 0.0:
             type = -1
-        elif product.weight < 0.35 and volumetric_weight < 0.35:
-            type = 1
-        elif product.battery:
-            type = 2
         else:
-            type = 3
+            if product.weight < 0.35 and volumetric_weight < 0.35:
+                type = 1
+            else:
+                volumetric_weight = w * h * d / 6000 / int(product.pcs_ctn)
+                if product.battery:
+                    type = 2
+                else:
+                    type = 3
 
         return {
             "type": type,
