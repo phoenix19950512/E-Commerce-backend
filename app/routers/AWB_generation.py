@@ -39,6 +39,14 @@ async def create_awb_manually(awb: AWBCreate, user: User = Depends(get_current_u
         user_id = user.id
         
     db_awb = AWB(**awb.dict())
+    
+    awb_number = db_awb.awb_number
+    number = db_awb.number
+    result = await db.execute(select(AWB).where(AWB.awb_number == awb_number, AWB.number == number))
+    awb = result.scalars().first()
+    
+    if awb:
+        return awb
     db_awb.user_id = user_id
     db.add(db_awb)
     await db.commit()
