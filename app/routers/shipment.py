@@ -399,7 +399,7 @@ async def get_shipment(shipment_id: int, user: User = Depends(get_current_user),
     return db_shipment
 
 @router.get("/add product")
-async def add_product_in_shipment(ean: str, ship_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if user.role == -1:
         raise HTTPException(status_code=401, detail="Authentication error")
     
@@ -427,7 +427,7 @@ async def add_product_in_shipment(ean: str, ship_id: int, user: User = Depends(g
     
     cnt = db_shipment.cnt + 1
     db_shipment.ean = db_shipment.ean + [ean]
-    db_shipment.quantity = db_shipment.quantity + [1]
+    db_shipment.quantity = db_shipment.quantity + [qty]
     db_shipment.item_per_box = db_shipment.item_per_box + [pcs_ctn]
     db_shipment.pdf_sent = db_shipment.pdf_sent + [False]
     db_shipment.pay_url = db_shipment.pay_url + [""]
