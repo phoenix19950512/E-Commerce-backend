@@ -380,24 +380,7 @@ async def get_info(ean: str, item_per_box: int, user: User = Depends(get_current
             "type": 1,
             "imports_data": imports_data
         }
-
-@router.get("/{shipment_id}")
-async def get_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if user.role == -1:
-        raise HTTPException(status_code=401, detail="Authentication error")
-    
-    if user.role != 4:
-        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
-        db_team = result.scalars().first()
-        user_id = db_team.admin
-    else:
-        user_id = user.id
-    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user_id))
-    db_shipment = result.scalars().first()
-    if db_shipment is None:
-        raise HTTPException(status_code=404, detail="shipment not found")
-    return db_shipment
-
+        
 @router.get("/add product")
 async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if user.role == -1:
@@ -455,6 +438,23 @@ async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User =
     await db.commit()
     await db.refresh(db_shipment)
     
+    return db_shipment
+
+@router.get("/{shipment_id}")
+async def get_shipment(shipment_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+    result = await db.execute(select(Shipment).where(Shipment.id == shipment_id, Shipment.user_id == user_id))
+    db_shipment = result.scalars().first()
+    if db_shipment is None:
+        raise HTTPException(status_code=404, detail="shipment not found")
     return db_shipment
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
