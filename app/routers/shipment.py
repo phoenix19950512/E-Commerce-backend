@@ -450,6 +450,7 @@ async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User =
     db_shipment.received = db_shipment.received + [0]
     db_shipment.price = db_shipment.price + [0.0]
     db_shipment.each_note = db_shipment.each_note + [""]
+    db_shipment.updated_at = datetime.now()
     
     await db.commit()
     await db.refresh(db_shipment)
