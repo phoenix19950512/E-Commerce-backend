@@ -190,7 +190,7 @@ async def get_extra_info(
     query = text("""
         SELECT id, title 
         FROM shipments
-        WHERE user_id = :user_id
+        WHERE status = 'New' and user_id = :user_id
     """)
     
     result = await db.execute(query, {"user_id": user_id})
