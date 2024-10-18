@@ -9,7 +9,5 @@ class Scan_awb(Base):
     awb_type = Column(String, nullable=True)
     scan_date = Column(DateTime, nullable=True)
     user_id = Column(Integer, nullable=True)
-    __table_args__ = (
-        PrimaryKeyConstraint('account_id', 'market_place', name='pk_account_id_market_place'),
-    )
+
 
