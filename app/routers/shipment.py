@@ -15,6 +15,9 @@ from app.models.team_member import Team_member
 from app.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 import logging
 import json
+from datetime import datetime
+import time
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 router = APIRouter()
@@ -393,6 +396,64 @@ async def get_shipment(shipment_id: int, user: User = Depends(get_current_user),
     db_shipment = result.scalars().first()
     if db_shipment is None:
         raise HTTPException(status_code=404, detail="shipment not found")
+    return db_shipment
+
+@router.get("/add product")
+async def add_product_in_shipment(ean: str, ship_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Shipment).where(Shipment.id == ship_id, Shipment.user == user_id))
+    db_shipment = result.scalars().first()
+    
+    result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean, Internal_Product.user_id == user_id))
+    db_product = result.scalars().first()
+    pcs_ctn = db_product.pcs_ctn
+    supplier = db_product.supplier_id
+    
+    if db_product.link_address_1688:
+        pp = "agent"
+    else:
+        pp = ""
+    if db_shipment is None:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    
+    cnt = db_shipment.cnt + 1
+    db_shipment.ean = db_shipment.ean + [ean]
+    db_shipment.quantity = db_shipment.quantity + [1]
+    db_shipment.item_per_box = db_shipment.item_per_box + [pcs_ctn]
+    db_shipment.pdf_sent = db_shipment.pdf_sent + [False]
+    db_shipment.pay_url = db_shipment.pay_url + [""]
+    db_shipment.tracking = db_shipment.tracking + [""]
+    db_shipment.inland_cost = db_shipment.inland_cost + [0.0]
+    db_shipment.arrive_agent = db_shipment.arrive_agent + [False]
+    db_shipment.wechat_group = db_shipment.wechat_group + [str(supplier)]
+    db_shipment.pp = db_shipment.pp + [pp]
+    db_shipment.each_status = db_shipment.each_status + [""]
+    db_shipment.box_number = db_shipment.box_number + [1]
+    db_shipment.document = db_shipment.document + [""]
+    db_shipment.date_added = db_shipment.date_added + [datetime.now()]
+    db_shipment.date_agent = db_shipment.date_agent + [datetime.now()]
+    db_shipment.ship_id = db_shipment.ship_id + [f"{user.id}-{int(time.time() * 1000)}-{cnt}"]
+    db_shipment.before = db_shipment.before + [""]
+    db_shipment.user = db_shipment.user + [user.id]
+    db_shipment.cnt = cnt
+    db_shipment.other_cost = db_shipment.other_cost + [0.0]
+    db_shipment.target_day = db_shipment.target_day + [90]
+    db_shipment.received = db_shipment.received + [0]
+    db_shipment.price = db_shipment.price + [0.0]
+    db_shipment.each_note = db_shipment.each_note + [""]
+    
+    await db.commit()
+    await db.refresh(db_shipment)
+    
     return db_shipment
 
 @router.put("/{shipment_id}", response_model=ShipmentRead)
