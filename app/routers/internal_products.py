@@ -11,6 +11,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.product import Product
 from app.models.returns import Returns
+from app.models.shipment import Shipment
 from app.models.internal_product import Internal_Product
 from app.schemas.internal_product import Internal_ProductCreate, Internal_ProductRead, Internal_ProductUpdate
 from app.models.shipment import Shipment
@@ -428,6 +429,14 @@ async def delete_product(ean: str, user: User = Depends(get_current_user), db: A
     product = result.scalars().first()
     if product is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
+    if product.market_place:
+        raise HTTPException(status_code=500, detail="This product is in marketplaces")
+    
+    query = select(Shipment).where(ean == any_(Shipment.ean))
+    result = await db.execute(query)
+    shipment = result.scalars().all()
+    if shipment:
+        raise HTTPException(status_code=500, detail="This product is in shipment")
     await db.delete(product)
     await db.commit()
     return product
