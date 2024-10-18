@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
 from sqlalchemy import select
-from app.routers import auth, billing_software, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, warehouse, team_member, locality, courier, review, product, replacement, invoice, damaged_good, sync_stock, temp_product, proxy
+from app.routers import auth, billing_software, internal_products, returns, users, shipment, profile, marketplace, utils, orders, dashboard, supplier, inventory, AWB_generation, notifications, warehouse, team_member, locality, courier, review, product, replacement, invoice, damaged_good, sync_stock, temp_product, proxy, scan_awb
 from app.database import Base, engine
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,6 +80,7 @@ app.include_router(damaged_good.router, prefix="/api/damaged_good", tags=["damag
 app.include_router(sync_stock.router, prefix="/api/sync_stock", tags=["sync_stock"])
 app.include_router(temp_product.router, prefix="/api/temp_product", tags=["temp_product"])
 app.include_router(proxy.router, prefix="/api/proxy", tags=["proxy"])
+app.include_router(scan_awb.router, prefix="/api/Scan_awb", tags=["Scan_awb"])
 
 if __name__ == "__main__":
     import uvicorn
