@@ -9,6 +9,7 @@ from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
 from app.models.scan_awb import Scan_awb
 from app.models.team_member import Team_member
+from app.models.awb import AWB
 from app.schemas.scan_awb import Scan_awbCreate, Scan_awbRead, Scan_awbUpdate
 
 router = APIRouter()
@@ -20,6 +21,13 @@ async def create_scan_awb(scan_awb: Scan_awbCreate, db: AsyncSession = Depends(g
     scan_awb = result.scalars().first()
     if scan_awb:
         return scan_awb
+    awb_numer = db_scan_awb.awb_number
+    result = await db.execute(select(AWB).where(AWB.awb_number == awb_numer))
+    db_awb = result.scalars().first()
+    if db_awb is None:
+        raise HTTPException(status_code=404, detail="This awb_nubmer is not in out database")
+    user_id = db_awb.user_id
+    db_scan_awb.user_id = user_id
     db.add(db_scan_awb)
     await db.commit()
     await db.refresh(db_scan_awb)
