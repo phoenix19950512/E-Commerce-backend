@@ -17,6 +17,7 @@ import logging
 import json
 from datetime import datetime
 import time
+import math
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -420,7 +421,7 @@ async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User =
     db_shipment.wechat_group = db_shipment.wechat_group + [str(supplier)]
     db_shipment.pp = db_shipment.pp + [pp]
     db_shipment.each_status = db_shipment.each_status + [""]
-    db_shipment.box_number = db_shipment.box_number + [1]
+    db_shipment.box_number = db_shipment.box_number + [math.ceil(qty / pcs_ctn)]
     db_shipment.document = db_shipment.document + [""]
     db_shipment.date_added = db_shipment.date_added + [datetime.now()]
     db_shipment.date_agent = db_shipment.date_agent + [datetime.now()]
@@ -429,7 +430,6 @@ async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User =
     db_shipment.user = db_shipment.user + [user.id]
     db_shipment.cnt = cnt
     db_shipment.other_cost = db_shipment.other_cost + [0.0]
-    db_shipment.target_day = db_shipment.target_day + [90]
     db_shipment.received = db_shipment.received + [0]
     db_shipment.price = db_shipment.price + [0.0]
     db_shipment.each_note = db_shipment.each_note + [""]
