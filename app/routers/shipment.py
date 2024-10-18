@@ -394,7 +394,7 @@ async def add_product_in_shipment(ean: str, qty: int, ship_id: int, user: User =
     else:
         user_id = user.id
         
-    result = await db.execute(select(Shipment).where(Shipment.id == ship_id, Shipment.user == user_id))
+    result = await db.execute(select(Shipment).where(Shipment.id == ship_id, Shipment.user_id == user_id))
     db_shipment = result.scalars().first()
     
     result = await db.execute(select(Internal_Product).where(Internal_Product.ean == ean, Internal_Product.user_id == user_id))
