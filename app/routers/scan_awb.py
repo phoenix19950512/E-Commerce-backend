@@ -65,6 +65,12 @@ async def get_scan_awbs(
         raise HTTPException(status_code=404, detail="scan_awb not found")
     return db_scan_awbs
 
+@router.get("/awb_number")
+async def get_scan_awb_number(awb_number: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Scan_awb).where(Scan_awb.awb_number == awb_number))
+    db_scan_awb = result.scalars().first()
+    return db_scan_awb
+
 @router.get("/{scan_awb_id}", response_model=Scan_awbRead)
 async def get_scan_awb(scan_awb_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if user.role == -1:
