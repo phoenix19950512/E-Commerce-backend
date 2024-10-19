@@ -292,7 +292,7 @@ async def move_products(shipment_id1: int, shipment_id2: int, ean: str, ship_id:
     shipment_2.inland_cost = shipment_2.inland_cost + [inland_cost]
     shipment_2.arrive_agent = shipment_2.arrive_agent + [arrive_agent]
     shipment_2.wechat_group = shipment_2.wechat_group + [wechat_group]
-    shipment_2.pp = shipment_2.pp + [""]
+    shipment_2.pp = shipment_2.pp + [pp]
     shipment_2.each_status = shipment_2.each_status + [each_status]
     shipment_2.box_number = shipment_2.box_number + [box_number]
     shipment_2.document = shipment_2.document + [document]

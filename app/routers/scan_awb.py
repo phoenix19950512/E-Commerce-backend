@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.internal_product import Internal_Product
+from app.models.returns import Returns
 from app.models.scan_awb import Scan_awb
 from app.models.team_member import Team_member
 from app.models.awb import AWB
@@ -22,12 +23,26 @@ async def create_scan_awb(scan_awb: Scan_awbCreate, db: AsyncSession = Depends(g
     if scan_awb:
         return scan_awb
     awb_numer = db_scan_awb.awb_number
+    
+    result = await db.execute(select(Returns).where(Returns.awb == awb_numer))
+    db_return = result.scalars().first()
+    if db_return:
+        db_scan_awb.awb_type = "Return"
+        user_id = db_return.user_id
+        db.add(db_scan_awb)
+        await db.commit()
+        await db.refresh(db_scan_awb)
+        return db_scan_awb
+    
     result = await db.execute(select(AWB).where(AWB.awb_number == awb_numer))
     db_awb = result.scalars().first()
     if db_awb is None:
         raise HTTPException(status_code=404, detail="This awb_nubmer is not in out database")
-    user_id = db_awb.user_id
-    db_scan_awb.user_id = user_id
+    
+    if db_awb.awb_status in ([16, 35, 93]):
+        db_scan_awb.awb_type = "Refusal of Delivery"
+        user_id = db_awb.user_id
+        db_scan_awb.user_id = user_id
     db.add(db_scan_awb)
     await db.commit()
     await db.refresh(db_scan_awb)
