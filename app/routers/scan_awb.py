@@ -86,6 +86,13 @@ async def get_scan_awbs(
     db_scan_awbs = result.scalars().all()
     if db_scan_awbs is None:
         raise HTTPException(status_code=404, detail="scan_awb not found")
+    for db_scan_awb in db_scan_awbs:
+        awb_number = db_scan_awb.awb_number
+        if db_scan_awb.awb_type == "Return":
+            continue
+        result = await db.execute(select(AWB).where(AWB.awb_number == awb_number))
+        db_awb = result.scalars().first()
+        db_scan_awb.awb_type = db_awb.awb_status
     return db_scan_awbs
 
 @router.get("/awb_number")
