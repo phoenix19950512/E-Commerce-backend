@@ -36,6 +36,11 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
     if invoice:
         return invoice
     
+    result = await db.execute(select(Invoice).where(db_invoice.replacement_id != 0, Invoice.replacement_id == db_invoice.replacement_id))
+    invoice = result.scalars().first()
+    if invoice:
+        return invoice
+    
     data = {
         "companyVatCode": db_invoice.companyVatCode,
         "seriesName": db_invoice.seriesName,
