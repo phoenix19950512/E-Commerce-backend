@@ -10,6 +10,7 @@ from app.models.orders import Order
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.models.product import Product
+from app.models.damaged_good import Damaged_good
 from app.models.returns import Returns
 from app.models.shipment import Shipment
 from app.models.internal_product import Internal_Product
@@ -21,6 +22,8 @@ from app.models.marketplace import Marketplace
 import json
 
 import datetime
+from datetime import timedelta
+
 import base64
 import calendar
 
@@ -30,6 +33,109 @@ def get_valid_date(year, month, day):
     # Set the day to the last day of the month if necessary
     day = min(day, last_day_of_month)
     return datetime.date(year, month, day)
+
+async def get_orders_info(ean: str, db: AsyncSession):
+    query = select(Product).where(Product.ean == ean)
+    result = await db.execute(query)
+    products = result.scalars().all()
+    order_data = []
+
+    for product in products:
+        product_id = product.id
+
+        result = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
+        orders = result.scalars().all()
+
+        for order in orders:
+            order_id = order.id
+            product_list = order.product_id
+            index = product_list.index(product_id)
+            unit = order.quantity[index]
+            order_date = order.date
+            marketplace = order.order_market_place
+            customer_id = order.customer_id
+            customer_name = order.name
+            order_data.append(
+                {
+                    "order_id": order_id,
+                    "order_date": order_date,
+                    "customer_name": customer_name,
+                    "quantity_orders": unit,
+                    "order_status": order.status,
+                    "marketplace": marketplace
+                }
+            )
+    return order_data
+    
+async def get_refunded_info(ean: str, db: AsyncSession):
+    query = select(Product).where(Product.ean == ean)
+    result = await db.execute(query)
+    products = result.scalars().all()
+
+    total = 0
+    num1 = 0
+    num2 = 0
+    num3 = 0
+    num4 = 0
+    num5 = 0
+
+    for product in products:
+        product_id = product.id
+
+        query_total = select(Returns).where(product_id == any_(Returns.products))
+        result_total = await db.execute(query_total)
+        total += len(result_total.scalars().all())
+        query1 = query_total.where(Returns.return_type == 1)
+        result_1 = await db.execute(query1)
+        num1 += len(result_1.scalars().all())
+        query2 = query_total.where(Returns.return_type == 2)
+        result_2 = await db.execute(query2)
+        num2 += len(result_2.scalars().all())
+        query3 = query_total.where(Returns.return_type == 3)
+        result_3 = await db.execute(query3)
+        num3 += len(result_3.scalars().all())
+        query4 = query_total.where(Returns.return_type == 4)
+        result_4 = await db.execute(query4)
+        num4 += len(result_4.scalars().all())
+        query5 = query_total.where(Returns.return_type == 5)
+        resutl_5 = await db.execute(query5)
+        num5 += len(resutl_5.scalars().all())
+
+    return {
+        "total": total,
+        "type_1": num1,
+        "type_2": num2,
+        "type_3": num3,
+        "type_4": num4,
+        "type_5": num5
+    }
+
+async def get_imports(ean: str, db:AsyncSession):
+    query = select(Shipment).where(ean == any_(Shipment.ean))
+    result = await db.execute(query)
+
+    shipments = result.scalars().all()
+
+    imports_data = []
+
+    for shipment in shipments:
+        quantity = 0
+        if shipment.status == "Arrived":
+            continue
+        ean_list = shipment.ean
+        quantity_list = shipment.quantity
+        title = shipment.title
+        for i in range(len(ean_list)):
+            if ean_list[i] != ean:
+                continue
+            quantity += quantity_list[i]
+        imports_data.append({
+            "id": shipment.id,
+            "title": title,
+            "quantity": quantity
+        })
+
+    return imports_data
 
 router = APIRouter()
 
@@ -226,82 +332,6 @@ async def get_date_info(ean: str, st_datetime, en_datetime, db: AsyncSession):
         "sales": units
     }
 
-async def get_orders_info(ean: str, db: AsyncSession):
-    query = select(Product).where(Product.ean == ean)
-    result = await db.execute(query)
-    products = result.scalars().all()
-    order_data = []
-
-    for product in products:
-        product_id = product.id
-
-        result = await db.execute(select(Order).where(product_id == any_(Order.product_id)))
-        orders = result.scalars().all()
-
-        for order in orders:
-            order_id = order.id
-            product_list = order.product_id
-            index = product_list.index(product_id)
-            unit = order.quantity[index]
-            order_date = order.date
-            marketplace = order.order_market_place
-            customer_id = order.customer_id
-            customer_name = order.name
-            order_data.append(
-                {
-                    "order_id": order_id,
-                    "order_date": order_date,
-                    "customer_name": customer_name,
-                    "quantity_orders": unit,
-                    "order_status": order.status,
-                    "marketplace": marketplace
-                }
-            )
-    return order_data
-    
-async def get_refunded_info(ean: str, db: AsyncSession):
-    query = select(Product).where(Product.ean == ean)
-    result = await db.execute(query)
-    products = result.scalars().all()
-
-    total = 0
-    num1 = 0
-    num2 = 0
-    num3 = 0
-    num4 = 0
-    num5 = 0
-
-    for product in products:
-        product_id = product.id
-
-        query_total = select(Returns).where(product_id == any_(Returns.products))
-        result_total = await db.execute(query_total)
-        total += len(result_total.scalars().all())
-        query1 = query_total.where(Returns.return_type == 1)
-        result_1 = await db.execute(query1)
-        num1 += len(result_1.scalars().all())
-        query2 = query_total.where(Returns.return_type == 2)
-        result_2 = await db.execute(query2)
-        num2 += len(result_2.scalars().all())
-        query3 = query_total.where(Returns.return_type == 3)
-        result_3 = await db.execute(query3)
-        num3 += len(result_3.scalars().all())
-        query4 = query_total.where(Returns.return_type == 4)
-        result_4 = await db.execute(query4)
-        num4 += len(result_4.scalars().all())
-        query5 = query_total.where(Returns.return_type == 5)
-        resutl_5 = await db.execute(query5)
-        num5 += len(resutl_5.scalars().all())
-
-    return {
-        "total": total,
-        "type_1": num1,
-        "type_2": num2,
-        "type_3": num3,
-        "type_4": num4,
-        "type_5": num5
-    }
-
 async def get_shipment_info(ean: str, db: AsyncSession):
     result = await db.execute(select(Shipment).where(ean == any_(Shipment.ean)))
     shipments = result.scalars().all()
@@ -369,6 +399,61 @@ async def get_products(
     
     await db.commit() 
     
+    cnt = {}
+    
+    ProductAlias = aliased(Product)
+    query = select(Order, ProductAlias).join(
+        ProductAlias,
+        and_(
+            ProductAlias.id == any_(Order.product_id),
+            ProductAlias.product_marketplace == Order.order_market_place,
+            ProductAlias.user_id == Order.user_id
+        )
+    )
+    query = query.where(Order.user_id == user_id)
+    time = datetime.now()
+    thirty_days_ago = time - timedelta(days=30)
+    query1 = query.where(Order.date > thirty_days_ago)
+    result = await db.execute(query1)
+    orders_with_products = result.all()
+
+    for order, product in orders_with_products:
+        product_ids = order.product_id
+        quantities = order.quantity
+        for i in range(len(product_ids)):
+            if product.id == product_ids[i]:
+                if product.ean not in cnt:
+                    cnt[product.ean] = quantities[i]
+                else:
+                    cnt[product.ean] += quantities[i]
+                    
+    returns_cnt = []
+    ProductAlias = aliased(Product)
+    query = select(Returns, ProductAlias).join(
+        ProductAlias,
+        and_(
+            ProductAlias.id == any_(Returns.products),
+            ProductAlias.product_marketplace == Returns.return_market_place,
+            ProductAlias.user_id == Returns.user_id
+        )
+    )
+    query = query.where(Returns.user_id == user_id)
+    time = datetime.now()
+    thirty_days_ago = time - timedelta(days=30)
+    query1 = query.where(Returns.date > thirty_days_ago)
+    result = await db.execute(query1)
+    returns_with_products = result.all()
+
+    for returns, product in returns_with_products:
+        product_ids = returns.products
+        quantities = returns.quantity
+        for i in range(len(product_ids)):
+            if product.id == product_ids[i]:
+                if product.ean not in returns_cnt:
+                    returns_cnt[product.ean] = quantities[i]
+                else:
+                    returns_cnt[product.ean] += quantities[i]
+    
     offset = (page - 1) * items_per_page
     query = select(Internal_Product)
     if supplier_ids:
@@ -386,7 +471,43 @@ async def get_products(
 
     if db_products is None:
         raise HTTPException(status_code=404, detail="Internal_Product not found")
+    
+    product_data = []
+    for db_product in db_products:
+        ean = db_product.ean
+        if cnt[ean]:
+            sales = cnt[ean]
+        else:
+            sales = 0
+            
+        if returns_cnt[ean]:
+            refunds = returns_cnt[ean]
+        else:
+            refunds = 0
+        imports_data = await get_imports(ean, db)
+        damaged_good = await get_damaged(ean, db)
+        product_data.append({
+            **{column.name: getattr(db_product, column.name) for column in Internal_Product.__table__.columns},
+            "sales": sales,
+            "refunds": refunds,
+            "imports_data": imports_data,
+            "damaged_good": damaged_good
+        })
     return db_products
+
+async def get_damaged(ean: str, db: AsyncSession):
+    query = select(Damaged_good).where(ean == any_(Damaged_good.product_ean))
+    result = await db.execute(query)
+    db_damageds = result.scalars().all()
+    if db_damageds is None:
+        return 0
+    total = 0
+    for db_damaged in db_damageds:
+        for i in range(len(db_damaged.product_ean)):
+            if db_damaged.product_ean[i] == ean:
+                total += db_damaged.quantity[i]
+                
+    return total
 
 @router.put("/{ean}", response_model=Internal_ProductRead)
 async def update_product(ean: str, product: Internal_ProductUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

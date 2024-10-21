@@ -192,6 +192,7 @@ async def get_product_info(
                     "model_name": product.model_name,
                     "short_product_name": product.short_product_name,
                     "observation": product.observation,
+                    "discontinued": product.discontinued,
                     "sales": cnt[ean],
                     "sales90": cnt90[ean]
                 })
