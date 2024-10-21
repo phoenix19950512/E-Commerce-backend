@@ -427,7 +427,7 @@ async def get_products(
                 else:
                     cnt[product.ean] += quantities[i]
                     
-    returns_cnt = []
+    returns_cnt = {}
     ProductAlias = aliased(Product)
     query = select(Returns, ProductAlias).join(
         ProductAlias,
