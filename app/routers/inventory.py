@@ -31,7 +31,7 @@ async def get_imports(ean: str, db:AsyncSession):
 
     for shipment in shipments:
         quantity = 0
-        if shipment.status == "arrived":
+        if shipment.status == "Arrived":
             continue
         ean_list = shipment.ean
         quantity_list = shipment.quantity
