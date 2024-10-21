@@ -79,8 +79,7 @@ def download_pdf(cif: str, seriesname: str, number: str, smartbill: Billing_soft
     url = "https://ws.smartbill.ro/SBORO/api/invoice/pdf"
     headers = {
         "accept": "application/json",
-        "authorization": f"Basic {credentials}",
-        "content-type": "application/json"
+        "authorization": f"Basic {credentials}"
     }
     
     data = {
