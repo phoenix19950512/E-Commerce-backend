@@ -2,11 +2,13 @@ from psycopg2 import sql
 from urllib.parse import urlparse
 from app.config import settings
 from fastapi import Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.internal_product import Internal_Product
 from app.models.billing_software import Billing_software
 from sqlalchemy import select
 import requests
+from io import BytesIO
 from requests.auth import HTTPBasicAuth
 import base64
 import json
@@ -54,9 +56,9 @@ async def update_stock(db: AsyncSession):
             db_product = result.scalars.first()
             db_product.stock = product.get('quantity')
 
-def generate_invoice(data):
-    USERNAME = "theinnovatorssrl@gmail.com"
-    PASSWORD = "003|5c070dde3f5ed393cf1ff6a610748779"
+def generate_invoice(data, smartbill: Billing_software):
+    USERNAME = smartbill.username
+    PASSWORD = smartbill.password
     url = "https://ws.smartbill.ro/SBORO/api/invoice"
     credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     headers = {
@@ -69,3 +71,22 @@ def generate_invoice(data):
     response = requests.post(url, headers=headers, data=data)
     logging.info(response.json())
     return response.json()
+
+def download_pdf(cif: str, seriesname: str, number: str, smartbill: Billing_software):
+    USERNAME = smartbill.username
+    PASSWORD = smartbill.password
+    credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
+    url = "https://ws.smartbill.ro/SBORO/api/invoice/pdf"
+    headers = {
+        "accept": "application/json",
+        "authorization": f"Basic {credentials}",
+        "content-type": "application/json"
+    }
+    
+    data = {
+        "cif": cif,
+        "seriesname": seriesname,
+        "number": number
+    }
+    response = requests.get(url, headers=headers, data = json.dumps(data), stream=True)
+    return StreamingResponse(BytesIO(response.content), media_type=response.headers['Content-Type'])

@@ -8,8 +8,9 @@ from app.routers.auth import get_current_user
 from app.database import get_db
 from app.models.invoice import Invoice
 from app.models.team_member import Team_member
+from app.models.billing_software import Billing_software
 from app.schemas.invoice import InvoicesCreate, InvoicesRead, InvoicesUpdate
-from app.utils.smart_api import generate_invoice
+from app.utils.smart_api import generate_invoice, download_pdf
 import json
 import logging
 
@@ -41,6 +42,11 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
     if invoice:
         return invoice
     
+    result = await db.execute(select(Billing_software).where(Billing_software.user_id == user_id, Billing_software.site_domain == "smartbill.ro"))
+    smartbill = result.scalars().first()
+    if smartbill:
+        raise HTTPException(status_code=404, detail="You have to add Smartbill account")
+    
     data = {
         "companyVatCode": db_invoice.companyVatCode,
         "seriesName": db_invoice.seriesName,
@@ -57,7 +63,7 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
         "issueDate": db_invoice.issueDate.strftime('%Y-%m-%d'),
         "products": json.loads(db_invoice.products)
     }
-    result = generate_invoice(data=data)
+    result = generate_invoice(data, smartbill)
     if result.get('errorText') != '':
         return result
     
@@ -70,6 +76,22 @@ async def create_invoice(invoice: InvoicesCreate, user: User = Depends(get_curre
     await db.commit()
     await db.refresh(db_invoice)
     return db_invoice
+
+@router.get('/download_pdf')
+async def download_invoice(cif: str, seriesname: str, number: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user.role == -1:
+        raise HTTPException(status_code=401, detail="Authentication error")
+    if user.role != 4:
+        result = await db.execute(select(Team_member).where(Team_member.user == user.id))
+        db_team = result.scalars().first()
+        user_id = db_team.admin
+    else:
+        user_id = user.id
+        
+    result = await db.execute(select(Billing_software).where(Billing_software.user_id == user_id, Billing_software.site_domain == "smartbill.ro"))
+    db_smartbill = result.scalars().first()
+    
+    return download_pdf(cif, seriesname, number, db_smartbill)
 
 @router.get('/count')
 async def get_invoice_count(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
