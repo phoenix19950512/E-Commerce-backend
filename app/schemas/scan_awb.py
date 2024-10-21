@@ -6,7 +6,7 @@ class Scan_awb(BaseModel):
     awb_number: Optional[str] = None
     awb_type: Optional[str] = None
     scan_date: Optional[datetime] = None
-    user: Optional[int] = None
+    user_id: Optional[int] = None
 
 class Scan_awbCreate(Scan_awb):
     pass
