@@ -302,6 +302,7 @@ async def insert_products_into_db(products, place, user_id):
             ) ON CONFLICT (ean, product_marketplace) DO UPDATE SET
                 id = EXCLUDED.id,
                 sale_price = EXCLUDED.sale_price,
+                ean = EXCLUDED.ean,
                 stock = EXCLUDED.stock,
                 user_id = EXCLUDED.user_id
         """).format(sql.Identifier("products"))
