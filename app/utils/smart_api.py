@@ -78,14 +78,15 @@ def download_pdf(cif: str, seriesname: str, number: str, smartbill: Billing_soft
     credentials = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
     url = "https://ws.smartbill.ro/SBORO/api/invoice/pdf"
     headers = {
+        "Authorization": f"Basic {credentials}",
         "accept": "application/json",
-        "authorization": f"Basic {credentials}"
     }
     
-    data = {
+    params = {
         "cif": cif,
         "seriesname": seriesname,
         "number": number
     }
-    response = requests.get(url, headers=headers, data = json.dumps(data), stream=True)
+    
+    response = requests.get(url, headers=headers, params=params, stream=True)
     return StreamingResponse(BytesIO(response.content), media_type=response.headers['Content-Type'])
