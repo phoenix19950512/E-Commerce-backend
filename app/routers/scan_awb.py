@@ -43,6 +43,8 @@ async def create_scan_awb(scan_awb: Scan_awbCreate, db: AsyncSession = Depends(g
         db_scan_awb.awb_type = "Refusal of Delivery"
         user_id = db_awb.user_id
         db_scan_awb.user_id = user_id
+    else:
+        return
     db.add(db_scan_awb)
     await db.commit()
     await db.refresh(db_scan_awb)
