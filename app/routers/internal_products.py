@@ -493,7 +493,7 @@ async def get_products(
             "imports_data": imports_data,
             "damaged_good": damaged_good
         })
-    return db_products
+    return product_data
 
 async def get_damaged(ean: str, db: AsyncSession):
     query = select(Damaged_good).where(ean == any_(Damaged_good.product_ean))
