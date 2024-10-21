@@ -475,15 +475,15 @@ async def get_products(
     product_data = []
     for db_product in db_products:
         ean = db_product.ean
-        if cnt[ean]:
-            sales = cnt[ean]
-        else:
+        if ean not in cnt:
             sales = 0
-            
-        if returns_cnt[ean]:
-            refunds = returns_cnt[ean]
         else:
+            sales = cnt[ean]
+        if ean not in returns_cnt:
             refunds = 0
+        else:
+            refunds = returns_cnt[ean]
+            
         imports_data = await get_imports(ean, db)
         damaged_good = await get_damaged(ean, db)
         product_data.append({
