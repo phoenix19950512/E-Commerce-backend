@@ -403,6 +403,7 @@ async def refresh_emag_products(marketplace: Marketplace):
     PASSWORD = marketplace.credentials["secondKey"]
     API_KEY = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode('utf-8'))
     result = count_all_products(marketplace.baseAPIURL, endpoint, count_point, API_KEY)
+    logging.info(f"count result is {result}")
     if result:
         pages = result['results']['noOfPages']
         items = result['results']['noOfItems']
