@@ -353,7 +353,7 @@ async def get_shipment_info(ean: str, db: AsyncSession):
 
     return shipment_data
 
-@router.get("/", response_model=List[Internal_ProductRead])
+@router.get("/")
 async def get_products(
     supplier_ids: str = Query(None),
     page: int = Query(1, ge=1, description="Page number"),
