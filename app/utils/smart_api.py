@@ -92,7 +92,6 @@ def download_pdf(cif: str, seriesname: str, number: str, smartbill: Billing_soft
     response = requests.get(url, headers=headers, params=params, stream=True)
     
     output_filename = f"/var/www/html/factura_{seriesname}{number}.pdf"
-    
     if response.status_code == 200:
         with open(output_filename, 'wb') as pdf_file:
             for chunk in response.iter_content(chunk_size=1024):
