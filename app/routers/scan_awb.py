@@ -86,7 +86,9 @@ async def get_scan_awbs(
         user_id = user.id
         
     offset = (page - 1) * itmes_per_page
-    result = await db.execute(select(Scan_awb).where(Scan_awb.user_id == user_id).offset(offset).limit(itmes_per_page))
+    query = select(Scan_awb).where(Scan_awb.user_id == user_id)
+    query = query.offset(offset).limit(itmes_per_page)
+    result = await db.execute(query)
     db_scan_awbs = result.scalars().all()
     if db_scan_awbs is None:
         raise HTTPException(status_code=404, detail="scan_awb not found")
@@ -101,6 +103,9 @@ async def get_scan_awbs(
         else:
             db_scan_awb.awb_type = "Finish"
     await db.commit()
+    
+    for db_scan_awb in db_scan_awbs:
+        await db.refresh(db_scan_awb)
     return db_scan_awbs
 
 @router.get("/awb_number")
