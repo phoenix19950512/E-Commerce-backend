@@ -159,6 +159,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                         awb.height = height
                         awb.width = width
                         awb.length = length
+                        awb.awb_status_update_time = datetime.now()
                     except Exception as track_ex:
                         error_barcode.append(awb_barcode)
                         logging.error(f"Tracking API error for AWB {awb_barcode}: {str(track_ex)}")
