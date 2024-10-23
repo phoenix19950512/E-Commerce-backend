@@ -68,7 +68,7 @@ async def get_scan_awb_count(user: User = Depends(get_current_user), db: AsyncSe
     scan_awbs = result.scalars().all()
     return len(scan_awbs)
 
-@router.get("/", response_model=List[Scan_awbRead])
+@router.get("/")
 async def get_scan_awbs(
     page: int = Query(1, ge=1, description="Page number"),
     itmes_per_page: int = Query(50, ge=1, le=100, description="Number of items per page"),
