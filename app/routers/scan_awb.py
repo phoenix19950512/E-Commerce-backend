@@ -15,7 +15,7 @@ from app.schemas.scan_awb import Scan_awbCreate, Scan_awbRead, Scan_awbUpdate
 
 router = APIRouter()
 
-@router.post("/", response_model=Scan_awbRead)
+@router.post("/")
 async def create_scan_awb(scan_awb: Scan_awbCreate, db: AsyncSession = Depends(get_db)):
     db_scan_awb = Scan_awb(**scan_awb.dict())
     result = await db.execute(select(Scan_awb).where(Scan_awb.awb_number == db_scan_awb.awb_number))
