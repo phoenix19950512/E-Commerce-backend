@@ -117,8 +117,6 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
 
             error_barcode = []
             
-            batch_size = 100
-            count = 0 
             try:
                 result = await session.execute(
                     select(AWB)
@@ -171,7 +169,7 @@ async def update_awb(db: AsyncSession = Depends(get_db)):
                 while retries < MAX_RETRIES:
                     try:
                         await session.commit()
-                        logging.info(f"Successfully committed {count} AWBs so far")
+                        logging.info(f"Successfully committed AWBs so far")
                         break  # Break out of the retry loop if commit succeeds
                     except Exception as e:
                         await session.rollback()
