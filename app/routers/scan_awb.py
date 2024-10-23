@@ -45,6 +45,8 @@ async def create_scan_awb(scan_awb: Scan_awbCreate, db: AsyncSession = Depends(g
         db_scan_awb.user_id = user_id
     else:
         return
+    if db_scan_awb.awb_number[-3:] == '001':
+        db_scan_awb.awb_number = db_scan_awb.awb_number[:-3]
     db.add(db_scan_awb)
     await db.commit()
     await db.refresh(db_scan_awb)
@@ -95,6 +97,7 @@ async def get_scan_awbs(
         result = await db.execute(select(AWB).where(AWB.awb_number == awb_number))
         db_awb = result.scalars().first()
         db_scan_awb.awb_type = db_awb.awb_status
+    await db.commit()
     return db_scan_awbs
 
 @router.get("/awb_number")
