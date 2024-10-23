@@ -93,11 +93,12 @@ def download_pdf(cif: str, seriesname: str, number: str, smartbill: Billing_soft
     
     output_filename = f"/var/www/html/factura_{seriesname}{number}.pdf"
     if response.status_code == 200:
+        content = BytesIO(response.content)
+        
         with open(output_filename, 'wb') as pdf_file:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:  # filter out keep-alive new chunks
-                    pdf_file.write(chunk)
-        print(f"PDF saved as {output_filename}")
-        return StreamingResponse(BytesIO(response.content), media_type=response.headers['Content-Type']) 
+            pdf_file.write(content.getvalue())
+            
+        logging.info(f"PDF saved as {output_filename}")
+        return StreamingResponse(content, media_type=response.headers['Content-Type']) 
     else:
         return response
