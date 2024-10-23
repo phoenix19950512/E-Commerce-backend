@@ -47,6 +47,7 @@ class AWB(Base):
     awb_date = Column(DateTime, nullable=True)
     awb_trigger = Column(String, nullable=True)
     awb_creation_date = Column(String, nullable=True)
+    awb_status_update_time = Column(DateTime, nullable=True)
     length = Column(DECIMAL, nullable=True)
     width = Column(DECIMAL, nullable=True)
     height = Column(DECIMAL, nullable=True)

@@ -46,6 +46,7 @@ class AWBBase(BaseModel):
     awb_trigger: Optional[str] = None
     pickedup: Optional[bool] = False
     awb_creation_date: Optional[str] = None
+    awb_status_update_time: Optional[datetime] = None
     length: Optional[Decimal] = None
     width: Optional[Decimal] = None
     height: Optional[Decimal] = None
